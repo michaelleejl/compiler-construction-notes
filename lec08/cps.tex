@@ -26,17 +26,19 @@ let rec interpret (e, env, store) =
 There's great simplicity in this -- so why do we have to do any more? Why can we not just stop here? The answer is that we are implicitly relying on many \texttt{OCaml} facilities, in particular, we're relying on the \texttt{OCaml} call stack. So really we've been cycling with the training wheels on, in some sense. It is time to take them off. 
 
 \subsection{Goals}
-The \emph{goal} of this chapter, therefore, is to \emph{take the training wheels off}: liberate ourselves from the \texttt{OCaml} facilities, and use our own. In particular, we want to \emph{stop relying on the \texttt{OCaml} call stack} and \emph{use an explicit stack that we have full control over}. Doing this to \textbf{\texttt{Interpreter 0}} will create \textbf{\texttt{Interpreter 1}}.
+The goal of this chapter, therefore, is to \emph{take the training wheels off}: liberate ourselves from the \texttt{OCaml} call stack and \emph{use an explicit call stack that we have full control over}. Doing this to \textbf{\texttt{Interpreter 0}} will create \textbf{\texttt{Interpreter 1}}.
 
 \subsection{Roadmap}
-Taking off the training wheels may seem like a really daunting task. Let's first look at a simple program, and try to draft out a general strategy.
+Taking off the training wheels may seem like a really daunting task. In this chapter, what we're going to do is gradually build up to a  a general strategy for doing so, by considering concrete, simple examples.
 
-To liberate ourselves from relying on the call-stack, we can convert a \emph{recursive} function to an \emph{tail-recursive} one. Recall from {\sffamily Part IA Foundations of Computer Science}, a tail recursive function (that does not call any other functions other than itself) only needs to use a single stack frame (this is called \emph{tail call optimisation}). The \emph{continuation-passing style} transformation will give us such a technique to convert \emph{any} recursive function to a tail-recursive one. That's step 1.
+First, we're going to examine \emph{what a call stack is}, in order to understand what it is that \texttt{OCaml} has given us for free, and what it is we'll need to construct if we want to build it on our own.
 
-As we will see (and you'll have to trust me on this for now), we'll end up with a \emph{deeply nested function} that has the structure of a stack, but is not \emph{quite} one. Step 2 is therefore \emph{defunctionalisation}, which is a straightforward way of turning that deeply nested function into an explicit stack. 
+Second, we'll liberate ourselves from relying on the call stack. The main idea here is to convert a \emph{recursive} function to an \emph{tail-recursive} one. The \emph{continuation-passing style} transformation will give us such a technique.
 
-\section{Stacks}
-Given our goal: to switch from \texttt{OCaml}'s call stack to our own, explicit call stack, it's first important to \emph{truly} understand what a stack is. To do this, let's examine a simple function that sums the elements of a list, and let's think about how the stack changes when we run the function on the input list \texttt{[1; 2; 3]}.
+Third, we'll see that CPS alone will end up giving us something that has the structure of a call stack, but is not \emph{quite} one. We'll turn it into something more stack like using \emph{defunctionalisation}. 
+
+\section{Call Stacks}
+Given our goal: to switch from \texttt{OCaml}'s call stack to our own, explicit call stack, it's first important to \emph{truly} understand what a stack is. To do this, let's examine a simple function that sums the elements of a list, and let's sketch how the stack changes when we run the function on the input list \texttt{[1; 2; 3]}.
 
 \begin{code}[A function to sum the elements of a list in \texttt{OCaml}]
 \label{code:sum-ocaml}
@@ -48,7 +50,9 @@ let rec sum xs =
 \end{minted}
 \end{code}
 
-In the first call, \texttt{sum [1;2;3]} will evaluate to \texttt{1 + sum [2;3]}. This means that we need to \emph{evaluate} \texttt{sum [2;3]}, take the result of that evaluation, and add \texttt{1} to it, before we return. In order to remember that we need to add \texttt{1}, let's push \texttt{ADD 1} (which, in the jargon, is known as an \emph{activation frame}) onto a stack. At this point, we'll assume that the stack consists of \emph{instructions and data} -- in a later lecture, we'll see how to tear the two apart, and therefore create the data-only stack that we're so familiar with. 
+In the first call, we start with an empty stack and call \texttt{sum [1;2;3]}. \texttt{sum [1;2;3]} will evaluate to \texttt{1 + sum [2;3]}. Let's break this into two parts. We are \emph{first} going to evaluate \texttt{sum [2;3]}, and then \emph{second}, take the result of that evaluation and add \texttt{1} to it. Before we dive in headfirst in evaluating \texttt{sum [2;3]}, we need to use some scratch space to note down what we need to do once we're done: specifically, we need to add \texttt{1}. 
+
+That's exactly the purpose of the call stack --- we push an \emph{activation frame} onto the call stack, in this case, I hide away the specific details of the activation frame and focus on what it \emph{is} --- a note that we should \texttt{ADD 1} on completion of the recursive call. It's important to get the intuition for what an activation frame is: an activation frame represents \emph{the rest of the computation}. Pushing an activation frame onto a call stack is thus just nerd-speak for ``jotting down what we need to do so we don't forget it''. 
 
 \begin{figure}[h]
     \centering
@@ -59,16 +63,50 @@ In the first call, \texttt{sum [1;2;3]} will evaluate to \texttt{1 + sum [2;3]}.
     \label{fig-sumstack}
 \end{figure}
 
-As we continue making calls, we'll push \texttt{ADD 2} and \texttt{ADD 3} onto the stack, at which point we hit the base case. In doing so, we are building up \emph{the rest of the computation}: by pushing \texttt{ADD 1} onto the stack, we are saying ``after we finish evaluating the recursive call, we should \emph{complete} the computation by adding \texttt{1} to the result''.
+As we continue making calls, we'll push \texttt{ADD 2} and \texttt{ADD 3} onto the stack, at which point we hit the base case. Things start to change when we reach the base case -- at this point, we've fully \emph{unravelled} the computation into a sequence of activation frames. We know exactly what we need to do once we have a value, but we don't yet have a value. But luckily, we've hit the base case! So we can simply \emph{pass in} the value (in this case, \texttt{0}), using the \emph{remembered transformations} on the stack to transform the value. After this point, the stack only shrinks as we apply transformation after transformation.
 
-Thing start to change when we reach the base case -- at this point, we don't need to grow the stack any more, we can simply \emph{pass in} the value, with the stack \emph{remembering} how we wanted to transform the value. After this point, the stack only decreases as we apply transformation after transformation.
-
-This is summarised graphically in \Cref{fig-sumstack}. It's an extremely important point: when we \emph{build} the stack, we are \emph{remembering what we need to do once we hit a base case}. Don't be fooled by the scary terminology -- pushing an activation frame onto a call stack is just nerd-speak for ``jotting down what we need to do so we don't forget it''. Once we hit the base case, we simply \emph{unwind} the stack by using the remembered operations to transform our value.
+This is summarised graphically in \Cref{fig-sumstack}. It's an extremely important point: when we \emph{build} the stack, we are \emph{remembering what we need to do once we hit a base case}. Don't be fooled by the scary terminology -- p. Once we hit the base case, we simply \emph{unwind} the stack by using the remembered operations to transform our value.
 
 \section{Continuation Passing Style}
-Continuation Passing Style (CPS) is a technique to convert any \emph{recursive} function into a \emph{tail-recursive} one. 
+Continuation Passing Style (CPS) is a technique to convert any \emph{recursive} function into a \emph{tail-recursive} one.
 
-Let's consider, once again the \texttt{sum} function defined in \Cref{code:sum-ocaml}. This is \emph{not} tail recursive, since once the recursive call terminates, we still have work to do! Specifically, we need to \texttt{ADD x}. Here's an idea -- why don't we \emph{pass in the work to do to the recursive call}. That is, let's pass in an \emph{anonymous function} that holds ``the rest of the computation'' -- the stuff that's to be done once the recursive call finishes. That's exactly the idea behind the CPS transformation! The CPS transformed \texttt{sum} function can be seen in \Cref{code:sum-cps-ocaml}.
+\subsection{Tail Recursion}
+We'll quickly recap tail recursion, which was covered in {\sffamily Part IA Foundations of Computer Science}. To tell if a recursive function is tail recursive, just ask yourself: “Whenever I make a recursive call, do I need to do anything after the call returns?”
+
+If the answer is yes, then the function is \textbf{not} tail recursive. Hence, the \texttt{sum} function defined in \Cref{code:sum-ocaml} is not tail recursive, because the recursive expression is \texttt{x + sum xs}. Once the recursive call \texttt{sum xs} returns, there is still work to do in adding \texttt{x}.
+
+If the answer is no, then the function \emph{is} tail recursive. An easy example of a tail recursive function is checking if an element is in a list
+
+\begin{code}[A tail recursive program for checking if an element is in a list in \texttt{OCaml}]
+\label{code:sum-cps-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec mem x xs = 
+  match xs with
+    | [] -> False
+    | y::xs -> x == y || mem x xs 
+\end{minted}
+\end{code}
+
+This is tail recursive because either \texttt{x == y}, in which case we can return true without having to perform the recursive call, or \texttt{x != y}, in which case we can perform the recursive call and simply return the result. 
+
+\subsection{CPS Transformation}
+Let's consider, once again the \texttt{sum} function defined in \Cref{code:sum-ocaml}. This is \emph{not} tail recursive, since once the recursive call terminates, we still have work to do! Specifically, we need to \texttt{ADD x} once the recursive call is done. 
+
+Let's describe this annoying ``extra work'' in a way that makes its nature more apparent. Rather than saying \texttt{x + sum xs}, we'll say \texttt{(fun res -> x + res) (sum xs)} (where \texttt{res} stands for result). Putting it together, 
+
+\begin{code}[Making the order of evaluation explicit]
+\label{code:sum-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec sum xs = 
+   match xs with
+     | [] -> 0
+     | x::xs -> (fun res -> x + res) (sum xs)
+\end{minted}
+\end{code}
+
+If you remember call-by-value semantics, this makes the order of evaluation explicit. We \emph{first} evaluate \texttt{sum xs} and \emph{then} apply the function \texttt{(fun res -> x + res) (sum xs)} to it. 
+
+The key insight behind the CPS transform is that \textbf{functions are values}. Hence, they can be passed to other functions as arguments. Therefore, in order to make the function tail recursive, we can \emph{pass in the work to do to the recursive call}. That is, we'll rewrite \texttt{sum} to take in an additional argument, called \texttt{k}, that represents ``the work that's left to be done''. At every iteration, we'll update ``the work that's left to be done'', until we hit the base case, at which point we'll simply execute it. This is exactly the CPS transform, and the CPS transformed \texttt{sum} function can be seen in \Cref{code:sum-cps-ocaml}.
 
 \begin{code}[A CPS-transformed function to sum the elements of a list in \texttt{OCaml}]
 \label{code:sum-cps-ocaml}
@@ -76,17 +114,34 @@ Let's consider, once again the \texttt{sum} function defined in \Cref{code:sum-o
 let rec sum_cps xs k = 
    match xs with
      | [] -> k 0
-     | x::xs -> sum_cps xs (fun v -> k (x + v))
+     | x::xs -> sum_cps xs (fun res -> k (x + res))
 \end{minted}
 \end{code}
 
-As we can see on \texttt{Line 4}, this is now tail recursive --- we don't need to use the call stack to remember that we need to \texttt{ADD x}, since we have bundled it up into a function, and passed it as a second argument. 
+As we can see on \texttt{Line 4}, this is now tail recursive --- we've taken the additional work to be done, bundled it up into a function, and passed it as a second argument. 
 
-Wait a minute -- ``Why is it \texttt{fun v -> k (x + v)} and not \texttt{fun v -> x + v}?'', I hear you ask. Since \texttt{k} represents the work our \emph{calling function} needs us to do, we should add \texttt{x} to \texttt{v}, and then run ``the rest of the computation'', given to us by our calling function, on it. We should not assume that once we add \texttt{x} to \texttt{v}, we are done. 
+There is a subtlety --- why is it \texttt{fun res -> k (x + res)} and not \texttt{fun res -> x + res}? Think about what each function call receives --- a \texttt{k} from its caller, that represents what its caller needs to do. Think about what each function call gives its callee --- some \texttt{k} that \emph{chains} what the function call needs to do with what the function caller needed to do. In doing so, we are building up ``the rest of the computation''. Here, we chain by using function composition -- add \texttt{res} to \texttt{x}, and then execute whatever our function caller wants us to do.
 
 Further, when we reach a value, as in the base case, we now \emph{apply the fully built-up computation} to the value. That's what we're doing in \texttt{Line 3}.
 
 In fact, we can give the ``rest of the computation'' a name -- it is the \textbf{continuation}. Since we are \emph{passing} the continuation along at each step, this is called \textbf{Continuation Passing Style}.
+
+We can then bundle \texttt{sum\_cps} into a single argument function
+
+\begin{code}[Wrapping the \texttt{sum\_cps} function]
+\label{code:sum-cps-wrapped-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let sum xs = 
+  let rec sum_cps xs k = 
+    match xs with
+      | [] -> k 0
+      | x::xs -> sum_cps xs (fun res -> k (x + res))
+    in
+    sum_cps xs (fun x -> x)
+\end{minted}
+\end{code}
+
+We pass in the identity \texttt{fun x -> x} in the initial call, because there is \emph{no additional work} to be done. 
 
 We'd like you to note two things at this point: first, that \emph{continuation passing style} has converted a non-tail recursive function into a tail-recursive one, as promised. 
 
@@ -95,10 +150,163 @@ Second, the continuation \emph{exactly mirrors} the stack! Building up the conti
 \subsection{The Wonderful World of Continuations}
 Continuations are \emph{incredibly powerful}. Let's list their merits, and then dig through them in greater detail. Lots of the finer technical details here will be non-examinable, but the key ideas are!
 
-Continuations ensure that \emph{every call is a tail call}. This is fairly self explanatory.
-
-Continuations ensure that the \emph{evaluation order is explicit}. 
-
+\subsubsection{Continuations ensure that every call is a tail call}
+We've seen this in the previous section.
 
 
-\subsection{The CPS Transform as a Logical Embedding}
+\subsubsection{Continuations ensure that the evaluation order is explicit}
+To see this, let's consider another function, the fibonacci function, and its CPS transformation. 
+
+\begin{code}[A fibonacci function in \texttt{OCaml}]
+\label{code:fib-ocaml-again}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec fib n = 
+  match n with
+    | 0 -> 1
+    | 1 -> 1
+    | n -> fib n-1 + fib n-2
+\end{minted}
+\end{code}
+
+\begin{code}[A CPS-transformed fibonacci function in \texttt{OCaml}]
+\label{code:fib-ocaml-again}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec fib_cps n k = 
+  match n with
+    | 0 -> k 1
+    | 1 -> k 1
+    | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
+\end{minted}
+\end{code}
+
+The CPS transformation here is slightly more involved. Two points: first, we have two base cases rather than one. Second, the CPS transformed recursive case looks rather gnarly. But it isn't too bad! Let's start from first principles. We wish to make the following expression tail recursive 
+
+\begin{minted}[bgcolor=backcolour]{ocaml}
+fib n-1 + fib n-2
+\end{minted}
+To do that, let's bundle up what needs to be done into a function, just like we did for \texttt{sum}
+\begin{minted}[bgcolor=backcolour]{ocaml}
+(fun res -> res + fib n-2) fib n-1 
+\end{minted}
+But the body of the resultant function features another recursive call, so we repeat this one more time
+\begin{minted}[bgcolor=backcolour]{ocaml}
+(fun res1 -> (fun res2 -> res1 + res2) fib n-2) fib n-1 
+\end{minted}
+If we replace \texttt{res1} with \texttt{x} and \texttt{res2} with \texttt{y}, we get
+\begin{minted}[bgcolor=backcolour]{ocaml}
+(fun x -> (fun y -> x + y) fib n-2) fib n-1 
+\end{minted}
+The rest of the conversion is simply reorganisation and sticking the continuation of our caller in at the right place.
+\begin{minted}[bgcolor=backcolour]{ocaml}
+fib n-1 (fun x -> fib n-2 (fun y -> k (x + y))) 
+\end{minted}
+Notice how the order of evaluation has become really explicit. We first evalute \texttt{fib n-1}, then \texttt{fib n-2}, and then add their results, and then apply whatever's left of the computation. 
+
+It turns out that this simple idea can be used in very powerful ways! Let's revisit, for a brief moment, lexing and parsing. When we talked about the lexer and the parser, we described them as communicating through an interface --- the lexer takes a character stream and turns it into a token stream, which is then handled by a parser. Interfaces are great for separating concerns --- we don't want to worry too much about the parser when defining the lexer, and we don't want to worry too much about the lexer when defining the parser. But interfaces also block off opportunities for optimisation --- if the lexer and the parser were defined together, then whenever the lexer emits a token, the parser could take it immediately, and put it \emph{exactly} where it needs to be in the AST, and then return control back to the lexer, in a way that \textit{exposes more opportunities for optimisation}. It'd be really cool if there was a way to define lexers and parsers separately, and then \emph{automatically} fuse them. It turns out you can, and one of the key ideas is to CPS-transform the lexer, and then CPS-transform the parser, and then \emph{interleave} their continuations. This is made possible because the order of evaluation has been made explicit. 
+
+\subsubsection{Every continuation is reified}
+What this means is, in essence, the program's \emph{call stack} has become a real object that can be manipulated by the program. 
+
+First, let's consider how we might, and why we might want to, manipulate continuations. Here are two examples
+
+First, fast multiplication of a list. Here's a standard way of multiplying the elements of a list 
+
+\begin{code}[Multiplying the elements of a list in \texttt{OCaml}]
+\label{code:mul-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec mul xs = 
+  match xs with
+    | [] -> 1
+    | x::xs -> x * mul xs
+\end{minted}
+\end{code}
+
+Which we CPS-convert
+
+\begin{code}[A CPS-transformed function in \texttt{OCaml} that multiplies the elements of a list]
+\label{code:mul-ocaml-fast}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec mul_cps xs k = 
+  match xs with
+    | [] -> k 1
+    | x::xs -> mul_cps xs (fun res -> k (x * res))
+\end{minted}
+\end{code}
+
+We can make this multiplication faster, by simply returning zero whenever we encounter a zero. 
+
+\begin{code}[A faster \texttt{OCaml} function that multiplies the elements of a list]
+\label{code:mul-ocaml-fastest}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec mul_cps xs k = 
+  match xs with
+    | [] -> k 1
+    | 0::xs -> k 0
+    | x::xs -> mul_cps xs (fun res -> k (x * res))
+\end{minted}
+\end{code}
+
+But this is still not the most optimal, since we will have to go through the \emph{built-up} continuation \texttt{k}, which may be some non-zero sequence of multiplications, before returning. 
+
+However, since continuations are now explicit objects that we can manipulate, we can do something rather devious. Let's \emph{save} the continuation \emph{before} we do any multiplication, and call it \texttt{u}. If we reach a \texttt{0}, let's not apply the built up continuation \texttt{k}, but instead the saved continuation \texttt{u}.
+
+\begin{code}[An even faster \texttt{OCaml} function that multiplies the elements of a list]
+\label{code:fib-ocaml-again}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let mul_cps xs u = 
+  let rec mul_cps_inner xs k = 
+    match xs with
+      | [] -> k 1
+      | 0::xs -> u 0
+      | x::xs -> mul_cps_inner xs (fun res -> k (x * res))
+  in
+  mul_cps_inner xs u
+\end{minted}
+\end{code}
+
+Now we can do something amazing --- we can implement \texttt{Prolog} style backtracking in \texttt{OCaml}. We won't go through the details here, you'll learn much more about them in {\sffamily Part II Types}, but the key is that every time we encounter a decision point that we may need to re-consider during a backtracking phase, we can push the \emph{continuation} (representing the call stack) onto a \emph{stack}. If we fail, we can simply pop the last decision point off the stack. 
+
+\subsubsection{The CPS transform corresponds to a logical embedding}
+In \texttt{Haskell}, the way you work with continuations is by using two primitives, \texttt{callcc} (``call with current continuation'') and \texttt{throw}.\texttt{callcc} allows the programmer to \emph{name} the current continuation (call stack) and allows your code to reference that continuation. \texttt{throw} is a way of passing a value to a continuation. Fast multiplication with \texttt{callcc} and \texttt{throw} looks like
+
+\begin{code}[Fast multiplication with \texttt{callcc} and \texttt{throw}]
+\label{code:mul-ocaml-callcc}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let mul_callcc xs = 
+  let rec mul_inner xs k = 
+    match xs with
+      | [] -> 1
+      | 0::xs -> throw u 0
+      | x::xs -> x * mul_callcc xs u
+  in callcc (fun u -> mul_callcc xs u)
+\end{minted}
+\end{code}
+
+For simplicity, \texttt{mul\_inner} is not CPS converted. 
+
+In the 1970s, there was a widespread belief that \texttt{callcc} ``couldn't be typed''. Timothy Griffin was the first to discover that it \emph{could} be typed. If I let the return type be $A$, and the type of a continuation be $B$, then the type of \texttt{callcc} is
+\[((A \rightarrow B) \rightarrow A)) \rightarrow A\]
+Basically, if
+\begin{enumerate}
+    \item \texttt{u} is something that takes in an $A$ and returns a continuation $B$ (\texttt{u} has type $A \rightarrow B)$,
+    \item Assuming \texttt{u} has type $A \rightarrow B$, can conclude that \texttt{mul\_callcc xs u} has type $A$,
+    \item Then, \texttt{callcc (fun u -> mul\_callcc xs u)} has type $A$
+\end{enumerate} 
+
+Eagle-eyed readers will spot that this corresponds to Pierce's Law, 
+\[((P \rightarrow Q) \rightarrow P)) \rightarrow P\]
+
+Pierce's Law is an axiom of \emph{Classical Logic} but not of \emph{Constructive Logic}. Don't worry if you don't know what this is, you'll learn about it in {\sffamily Part II Types}. However, if you are curious, Classical Logic is a logic of \emph{fact}, whereas Constructive Logic is a logic of \emph{data}. In order to \emph{prove} something in Constructive Logic, you need to give a \emph{decision algorithm}. This is not needed in Classical Logic. Consider the statement 
+
+\begin{center}
+    Every program either terminates or does not terminate.
+\end{center}
+
+In Classical Logic, we know factually, that this is true (and it is provable). In Constructive Logic, in order to prove this to be true, we need to produce an \emph{algorithm} that takes a program and tells us, for any program, if it terminates or does not terminate (which is undecidable, see {\sffamily Part IB Computation Theory}). It turns out that the only axiom you need to add to Constructive Logic to turn it into Classical Logic is Pierce's Law. 
+
+The discovery that \texttt{callcc}'s type corresponded to Pierce's Law uncovered the \emph{logical} nature of CPS. In {\sffamily Part IB Semantics of Programming Languages}, you'll have touched on the \emph{Curry-Howard Correspondence} --- every concept in programming has a corresponding concept in logic. It turns out that the CPS transform corresponds to a way to \emph{logically embed} Classical Logic into Constructive Logic.
+
+All of this is non-examinable, but if you're interested, you can find out much more in {\sffamily Part II Types}.
+
+
+
