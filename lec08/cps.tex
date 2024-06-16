@@ -5,7 +5,7 @@
 \dictum[Timothy Griffin]{The cps transform is a logical embedding.}
 
 \section{Overview}
-Before we begin this chapter, let's take stock of what we have done, and our goals. 
+Before we begin this chapter, let's take stock of what we have done, our goals for this chapter, and how we plan on achieving them. 
 
 \subsection{Recap}
 We have developed \textbf{\texttt{Interpreter 0}}, a ``\emph{denotational} interpreter'' for \texttt{Slang}. It is \emph{denotational} in the sense that it is ``definitional'', and so we can see at a glance that it is correct. For example, let's recall how we interpret \texttt{If}
@@ -37,7 +37,11 @@ Second, we'll liberate ourselves from relying on the call stack. The main idea h
 
 Third, we'll see that CPS alone will end up giving us something that has the structure of a call stack, but is not \emph{quite} one. We'll turn it into something more stack like using \emph{defunctionalisation}. 
 
-\section{Call Stacks}
+Finall, we'll perform some clean-up, eliminating \emph{mutual recursion} and then doing some refactoring. 
+
+
+
+\section{Call Stacks}\label{section:call-stacks}
 Given our goal: to switch from \texttt{OCaml}'s call stack to our own, explicit call stack, it's first important to \emph{truly} understand what a stack is. To do this, let's examine a simple function that sums the elements of a list, and let's sketch how the stack changes when we run the function on the input list \texttt{[1; 2; 3]}.
 
 \begin{code}[A function to sum the elements of a list in \texttt{OCaml}]
@@ -147,16 +151,7 @@ We'd like you to note two things at this point: first, that \emph{continuation p
 
 Second, the continuation \emph{exactly mirrors} the stack! Building up the continuation, using function composition, corresponds to pushing \emph{activation frames} onto the stack. Applying the continuation to a value corresponds to the \texttt{APPLY} step. The value is then successively transformed by the functions in the continuation. This is not a coincidence -- you can, and \emph{should}, think of the continuation as a \emph{functionalised stack}. 
 
-\subsection{The Wonderful World of Continuations}
-Continuations are \emph{incredibly powerful}. Let's list their merits, and then dig through them in greater detail. Lots of the finer technical details here will be non-examinable, but the key ideas are!
-
-\subsubsection{Continuations ensure that every call is a tail call}
-We've seen this in the previous section.
-
-
-\subsubsection{Continuations ensure that the evaluation order is explicit}
-To see this, let's consider another function, the fibonacci function, and its CPS transformation. 
-
+\subsection{CPS transforming the fibonacci function}
 \begin{code}[A fibonacci function in \texttt{OCaml}]
 \label{code:fib-ocaml-again}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
@@ -200,14 +195,68 @@ The rest of the conversion is simply reorganisation and sticking the continuatio
 \begin{minted}[bgcolor=backcolour]{ocaml}
 fib n-1 (fun x -> fib n-2 (fun y -> k (x + y))) 
 \end{minted}
-Notice how the order of evaluation has become really explicit. We first evalute \texttt{fib n-1}, then \texttt{fib n-2}, and then add their results, and then apply whatever's left of the computation. 
 
-It turns out that this simple idea can be used in very powerful ways! Let's revisit, for a brief moment, lexing and parsing. When we talked about the lexer and the parser, we described them as communicating through an interface --- the lexer takes a character stream and turns it into a token stream, which is then handled by a parser. Interfaces are great for separating concerns --- we don't want to worry too much about the parser when defining the lexer, and we don't want to worry too much about the lexer when defining the parser. But interfaces also block off opportunities for optimisation --- if the lexer and the parser were defined together, then whenever the lexer emits a token, the parser could take it immediately, and put it \emph{exactly} where it needs to be in the AST, and then return control back to the lexer, in a way that \textit{exposes more opportunities for optimisation}. It'd be really cool if there was a way to define lexers and parsers separately, and then \emph{automatically} fuse them. It turns out you can, and one of the key ideas is to CPS-transform the lexer, and then CPS-transform the parser, and then \emph{interleave} their continuations. This is made possible because the order of evaluation has been made explicit. 
+
+\subsection{The Wonderful World of Continuations}
+Continuations are \emph{incredibly powerful}. Let's list their merits, and then dig through them in greater detail. Lots of the finer technical details here will be non-examinable, but the key ideas are!
+
+\subsubsection{Every call is a tail call}
+We've seen this in the previous section.
+
+\subsubsection{Every intermediate result is named}
+In \Cref{code:sum-cps-ocaml}, we've chosen \texttt{res} as the name of the intermediate result of \texttt{sum xs}.
+
+{\sffamily \textbf{(Non-Examinable)} CPS and SSA.} In addition, it is not \emph{just} that every intermediate result is named, but every function in the continuation is applied \emph{at most once}. In {\sffamily Part II Optimising Compilers}, you'll learn about \textit{Static Single Assignment} (SSA) form, a transformation commonly used in imperative intermediate representations. SSA form ensures that every user variable is assigned \textit{at most once}. For example, the following code is \textbf{not} in SSA form, since (for example) \texttt{a} is assigned to twice -- once the result of \texttt{f(1)}, and once the result of \texttt{f(6)}.
+
+\begin{code}[\texttt{C} Code that is not in SSA form]
+\label{code:fib-ocaml-again}
+\begin{minted}[bgcolor=backcolour, linenos]{C}
+extern int f(int); 
+extern void h(int,int); 
+void g() {   
+    int a,b,c;   
+    a = f(1); b = f(2); h(a,b);   
+    b = f(3); c = f(4); h(b,c);   
+    c = f(5); a = f(6); h(c,a); 
+}
+\end{minted}
+\end{code}
+
+To transform this code into SSA form, we number every assignment, so every variable is assigned to \emph{at most} once. 
+
+\begin{code}[\texttt{C} Code that is in SSA form]
+\label{code:fib-ocaml-again}
+\begin{minted}[bgcolor=backcolour, linenos]{C}
+extern int f(int); 
+extern void h(int,int); 
+void g() {   
+    int a1,a2,b1,b2,c1,c2;   
+    a1 = f(1); b1 = f(2); h(a1,b1);   
+    b2 = f(3); c1 = f(4); h(b2,c1);   
+    c2 = f(5); a2 = f(6); h(c2,a2); 
+}
+\end{minted}
+\end{code}
+
+In CPS, every function is applied at most once, so every function variable is bound at most once. In SSA, every variable is assigned at most once. CPS and SSA might seem related, and in fact, they are. \citet{kelsey-1995} shows a correspondence between CPS and SSA. 
+
+\subsubsection{The evaluation order is explicit}
+This is apparent when we consider the fibonacci function. We start off with an expression
+\begin{minted}[bgcolor=backcolour]{ocaml}
+fib n-1 + fib n-2
+\end{minted}
+Where it is not at all clear what the order of evaluation is, just from the syntax. We end up with the expression,
+\begin{minted}[bgcolor=backcolour]{ocaml}
+fib n-1 (fun x -> fib n-2 (fun y -> k (x + y))) 
+\end{minted}
+Now, knowing nothing about \texttt{OCaml}, it is apparent that we first evalute \texttt{fib n-1}, then \texttt{fib n-2}, and then add their results, and then apply whatever's left of the computation. 
+
+{\sffamily \textbf{(Non-Examinable)}: Fused Lexing and Parsing.} It turns out that this simple idea can be used in very powerful ways! Let's revisit, for a brief moment, lexing and parsing. When we talked about the lexer and the parser, we described them as communicating through an interface --- the lexer takes a character stream and turns it into a token stream, which is then handled by a parser. Interfaces are great for separating concerns --- we don't want to worry too much about the parser when defining the lexer, and we don't want to worry too much about the lexer when defining the parser. But interfaces also block off opportunities for optimisation --- if the lexer and the parser were defined together, then whenever the lexer emits a token, the parser could take it immediately, and put it \emph{exactly} where it needs to be in the AST, and then return control back to the lexer, in a way that \textit{exposes more opportunities for optimisation}. It'd be really cool if there was a way to define lexers and parsers separately, and then \emph{automatically} fuse them. \citet{yallop-2023} illustrate that this is possible, and one of the key ideas is to CPS-transform the lexer, and then CPS-transform the parser, and then \emph{interleave} their continuations. This is made possible because the order of evaluation has been made explicit. 
 
 \subsubsection{Every continuation is reified}
 What this means is, in essence, the program's \emph{call stack} has become a real object that can be manipulated by the program. 
 
-First, let's consider how we might, and why we might want to, manipulate continuations. Here are two examples
+{\sffamily \textbf{(Non-Examinable)} Fast multiplication and Backtracking}. Let's consider how we might, and why we might want to, manipulate continuations. Here are two examples
 
 First, fast multiplication of a list. Here's a standard way of multiplying the elements of a list 
 
@@ -264,9 +313,56 @@ let mul_cps xs u =
 \end{minted}
 \end{code}
 
-Now we can do something amazing --- we can implement \texttt{Prolog} style backtracking in \texttt{OCaml}. We won't go through the details here, you'll learn much more about them in {\sffamily Part II Types}, but the key is that every time we encounter a decision point that we may need to re-consider during a backtracking phase, we can push the \emph{continuation} (representing the call stack) onto a \emph{stack}. If we fail, we can simply pop the last decision point off the stack. 
+Second, we can implement \texttt{Prolog} style backtracking in \texttt{OCaml}. Specifically, we implement an \texttt{amb} primitive, described first by \citet{mccarthy-1963} in 1961, that takes in a list of values it could be, and tries them in order. For example, in \Cref{code:amb-specification}, \texttt{x} first takes the value \texttt{1}, then \texttt{2}, then \texttt{3}, etcetera.
 
-\subsubsection{The CPS transform corresponds to a logical embedding}
+\begin{code}[An example of the \texttt{amb} primitive in operation]
+\label{code:amb-specification}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let x = amb [1;2;3;4] in
+let y = amb [5;6;7;8] in
+let _ = assert x+y == 11 in
+(x, y) (* returns (3, 8) *)
+\end{minted}
+\end{code}
+
+We can implement the \texttt{amb} primitive using continuations. We won't go through the details here (though we will attach the code for your perusal). You'll learn much more about \texttt{amb} in {\sffamily Part II Types}, but the key is that every time we encounter a decision point that we may need to re-consider during a backtracking phase, we can push the \emph{continuation} (representing the call stack) onto a \emph{stack}. If we fail, we can simply pop the last decision point off the stack. 
+
+\begin{code}[Implementing the \texttt{amb} primitive]
+\label{code:amb-specification}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+module AMB : sig
+  (* Interface *)
+  exception AmbFail
+  val assert : bool -> unit
+  val amb : int list -> int
+end = struct
+  (* Implementation *)
+  exception AmbFail
+
+  (*Internal state*)
+  let stack: int option cont list ref = ref []
+  let fail () = match !stack with
+    | [] -> raise AmbFail
+    | k::ks -> let _ = stack := ks in (*Remove the last choice point*)
+               throw k NONE (*Resume executing from the choice point*)
+  
+  let assert b = if b then () else fail ()
+
+  let amb xs = match xs with
+    | [] -> raise AmbFail
+    | x::xs -> let next k = 
+                 let _ = stack := k::(!stack) in 
+                 (*Push the current continuation onto the stack*)
+                 SOME x
+               in
+               match callcc (fun k -> next k) with
+                 | SOME v -> v 
+                 | NONE -> amb xs 
+end
+\end{minted}
+\end{code}
+
+\subsubsection{The CPS transform corresponds to a logical embedding$^{*}$}
 In \texttt{Haskell}, the way you work with continuations is by using two primitives, \texttt{callcc} (``call with current continuation'') and \texttt{throw}.\texttt{callcc} allows the programmer to \emph{name} the current continuation (call stack) and allows your code to reference that continuation. \texttt{throw} is a way of passing a value to a continuation. Fast multiplication with \texttt{callcc} and \texttt{throw} looks like
 
 \begin{code}[Fast multiplication with \texttt{callcc} and \texttt{throw}]
@@ -277,25 +373,24 @@ let mul_callcc xs =
     match xs with
       | [] -> 1
       | 0::xs -> throw u 0
-      | x::xs -> x * mul_callcc xs u
-  in callcc (fun u -> mul_callcc xs u)
+      | x::xs -> x * mul_inner xs u
+  in callcc (fun u -> mul_inner xs u)
 \end{minted}
 \end{code}
 
 For simplicity, \texttt{mul\_inner} is not CPS converted. 
 
-In the 1970s, there was a widespread belief that \texttt{callcc} ``couldn't be typed''. Timothy Griffin was the first to discover that it \emph{could} be typed. If I let the return type be $A$, and the type of a continuation be $B$, then the type of \texttt{callcc} is
+In the 1970s, there was a widespread belief that \texttt{callcc} ``couldn't be typed''. \citet{griffin-1990} was the first to discover that it \emph{could} be typed. If I let the return type be $A$, and the type of a continuation that expects an element of $A$ be $A \rightarrow B$, then the type of \texttt{callcc} is
 \[((A \rightarrow B) \rightarrow A)) \rightarrow A\]
 Basically, if
 \begin{enumerate}
-    \item \texttt{u} is something that takes in an $A$ and returns a continuation $B$ (\texttt{u} has type $A \rightarrow B)$,
+    \item \texttt{u} is a continuation expecting an element of $A$ (\texttt{u} has type $A \rightarrow B)$,
     \item Assuming \texttt{u} has type $A \rightarrow B$, can conclude that \texttt{mul\_callcc xs u} has type $A$,
     \item Then, \texttt{callcc (fun u -> mul\_callcc xs u)} has type $A$
 \end{enumerate} 
 
 Eagle-eyed readers will spot that this corresponds to Pierce's Law, 
 \[((P \rightarrow Q) \rightarrow P)) \rightarrow P\]
-
 Pierce's Law is an axiom of \emph{Classical Logic} but not of \emph{Constructive Logic}. Don't worry if you don't know what this is, you'll learn about it in {\sffamily Part II Types}. However, if you are curious, Classical Logic is a logic of \emph{fact}, whereas Constructive Logic is a logic of \emph{data}. In order to \emph{prove} something in Constructive Logic, you need to give a \emph{decision algorithm}. This is not needed in Classical Logic. Consider the statement 
 
 \begin{center}
@@ -308,5 +403,321 @@ The discovery that \texttt{callcc}'s type corresponded to Pierce's Law uncovered
 
 All of this is non-examinable, but if you're interested, you can find out much more in {\sffamily Part II Types}.
 
+\section{Defunctionalisation}
+We've learnt about Continuation Passing Style and continuations, and seen that continuations, logically, \emph{are} call stacks. But this is a course on compilers, and it is not enough to logically \emph{be} the call stack. The biggest difference now is that we have a very high order function, called a continuation, and we want to turn it into a stack. 
 
+\emph{Defunctionalisation} is a technique for getting rid of higher order functions. We'll apply it to a simple function first, and then apply it to our CPS transformed fibonacci function. 
 
+Let's consider the following \texttt{OCaml} function that filters a list.
+
+\begin{code}[An \texttt{OCaml} function for filtering a list]
+\label{code:defun-0}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec filter p xs = match xs with
+  | [] -> []
+  | x::xs -> if p x then x::(filter xs) else filter xs
+
+let f l y = filter (fun x -> x < 3) l @ filter (fun x -> x > y)
+\end{minted}
+\end{code}
+
+We want to get rid of higher order functions, so in particular \texttt{fun x -> x < 3}. Here's one idea: let's introduce a set of constructors, one that represents each function. For example, we might introduce the constructor \texttt{Add\_one} to represent \texttt{fun x -> x + 1}, and \texttt{Sb of int} to represent \texttt{fun x -> x - y} (where \texttt{y} is in scope).
+
+\begin{code}[Defunctionalisation: Step 1: Introducing constructors]
+\label{code:defun-1}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type fn = Lt_three | Gt of int (* CHANGED *)
+
+let rec filter p xs = match xs with
+  | [] -> []
+  | x::xs -> if p x then x::(filter xs) else filter xs
+
+let f l y = filter (fun x -> x < 3) l @ filter (fun x -> x > y)
+\end{minted}
+\end{code}
+
+Once we've added the type constructors, we've lost information! We know that when we see \texttt{Lt\_three}, we should apply the function \texttt{fun x -> x < 3}, but this isn't recorded anywhere in the code! Let's fix it, by defining an explicit \texttt{apply} function
+
+\begin{code}[Defunctionalisation Step 2: Defining the \texttt{apply} function]
+\label{code:defun-2}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type fn = Lt_three | Gt of int 
+
+let apply fn x = match fn, x with (* CHANGED *)
+  | Lt_three, x -> x < 3
+  | Gt y, x     -> x > y
+  
+let rec filter p xs = match xs with 
+  | [] -> []
+  | x::xs -> if p x then x::(filter xs) else filter xs
+
+let f l y = filter (fun x -> x < 3) l @ filter (fun x -> x > y)
+\end{minted}
+\end{code}
+
+Finally, let's get rid of higher-order functions by replacing each function with its constructor, and replacing each \emph{call} of such a function with an explicit call to our \texttt{apply} function. 
+
+\begin{code}[Defunctionalisation: Step 3]
+\label{code:defun-3}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type fn = Lt_three | Gt of int 
+
+let apply fn x = match fn, x with
+  | Lt_three, x -> x < 3
+  | Gt y, x     -> x > y
+  
+let rec filter p xs = match xs with
+  | [] -> []
+  | x::xs -> if apply p x then x::(filter xs) else filter xs (* CHANGED *)
+
+let f l y = filter Lt_three l @ filter (Gt y) l (* CHANGED *)
+\end{minted}
+\end{code}
+
+\subsection{Benefits of Defunctionalisation}
+\subsubsection{No higher-order functions}
+Getting rid of higher order functions is useful because while higher order functions make code easier to \emph{write}, they make code harder to \emph{read} --- both for humans, and for machines. This is the main advantage: all other advantages are \emph{consequences} of this.
+
+\subsubsection{Every function is named}
+This is similar to how CPS transform forces you to name every intermediate result. 
+
+\subsubsection{All values are data}
+For example, one consequence is that all values are data --- since higher-order functions are the only way to get functions as values. This is \emph{extremely} useful for analysis, and thus optimisation. There are many uses, but one important one is that \emph{value equality} becomes a lot more straightforward. 
+
+As you will have learnt in {\sffamily Part IB Semantics of Programming Languages}, the problem with functions when it comes to equality is that function definitions are \emph{intensional} rather than \emph{extensional}. Basically, it means that the functions \texttt{fun x -> x + x} and \texttt{fun x -> 2 * x} are different, even though their \emph{graphs} are the same. This complication goes away when all values are data.
+
+\subsubsection{All control flow is first order}
+Another advantage (a consequence of the fact that there are no higher-order functions) is that all control flow is first order (i.e. there is no \emph{indirection}). This makes \emph{analysis} and therefore \emph{optimisation} significantly easier. For example, \emph{reachability analysis} can be used for unreachable procedure elimination. That is, in the following code, the function \texttt{h} is never called, and can therefore be removed to make the program smaller.
+
+\begin{code}[An example of unreachable procedure elimination in \texttt{C}]
+\label{code:unreachable-c}
+\begin{minted}[bgcolor=backcolour, linenos]{C}
+int main () {
+  return f (1)
+}
+
+int f(int x) {
+  return g(x) + 1
+}
+
+int g(int x) {
+  return -x
+}
+
+int h(int x) {  (* Unreachable *)
+  return x
+}
+\end{minted}
+\end{code}
+
+The task of unreachable procedure elimination becomes a lot harder when control flow is not first order. For example,
+
+\begin{code}[Unreachable procedure elimination with function indirection in \texttt{C}]
+\label{code:unreachable-indirection-c}
+\begin{minted}[bgcolor=backcolour, linenos]{C}
+int main () {
+  return f(1, &g)
+}
+
+int f(int x, (*lambda)(int, int)) {
+  return lambda(x) + 1
+}
+
+int g(int x) {
+  return -x
+}
+
+int h(int x) {  (* Still unreachable *)
+  return x
+}
+\end{minted}
+\end{code}
+
+\texttt{h} is still unreachable, but figuring this out is now no longer trivial. Indirection makes analysis harder. This is a major theme in {\sffamily Part II Optimising Compilers}.
+
+\subsection{Defunctionalising the CPS-transformed fibonacci function}
+Now that we've covered defunctionalisation as a technique, let's see how we can perform defunctionalisation on a CPS converted function, and how it helps us make the stack explicit.
+
+\begin{code}[A CPS-transformed fibonacci function in \texttt{OCaml}]
+\label{code:defun-fib-0}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec fib_cps n k = 
+  match n with
+    | 0 -> k 1
+    | 1 -> k 1
+    | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
+
+let fib_1 n = fib_cps n (fun x -> x)
+\end{minted}
+\end{code}
+
+Let's apply the three steps. First, let's introduce three constructors, call them \texttt{ID}, \texttt{K1}, and \texttt{K2}, one for each of the anonymous functions. 
+
+\begin{code}[Defunctionalisation Step 1]
+\label{code:defun-fib-1}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type cont = ID | K1 of int * cont | K2 of int * cont
+
+let rec fib_cps n k = 
+  match n with
+    | 0 -> k 1
+    | 1 -> k 1
+    | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
+
+let fib_1 n = fib_cps n (fun x -> x)
+\end{minted}
+\end{code}
+
+Next, define the \texttt{apply\_cont} function. 
+
+\begin{code}[Defunctionalisation Step 2]
+\label{code:defun-fib-1}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type cont = ID | K1 of int * cont | K2 of int * cont
+
+let rec apply_cont k v = match k, v with
+  | ID, v -> v
+  | K1(n, k), x -> fib_cps_defun (n-2) (K2(x, k))
+  | K2(x, k), y -> apply_cont k (x+y)
+
+and fib_cps n k = 
+  match n with
+    | 0 -> k 1
+    | 1 -> k 1
+    | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
+
+let fib_1 n = fib_cps n (fun x -> x)
+\end{minted}
+\end{code}
+
+Finally, replace each function with its constructor. 
+
+\begin{code}[Defunctionalisation Step 3]
+\label{code:defun-fib-1}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type cont = ID | K1 of int * cont | K2 of int * cont
+
+let rec apply_cont k v = match k, v with
+  | ID, v -> v
+  | K1(n, k), x -> fib_cps_defun (n-2) (K2(x, k))
+  | K2(x, k), y -> apply_cont k (x+y)
+
+and fib_cps_defun n k = 
+  match n with
+    | 0 -> apply_cont k 1
+    | 1 -> apply_cont k 1
+    | n -> fib_cps_defun n-1 (K1(n, k))
+
+let fib_2 n = fib_cps_defun n ID
+\end{minted}
+\end{code}
+
+\subsubsection{Uncovering the List Structure}
+We've gotten rid of higher order functions --- in doing so, we've turned a deeply nested function (the continuation) into a deeply nested constructor that might look like
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+(K1(n1, K2(n2, ID)))
+\end{minted}
+We don't seem to have made much progress, but notice that the nesting now clearly has a list structure! We can treat \texttt{ID} as the empty list, and \emph{cons} on \texttt{K2} and \texttt{K1} as appropriate. That is, 
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+[K1(n1); K2(n2); ID]
+\end{minted}
+
+While we're at it, let's give \texttt{K1} and \texttt{K2} more meaningful names. Let's call \texttt{K1} ``\texttt{SUB2}'' and \texttt{K2} ``\texttt{PLUS}''. 
+
+\begin{code}[Uncovering the list structure]
+\label{code:defun-list-fib}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type tag = SUB2 of int | PLUS of int
+type tag_list_cont = taglist
+
+let rec apply_tag_list_cont k v = match k, v with
+  | [], v -> v
+  | SUB2(n)::k, x -> fib_cps_defun (n-2) ((PLUS x)::k))
+  | PLUS(x)::k, y -> apply_cont k (x+y)
+
+and fib_cps_defun_tags n k = 
+  match n with
+    | 0 -> apply_tag_list_cont k 1
+    | 1 -> apply_tag_list_cont k 1
+    | n -> fib_cps_defun_tags n-1 ((SUB2 n)::k))
+
+let fib_3 n = fib_cps_defun_tags n []
+\end{minted}
+\end{code}
+
+And so we have our call stack, as described at the start of this chapter.
+
+\section{Clean Up}
+We have our call stack, but we should do a couple of clean up steps before calling it a day. 
+
+\subsection{Mutual Recursion}
+One feature that we'd like to get rid of is \emph{mutual recursion} \texttt{apply\_tag\_list\_cont} will call \texttt{fib\_cps\_defun\_tags} and vice versa, so the two functions \textbf{have} to be defined together. 
+
+The good news is that eliminating mutual recursion is \emph{easy}, both conceptually and in practice. Let's see it in a simple setting first. Here are two mutually recursive functions that together, determine if a value is even or odd
+
+\begin{code}[A set of mutually recursive functions]
+\label{code:mutual-recursion}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec is_even n = n=0 || is_odd(n-1)
+and is_odd n = n <> 0 && is_even(n-1)
+\end{minted}
+\end{code}
+
+We'll convert this mutual recursion into single recursion by defining a single function, \texttt{is}, and a constructor, \texttt{eo}. We'll get the caller of the function to tell us explicitly if they want us to test for even-ness or odd-ness.
+
+\begin{code}[Eliminating mutual recursion]
+\label{code:mutual-recursion}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type eo = Even | Odd
+let is f n = 
+  match f with
+    | Even -> n=0  || is Odd  (n-1)
+    | Odd  -> n<>0 && is Even (n-1)
+\end{minted}
+\end{code}
+
+The abstract idea that we've shown in this concrete example is that we replace the \emph{two} functions with a single function (in this case replacing \texttt{is\_even} and \texttt{is\_odd} with \texttt{is}), and use a ``tag'' or ``index'' (in this case \texttt{f}) to parameterise the function behaviour.
+
+Applying this technique to our fibonacci function, we get
+\begin{code}[Eliminating mutual recursion for our fibonacci function]
+\label{code:defun-list-fib}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+type state_type = FIB (*means we should act like fib_cps_defun_tags*)
+                | APP (*means we should act like apply_tag_list_cont*)
+
+let rec eval = function
+  | FIB, 0, k -> eval (APP, 1, k)
+  | FIB, 1, k -> eval (APP, 1, k)
+  | FIB, n, k -> eval (FIB, n-1, SUB2 n :: k)
+  | APP, x, SUB2 n :: k -> eval (FIB, n-2, PLUS x :: k)
+  | APP, y, PLUS x :: k -> eval (APP, x + y, k)
+  | APP, v, [] -> v
+
+let fib_4 n = eval (FIB, n, [])
+\end{minted}
+\end{code}
+
+\subsection{Refactoring}
+Finally, \texttt{eval} is slightly clunky because it's a big function that calls itself recursively, but also has a lot of cases. Ideally, we want a function to either be a large pattern match or call itself recursively. We can do this by using a simple refactoring. 
+
+\begin{code}[Refactoring our fibonacci function]
+\label{code:defun-list-fib}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let step = function
+  | FIB, 0, k -> APP, 1, k
+  | FIB, 1, k -> APP, 1, k
+  | FIB, n, k -> FIB, n-1, SUB2 n :: k
+  | APP, x, SUB2 n :: k -> FIB, n-2, PLUS x :: k
+  | APP, y, PLUS x :: k -> APP, x + y, k
+  | _ -> fail_with "step: runtime error!"
+
+let rec driver = function
+  | APP, v, [] -> v
+  | state -> driver (step state)
+
+let fib_5 n = driver (FIB, n, [])
+\end{minted}
+\end{code}
+
+\section{Recap}
+Let's end the chapter by considering where we started, and where we ended. We started with a bog-standard fibonacci function, applied CPS transformation and defunctionalisation, and then eliminated mutual recursion and performed some refactoring. In doing so, we transformed plain, bog-standard \texttt{OCaml} code into something where an explicit list acts like the call stacks we described in \Cref{section:call-stacks}.
