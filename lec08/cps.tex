@@ -1,0 +1,104 @@
+\chapter{Continuation-Passing Style and Defunctionalisation}
+
+\dictum[Andrew Appel]{Continuation-passing style (CPS) is a program notation that makes every aspect of control flow and data flow explicit.}
+
+\dictum[Timothy Griffin]{The cps transform is a logical embedding.}
+
+\section{Overview}
+Before we begin this chapter, let's take stock of what we have done, and our goals. 
+
+\subsection{Recap}
+We have developed \textbf{\texttt{Interpreter 0}}, a ``\emph{denotational} interpreter'' for \texttt{Slang}. It is \emph{denotational} in the sense that it is ``definitional'', and so we can see at a glance that it is correct. For example, let's recall how we interpret \texttt{If}
+
+\begin{code}[Interpreting \texttt{If} in \texttt{\textbf{Interpreter 0}}]
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec interpret (e, env, store) =
+  match e with
+  | If(e1, e2, e3) -> 
+    let (v, store') = interpret(e1, env, store) in
+    match v with 
+      | true -> interpret(e2, env, store')
+      | false -> interpret(e3, env, store')
+  | ...
+\end{minted}
+\end{code}
+
+There's great simplicity in this -- so why do we have to do any more? Why can we not just stop here? The answer is that we are implicitly relying on many \texttt{OCaml} facilities, in particular, we're relying on the \texttt{OCaml} call stack. So really we've been cycling with the training wheels on, in some sense. It is time to take them off. 
+
+\subsection{Goals}
+The \emph{goal} of this chapter, therefore, is to \emph{take the training wheels off}: liberate ourselves from the \texttt{OCaml} facilities, and use our own. In particular, we want to \emph{stop relying on the \texttt{OCaml} call stack} and \emph{use an explicit stack that we have full control over}. Doing this to \textbf{\texttt{Interpreter 0}} will create \textbf{\texttt{Interpreter 1}}.
+
+\subsection{Roadmap}
+Taking off the training wheels may seem like a really daunting task. Let's first look at a simple program, and try to draft out a general strategy.
+
+To liberate ourselves from relying on the call-stack, we can convert a \emph{recursive} function to an \emph{tail-recursive} one. Recall from {\sffamily Part IA Foundations of Computer Science}, a tail recursive function (that does not call any other functions other than itself) only needs to use a single stack frame (this is called \emph{tail call optimisation}). The \emph{continuation-passing style} transformation will give us such a technique to convert \emph{any} recursive function to a tail-recursive one. That's step 1.
+
+As we will see (and you'll have to trust me on this for now), we'll end up with a \emph{deeply nested function} that has the structure of a stack, but is not \emph{quite} one. Step 2 is therefore \emph{defunctionalisation}, which is a straightforward way of turning that deeply nested function into an explicit stack. 
+
+\section{Stacks}
+Given our goal: to switch from \texttt{OCaml}'s call stack to our own, explicit call stack, it's first important to \emph{truly} understand what a stack is. To do this, let's examine a simple function that sums the elements of a list, and let's think about how the stack changes when we run the function on the input list \texttt{[1; 2; 3]}.
+
+\begin{code}[A function to sum the elements of a list in \texttt{OCaml}]
+\label{code:sum-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec sum xs = 
+   match xs with
+     | [] -> 0
+     | x::xs -> x + sum xs
+\end{minted}
+\end{code}
+
+In the first call, \texttt{sum [1;2;3]} will evaluate to \texttt{1 + sum [2;3]}. This means that we need to \emph{evaluate} \texttt{sum [2;3]}, take the result of that evaluation, and add \texttt{1} to it, before we return. In order to remember that we need to add \texttt{1}, let's push \texttt{ADD 1} (which, in the jargon, is known as an \emph{activation frame}) onto a stack. At this point, we'll assume that the stack consists of \emph{instructions and data} -- in a later lecture, we'll see how to tear the two apart, and therefore create the data-only stack that we're so familiar with. 
+
+\begin{figure}[h]
+    \centering
+    \include{lec08/sumstackbuild}
+    \vspace{-10mm}
+    \caption{Stack evolution when evaluating 
+    \texttt{sum [1;2;3]}}
+    \label{fig-sumstack}
+\end{figure}
+
+As we continue making calls, we'll push \texttt{ADD 2} and \texttt{ADD 3} onto the stack, at which point we hit the base case. In doing so, we are building up \emph{the rest of the computation}: by pushing \texttt{ADD 1} onto the stack, we are saying ``after we finish evaluating the recursive call, we should \emph{complete} the computation by adding \texttt{1} to the result''.
+
+Thing start to change when we reach the base case -- at this point, we don't need to grow the stack any more, we can simply \emph{pass in} the value, with the stack \emph{remembering} how we wanted to transform the value. After this point, the stack only decreases as we apply transformation after transformation.
+
+This is summarised graphically in \Cref{fig-sumstack}. It's an extremely important point: when we \emph{build} the stack, we are \emph{remembering what we need to do once we hit a base case}. Don't be fooled by the scary terminology -- pushing an activation frame onto a call stack is just nerd-speak for ``jotting down what we need to do so we don't forget it''. Once we hit the base case, we simply \emph{unwind} the stack by using the remembered operations to transform our value.
+
+\section{Continuation Passing Style}
+Continuation Passing Style (CPS) is a technique to convert any \emph{recursive} function into a \emph{tail-recursive} one. 
+
+Let's consider, once again the \texttt{sum} function defined in \Cref{code:sum-ocaml}. This is \emph{not} tail recursive, since once the recursive call terminates, we still have work to do! Specifically, we need to \texttt{ADD x}. Here's an idea -- why don't we \emph{pass in the work to do to the recursive call}. That is, let's pass in an \emph{anonymous function} that holds ``the rest of the computation'' -- the stuff that's to be done once the recursive call finishes. That's exactly the idea behind the CPS transformation! The CPS transformed \texttt{sum} function can be seen in \Cref{code:sum-cps-ocaml}.
+
+\begin{code}[A CPS-transformed function to sum the elements of a list in \texttt{OCaml}]
+\label{code:sum-cps-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec sum_cps xs k = 
+   match xs with
+     | [] -> k 0
+     | x::xs -> sum_cps xs (fun v -> k (x + v))
+\end{minted}
+\end{code}
+
+As we can see on \texttt{Line 4}, this is now tail recursive --- we don't need to use the call stack to remember that we need to \texttt{ADD x}, since we have bundled it up into a function, and passed it as a second argument. 
+
+Wait a minute -- ``Why is it \texttt{fun v -> k (x + v)} and not \texttt{fun v -> x + v}?'', I hear you ask. Since \texttt{k} represents the work our \emph{calling function} needs us to do, we should add \texttt{x} to \texttt{v}, and then run ``the rest of the computation'', given to us by our calling function, on it. We should not assume that once we add \texttt{x} to \texttt{v}, we are done. 
+
+Further, when we reach a value, as in the base case, we now \emph{apply the fully built-up computation} to the value. That's what we're doing in \texttt{Line 3}.
+
+In fact, we can give the ``rest of the computation'' a name -- it is the \textbf{continuation}. Since we are \emph{passing} the continuation along at each step, this is called \textbf{Continuation Passing Style}.
+
+We'd like you to note two things at this point: first, that \emph{continuation passing style} has converted a non-tail recursive function into a tail-recursive one, as promised. 
+
+Second, the continuation \emph{exactly mirrors} the stack! Building up the continuation, using function composition, corresponds to pushing \emph{activation frames} onto the stack. Applying the continuation to a value corresponds to the \texttt{APPLY} step. The value is then successively transformed by the functions in the continuation. This is not a coincidence -- you can, and \emph{should}, think of the continuation as a \emph{functionalised stack}. 
+
+\subsection{The Wonderful World of Continuations}
+Continuations are \emph{incredibly powerful}. Let's list their merits, and then dig through them in greater detail. Lots of the finer technical details here will be non-examinable, but the key ideas are!
+
+Continuations ensure that \emph{every call is a tail call}. This is fairly self explanatory.
+
+Continuations ensure that the \emph{evaluation order is explicit}. 
+
+
+
+\subsection{The CPS Transform as a Logical Embedding}

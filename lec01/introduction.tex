@@ -1,0 +1,402 @@
+\chapter{Introduction}
+\dictum[Neel Krishnaswami]{The sheer density of wonderful stuff in compilers is just out of this world.}
+
+\section{The Gap: A Chasm of Abstraction}
+We begin by considering the purpose of the compiler. The compiler is ``simply'' something that takes in a program that you write, like a fibonacci function
+
+\begin{code}[A Fibonacci function in \texttt{OCaml}]
+\label{code:fib-ocaml}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec fibonacci n = 
+   match n with
+     | 0 -> 1
+     | 1 -> 1
+     | n -> fibonacci n-1 + fibonacci n-2
+\end{minted}
+\end{code}
+
+And turns it into something that a processor understands, like \footnote{If you're interested in how the output was generated, I used \href{https://godbolt.org/}{The Compiler Explorer}, which lets you play around with the output of a compiler.}
+
+\begin{code}[A Fibonacci function in \texttt{x86 Assembly}]
+\label{code:fib-assembly}
+\begin{minted}[bgcolor=backcolour, linenos]{nasm}
+camlExample__set_of_closures_29:
+camlExample__fibonacci_5_closure:
+        .quad   camlExample__fibonacci_5
+        .quad   0x100000000000005
+camlExample__gc_roots:
+        .quad   0
+camlExample__fibonacci_5:
+        leaq    -344(%rsp), %r10
+        cmpq    32(%r14), %r10
+        jb      .L102
+.L103:
+        subq    $24, %rsp
+        cmpq    $3, %rax
+        jbe     .L100
+        movq    %rax, (%rsp)
+        call    camlExample__fibonacci_5@PLT
+.L104:
+        movq    %rax, 8(%rsp)
+        movq    (%rsp), %rax
+        call    camlExample__fibonacci_5@PLT
+.L105:
+        movq    8(%rsp), %rbx
+        addq    %rbx, %rax
+        addq    $-7, %rax
+        addq    $24, %rsp
+        ret
+.L100:
+        movl    $3, %eax
+        addq    $24, %rsp
+        ret
+.L102:
+        push    $36
+        call    caml_call_realloc_stack@PLT
+        popq    %r10
+        jmp     .L103
+camlExample:
+        .quad   camlExample__fibonacci_5_closure
+camlExample__entry:
+        movl    $1, %eax
+        ret
+camlExample__code_end:
+camlExample__data_end:
+        .quad   0
+camlExample__frametable:
+        .quad   2
+        .quad   .L105
+        .word   33
+        .word   1
+        .word   8
+        .long   (.L107 - .) + 0
+        .quad   .L104
+        .word   33
+        .word   1
+        .word   0
+        .long   (.L108 - .) + 0
+.L108:
+        .long   (.L110 - .) + -1677721600
+        .long   20928
+.L107:
+        .long   (.L110 - .) + 1543503872
+        .long   20672
+.L109:
+        .ascii  "/app/example.ml\0"
+.L110:
+        .long   (.L109 - .) + 0
+        .ascii  "Example.fibonacci\0"
+\end{minted}
+\end{code}
+
+Clearly, there is a huge gap (aptly named ``The Gap'') between the code in \Cref{code:fib-ocaml} and in \Cref{code:fib-assembly}.
+
+We'll return to \emph{The Gap} in a moment, but it is the compiler's fundamental responsibility to \emph{bridge the gap} between the high level syntax in \Cref{code:fib-ocaml} --- one that is designed for humans like you and me to understand --- and the machine oriented syntax in \Cref{code:fib-assembly}. Compilers thus allow those of us who think about \emph{the programmer} --- programming language designers and human-computer interaction people that play around with fancy type systems (like those found in \texttt{Agda} or \texttt{Idris}), interesting evaluation strategies (Call By Name or Call By Value), or HCI properties --- to avoid having to think about the machine. Symmetrically, they also allow those of us who think about \emph{the machine} --- computer architects who are considering different or novel instruction set architectures --- to avoid thinking about the human. 
+
+\section{Why Study Compilers?}
+As we'll see in just a moment, and perhaps as you might already intuitively feel, crossing \emph{The Gap} is a herculean effort. The sheer volume of things to be learnt in the field of compilers is both exciting and incredibly daunting. Consequently, this course can challenge with its depth and breadth. It also mixes the highly theoretical with the highly practical, challenging you to both \emph{understand the theory} of compilers, and \emph{put into practice} the concepts by constructing compilers of your own. However, it is also incomplete --- at times barely scratching the surface of a much richer theory.
+
+For those who wish to use this knowledge to build compilers --- perhaps for their Part II Projects, or perhaps for work --- the experience can therefore be frustrating. For those that do not plan on working in compilers, the experience may be even \emph{more} frustrating. This begs the question: why study compilers in the first place?
+
+Each of you will have to find your own answer to the question, but here are some reasons we think studying compilers is worthwhile. 
+
+\subsection{Why understand compilers?}
+No matter your future path, it is highly likely that you will have to, at some point, interact with a compiler. This holds for those who will end up working in software, building programs that will run on compilers, for those who work in hardware, building the processors and instruction sets that compiler writers end up using, and even those who decide to work further away from computer science, who will use compilers both in their professional lives (every time they use software like Microsoft Excel, for example), and increasingly in their personal ones (programming a smart device to automatically close the blinds at 7pm, for example).
+
+When interacting with such a compiler, two questions invariably come to mind:
+
+\textbf{How can a compiler be so \emph{smart}?} In courses like {\sffamily IA Foundations of Computer Science}, you've become familiar with really high level languages like \texttt{OCaml}, that seem to allow you to play around with abstract objects. Last term, in {\sffamily IB Computer Architecture}, you learnt a little about the the low level assembly languages that move signals between hardware components like transistors. The compiler, so far, has been treated as a mysterious black box that magically performs the translation for you --- while also magically performing ``quality of life'' stuff that you would \emph{hate} to have to do on your own. For example,
+
+\begin{enumerate}
+    \item \textbf{Optimisation.} In {\sffamily Part IA Foundations of Computer Science} you learnt about how the \texttt{OCaml} compiler could automatically transform \emph{tail recursive} calls into \emph{iterative} calls, thereby using constant stack space. In fact, the compiler is responsible for performing many such optimisations for you. In {\sffamily Part IA Databases}, for example, you could focus on writing a \emph{correct} SQL query, and let the query optimiser focus on making sure it ran as efficiently as possible. This is compiler technology.
+    \item \textbf{Garbage Collection.} In {\sffamily Part IA Object Oriented Programming}, you learnt about how \texttt{Java} relies on a garbage collector to automatically manage space on the heap for you, and in {\sffamily Part IB C and C++}, you hopefully saw how painful and error-prone managing memory on your own is. 
+    \item \textbf{Register Allocation.} In {\sffamily Part IB Computer Architecture} you would have learnt about instruction set architectures that expose a finite number of registers --- 32 or 64 --- that effectively act as \emph{variables} for the processor. It would be horrendous if \emph{you} as the programmer were limited to using these registers as variables. The fact that you are not --- and that you can use any number of variables as you'd like --- is because the compiler will handle register allocation for you.
+    \item \textbf{Loads More!} Other examples include \emph{linking and loading}, \emph{instruction scheduling}, and \emph{type checking}.
+\end{enumerate}
+
+The second question one invariably has is: \textbf{How can compilers be so \emph{stupid}}? Why can it fail to resolve some seemingly simple errors?
+
+You haven't learnt \texttt{Agda} yet, but here's a basic definition for a natural numbers type in \texttt{Agda} 
+
+\begin{code}[A natural number type in \texttt{Agda} that successfully compiles]
+\label{code:agda-nat-good}
+\begin{minted}[bgcolor=backcolour, linenos]{agda}
+data Nat : Set where
+    zero : Nat
+    succ : Nat -> Nat
+\end{minted}
+\end{code}
+
+And here's a version that fails to compile 
+
+\begin{code}[A natural number type in \texttt{Agda} that fails to compile]
+\label{code:agda-nat-good}
+\begin{minted}[bgcolor=backcolour, linenos]{agda}
+data Nat: Set where
+    zero : Nat
+    succ : Nat -> Nat
+\end{minted}
+\end{code}
+
+The ``bug'' is the lack of white-space between \texttt{Nat} and the colon. You will probably have encountered many similar such ``bug''s when programming in languages like \texttt{OCaml} and \texttt{Java} -- the type of bug that makes you go ``It is \emph{clear} what I mean, why won't you work?'' (and also makes you thankful that you're not asked to write code that \emph{actually compiles} during the Tripos).
+
+In some sense, therefore, a compiler is like that one friend who is an utter genius when it comes to some really hard things --- like training a neural network or solving category theory questions --- yet utterly rubbish at others --- like tying their shoes or brushing their teeth. By understanding them, we hope to understand \emph{how they work}, and thus why they are good at the things they are good at, and bad at the things they are bad at. As a result, no matter what you use them for, you'll hopefully be able to have a sense of \emph{why they do what they do}, and therefore \emph{use them more effectively}. If you go on to design programming languages, for example, understanding how compilers work will help you better weigh the consequences of design decisions. If you go on to become a computer architect, the vast majority of the code you'll be running won't be written directly by a person, but instead compiled by a compiler, and you'll have to figure out whether your design decisions can be exploited by a compiler effectively.
+
+\subsection{Why build compilers?}
+The second question is why \emph{build} compilers? What \emph{practical} skills will building compilers actually teach you --- and will they, like the theory, extend beyond the course?
+
+The answer to this is that you can view the fundamental goal of a compiler as just one instance of a recurrent theme that of \emph{analysis $+$ transformation}. A compiler first \emph{analyses} the user input to understand its meaning, and then \emph{transforms} it in a way that respects the meaning, into something that the machine can execute. This general strategy can be seen in programs such as:
+
+\begin{minipage}[t]{0.5\textwidth}
+Query Languages (\texttt{GraphQL})\\
+Serialisation Frameworks (\texttt{Protobuf})\\
+Build Systems (\texttt{make})\\
+Game Engine Scripting (\texttt{Lua}) \\
+Financial contracts (\texttt{MLFI})\\
+Music systems (\texttt{Csound}) \\
+Text editors (\texttt{emacs})\\
+Hardware Description Languages (\texttt{VHDL}) \\
+Statistical computing environments (\texttt{R})\\
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+Browser engines (\texttt{WebKit})\\
+Document processors (\LaTeX)\\
+Continuous integration (\texttt{GitHub Actions})\\
+Blockchain platforms (\texttt{Solidity})\\
+Legal contracts (\texttt{Catala})\\
+Text processors (\texttt{sed}, \texttt{grep}, \ldots)\\
+Interactive testing systems (\texttt{expect})\\
+Compiler compilers (\texttt{yacc})\\
+Wikis (\texttt{MediaWiki})
+\end{minipage}
+
+In addition, the \emph{techniques} you'll learn and apply when building a compiler are ones that generalise \emph{beyond compilers}. We'll issue two challenges at the start of the course (that you're not expected to solve, though keen students are of course free to come up with answers), which we'll learn techniques to solve.
+
+\subsubsection{Challenge 1: Recursion to Iteration}
+\Cref{code:cps-challenge} features a program that sums the elements of a list.
+
+\begin{code}[A program that sums the elements of a list]
+\label{code:cps-challenge}
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec sum xs = 
+  match xs with
+  | [] -> 0
+  | x::xs -> x + sum xs
+\end{minted}
+\end{code}
+
+This is \emph{not} tail-recursive, meaning it has space complexity \emph{linear} in the length of the list. That's pretty rubbish -- \emph{if} we can transform this into a tail-recursive style, then we can do this in \emph{constant} space. We'll learn the technique for this in .
+
+\subsubsection{Challenge 2: Garden-Path Sentences}
+Here's another challenge. Explain why this sentence is difficult to understand on first-read:
+
+\begin{center}
+    \textit{The cotton clothing is made of grows in Mississippi.}
+\end{center}
+
+To which we'll see an answer, albeit set in the world of programs, in .
+
+\subsection{Compilers are interesting}
+The aforementioned reasons are (hopefully) non-controversial. Here are some more subjective reasons for studying compilers:
+
+\textbf{Compilers \emph{process} programs.} You'll hopefully agree that programs --- and the types of programs people come up with --- are full of rich ideas. Take, for example, the Fast Inverse Square Root Algorithm (whose details you don't have to understand)
+
+\begin{code}[The Fast Inverse Square Root Algorithm]
+    \begin{minted}[bgcolor=backcolour, linenos]{C}
+float Q_rsqrt(float number){
+  long i;
+  float x2, y;
+  const float threehalfs = 1.5F;
+
+  x2 = number * 0.5F;
+  y  = number;
+  i  = * ( long * ) &y; // evil floating point bit level hacking
+  i  = 0x5f3759df - ( i >> 1 ); // what the f***?
+  y  = * ( float * ) &i;
+  y  = y * ( threehalfs - ( x2 * y * y ) );
+  return y;
+}
+    \end{minted}
+\end{code}
+
+Now --- at the risk of personifying compilers too much --- this is an \emph{incredibly opaque} piece of code whose semantics is \emph{not at all clear}. But a compiler \textbf{has} to be able to process this code, and has to (in some sense) ``understand'' its semantic meaning, so it can perform a transformation that's \emph{safe}, plus some optimisations. In other words, since \emph{programs} are interesting, compilers (program \textit{processors} or \textit{transformers}) are interesting too.
+
+\textbf{Compilers view the same program from many different perspectives.} Recall that compilation is fundamentally a process of \textit{analysis} $+$ \textit{transformation}. It should not be surprising that different types of analysis and different types of transformation require looking at the same program from many different perspectives. Some transformations involve looking at the meaning or semantics of a program to figure out how to transform it in a way that preserves the semantics, but makes it faster or smaller in some way. Another class of transformations uses \emph{type-level} information. For example, a common optimisation is to use constant folding, that is, to turn expressions like \texttt{1+1} into constants like \texttt{2}. Constant folding can be blocked in cases where one of the inputs to the expression is \emph{dynamic} (that is, its value is not known until run-time), for example
+
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+int f(int x){
+  return x + 1
+}
+\end{minted}
+This cannot be optimised in such a manner because we won't know what \texttt{x} is until runtime. However, we can use \emph{type-level information} (the fact that \texttt{x} is an \texttt{int}, and that \texttt{int} is a \emph{finite} type) in order to pattern match on the \emph{possible} static values for \texttt{x}, and then perform constant folding. 
+
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+int f(int x){
+  switch x {
+    case 0:
+      return 1
+    case 1:
+      return 2
+    //...
+  }
+}
+\end{minted}
+Its merits are hard to see in this trivial example, but it is used widely in compilers, and indeed crops up in other places! In {\sffamily Part II Bioinformatics}, you'll learn about \emph{the Four Russians Technique} of speeding up the Longest Common Sub-sequence (LCS) algorithm ({\sffamily Part IA Algorithms}), which (morally) relies on this very same trick. 
+
+\textbf{Compilers are a \emph{practical} application of semantics.} In courses like {\sffamily Part IB Semantics of Programming Languages} and {\sffamily Part II Denotational Semantics}, you learn about how to specify what a program means. For example, in {\sffamily Part IB Semantics of Programming Languages}, you learnt that one way to specify the semantics of \texttt{while} is 
+
+\begin{minipage}[t]{\textwidth}
+    \centering
+    \AxiomC{$ $}
+    \UnaryInfC{$\texttt{while } e_1 \texttt{ do } e_2$ $\leadsto \texttt{if } e_1 \texttt{ then } e_2; \texttt{ while } e_1 \texttt{ do } e_2 \texttt{ else skip}$}
+    \DisplayProof
+\end{minipage}
+
+Which, as we'll see, is actually a way of implementing the \texttt{while} function! In {\sffamily Denotational Semantics}, you'll learn another way of specifying a semantics for \texttt{while}, via the \emph{Kleene-Tarski fixed-point theorem}, and indeed this is \emph{another} way of implementing \texttt{while}.
+
+\textbf{Compilers are a Computer Science success story.} Compilers have been around nearly as long as computers themselves, and people have been constantly researching them since they were invented. This means that, unlike \emph{some} other inventions attributed to us as computer scientists, compilers are something we can be proud of --- we generally understand what it means to be a good compiler, what techniques are used in the building of a good compiler, and give guarantees of correctness. It's also still a fast moving field, with lots of exciting research (which we'll hope to give pointers to throughout the course).
+
+\textbf{Compilers involve self-application.} Compilers process (analyse and transform) programs, but they are \emph{themselves} programs, and so can analyse and transform not only other compilers, but themselves. 
+
+\section{The Gap}
+We've now looked, broadly, at what a compiler is, and a non-exhaustive list of reasons as to why they're interesting and worth studying. We'll now examine more closely \emph{The Gap}, and detail the structure of the compiler used to bridge this gap. 
+
+\emph{The Gap} exists, fundamentally, because the structure of code that is easy for us humans to read and understand is very different from the code that a machine can run (recall \Cref{code:fib-ocaml,code:fib-assembly})
+
+\textbf{High Level Code}. The high-level code that we program in, be it \texttt{C} or \texttt{OCaml}, has many facilities designed to make our lives easier. Such features include:
+
+\begin{enumerate}
+    \item \textbf{Machine-independence}, so your code is portable and you don't have to worry about whether you're running on \texttt{ARM} or \texttt{x86},
+    \item \textbf{Complex syntax}, that allow for structures like recursive functions or objects or modules, that aren't necessarily complex because they are difficult to understand, but complex because they capture complicated thoughts that are easily expressed by us,
+    \item \textbf{Complex type systems}, like dependent type systems (which you'll learn about in {\sffamily Part IB Concepts in Programming Languages} and {\sffamily Part II Types}), that make it possible to get very rich guarantees at compile time,
+    \item \textbf{Infinite variables}, so you never need to worry about manually managing some finite number of registers, or moving things between registers and memory, and
+    \item \textbf{Nested scope}, that allow us to define things within some surrounding context.
+\end{enumerate}
+
+High level code is therefore \emph{great} to write and read in --- but it cannot be run on a machine. 
+
+\textbf{Low Level Code}. In {\sffamily Part IB Computer Architecture}, you've seen the shape of the machines we'll need to actually run our code on, and the type of Assembly code that these machines support. This low-level code has several features that make it easy (or in some cases, feasible) for computer architects to implement the processor.
+
+\begin{enumerate}
+    \item \textbf{Machine-dependent}, so your code \emph{will} have to care about specific quirks. Some processors, for example, have a \emph{load delay slot}: that is, they will always execute the instruction after a load, so it \emph{better not need to use the result of the load}. Some processors use specific registers for specific purposes. For example, the operands for multiplication \emph{have} to be in a specific register,
+    \item \textbf{Simple syntax}, typically a linear sequence of instructions (with labels), because the program almost always has to be stored as a contiguous sequence of words in memory, so it is always clear to the processor where to find the next instruction to execute,
+    \item \textbf{Simple type systems}, essentially, only distinctions that the processor need worry about. So, for example, integer arithmetic and floating point arithmetic often require different hardware, so this distinction is made by the type system. Whether a value is a pointer to memory is also an important distinction, so it is included as a type, and 
+    \item \textbf{Finite number of instruction set registers}, often 32 or 64, plus some additional space on the stack or heap that we'll have to manage manually.
+    \item \textbf{No scope}.
+\end{enumerate}
+
+\section{Compiler Structure}
+We'll now consider, at a high level, the structure of any compiler. 
+
+\begin{figure}[h]
+    \centering
+    \import{}{compiler-structure}
+    \caption{High Level Structure of a compiler}
+    \label{fig:compiler-structure}
+\end{figure}
+
+As shown in \Cref{fig:compiler-structure}, a compiler can be divided into three components: the front-end, the middle-end, and the back-end. We'll now explore their roles and responsibilities. 
+
+\begin{figure}[h]
+    \centering
+    \import{}{frontend-structure}
+    \caption{The structure of the Front-End of a compiler}
+    \label{fig:frontend-label}
+\end{figure}
+
+\begin{minipage}[t]{0.15\textwidth}
+    \textbf{\sffamily Front-End}
+\end{minipage}%
+\begin{minipage}[t]{0.85\textwidth}
+    The Front-End takes in code written by the user, and produces an annotated abstract syntax tree. Its role is threefold: first, to \emph{recover meaning}, second, to perform error-checking, and third, to \emph{discover types}.
+
+    By ``recover meaning'', consider a source program such as the fibonacci function in \Cref{code:fib-ocaml}. When we read the code, we are \emph{implicitly} leveraging two types of structure: a \emph{syntactic} structure and a \emph{semantic} structure.
+
+    In terms of the \emph{syntactic} structure, we are able to \emph{tokenize} --- divide the characters into units (``words''), each with its own role or function (this is very similar to tokenization in Natural Language Processing, as in {\sffamily Part IA Machine Learning and Real World Data}). For example, looking at the first line, we can recover three tokens: \texttt{let rec}, which is a \emph{keyword}, \texttt{fibonacci}, a user-given identifier for the variable, and \texttt{n}, another user-given identifier. 
+
+    In terms of the \emph{semantic} structure, we are able to recover the \emph{meaning} of the function, by constructing (in our heads) an ``abstract syntax tree'' -- in a somewhat handwavy way, we are able to draw ``sensible brackets'' around phrases to indicate their role or responsibility in the code.
+
+    The front-end performs these roles, which we do so effortlessly, but in a methodical and mechanical way. 
+
+    The second important role of the front-end is error-checking. As one can see in \Cref{fig:frontend-label}, while all the errors that a compiler complains about \emph{look} the same, there are actually three distinct types of error that are caught in three different places. 
+
+    The first type of error is an error of lexing. An example of such an error would be if you forget closing quotes, for example
+
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let string = "String
+\end{minted}
+    
+    The second type of error is an error of parsing. There is nothing stopping you, as the programmer, from writing something silly like 
+
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let fibonacci x rec
+\end{minted}
+
+    Which of course, is totally of the wrong shape and has no meaning. 
+
+    The third type of error is an error of typing, for example
+
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let f (x: int) = if x then 3 else 5
+\end{minted}
+
+    By checking for errors, the front-end is responsible for ensuring only \emph{meaningful} expressions are allowed to pass to the middle-end. This is important --- as we'll see, the middle and back-end will transform the source program into something completely unrecognisable, so error-detection at this stage will be nearly useless from a debugging point of view.
+
+\end{minipage}
+
+\begin{minipage}[t]{0.15\textwidth}
+\textbf{\sffamily Front-End} \textit{\sffamily (cont.)}    
+\end{minipage}%
+\begin{minipage}[t]{0.85\textwidth}    
+
+    The final responsibility of the front-end is to look at the abstract syntax tree and discover types at each of the nodes. This overlaps a little with error detection, but is useful in its own right. Modern day compilers can leverage type information in order to generate efficient code.
+\end{minipage}
+
+\begin{minipage}[t]{0.15\textwidth}
+\textbf{\sffamily Middle-End}    
+\end{minipage}%
+\begin{minipage}[t]{0.85\textwidth}    
+    The role of the Middle-End is twofold. 
+
+    The first is to take the annotated AST and transform it into a re-targetable representation, or an intermediate representation. Examples of such representations include the \texttt{Java Bytecode}, the \texttt{Jargon VM} (which we'll be compiling down to in this course) and \texttt{3 Address Code} (which you'll see in {\sffamily Part II Optimising Compilers}). In a hand-wavy way, you can think of these re-targetable or intermediate representations as the intersection of the capabilities of all the different machines --- \texttt{ARM}, \texttt{x86}, and much more. 
+
+    The second role of the middle-end is to apply as many ``generic'' optimisations as possible. A \emph{generic optimisation} is one that is not specific to a machine. To make this even clearer, we will give some examples and some non-examples. 
+
+    \textbf{Example 1: Unreachable Code Elimination.} Assume you had a \texttt{C} function
+
+    \begin{minted}[bgcolor=backcolour, linenos]{C}
+int f(int x) {
+   return x;
+   x + 1; // unreachable
+}
+    \end{minted}
+
+    It is always safe to delete the line after the \texttt{return} statement. 
+
+    \textbf{Example 2: Dead Code Elimination.} Assume once again a \texttt{C} function
+
+    \begin{minted}[bgcolor=backcolour, linenos]{C}
+int f(int x) {
+   y = ...; // dead
+   // some code which never uses y
+}
+    \end{minted}
+
+    Given that \texttt{y} is never used, assuming the expression on the right hand side of the assignment does not have any side-effects, it is safe to delete.
+    
+    \textbf{Non-Example 1: Register Allocation.} There is a trivial way to allocate registers: allocate each variable to its own register, and spill (push to memory) all variables which cannot be allocated a register. This is non-optimal. More optimal strategies are based on \textit{live variable analysis} and \textit{graph colouring} (see {\sffamily Part II Optimising Compilers} for details), but clearly this depends on the number of registers available in the target machine, and whether they are \emph{orthogonal} or if we have some special purpose registers.
+
+    \textbf{Non-Example 2: Instruction Scheduling.} Once we've generated the linear list of instructions, we can simply blindly execute them in the order generated -- but this is by no means optimal! In {\sffamily Part IA Computer Architecture} you'll have learnt that loads take longer than other instructions, and that a common technique is to do \textit{load hoisting} --- schedule the load to run as early as possible so its value reaches a register before the next instruction tries to use it. How aggressively to do this depends on how long a load takes relative to other instructions, which of course is machine dependent.
+
+\end{minipage}
+
+\begin{minipage}[t]{0.15\textwidth}
+\textbf{\sffamily Back-End}    
+\end{minipage}%
+\begin{minipage}[t]{0.85\textwidth}    
+    The role of the Backend-End is twofold. 
+
+    The first is to take the intermediate representation and target it to the specific machine. 
+
+    The second is to apply machine-dependent optimisations. 
+\end{minipage}

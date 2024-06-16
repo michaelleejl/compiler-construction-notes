@@ -1,0 +1,26 @@
+\begin{tikzpicture}
+\begin{scope}[execute at end node=\strut]
+    \node[text width=15mm, align = center] (cstream) at (0, 0) {\scriptsize \sffamily{Characters}};
+    
+    \node [right = 1 of cstream, rectangle, draw, rounded corners, text width = 24mm, align = center] (lex) {\sffamily{\textbf{Front End}}};
+
+    \draw[edge, shorten >= 5pt] (cstream) -> (lex);
+    
+    \node [right = 2 of lex, rectangle, draw, rounded corners, text width = 24mm, align = center] (parse) {\sffamily{\textbf{Middle End}}};
+
+    \draw[edge, shorten <= 5pt, shorten >= 5pt] (lex) -> (parse);
+
+    \node[below right = 0.1 and -0.15 of lex, text width=20mm, align = center, fill=white] (tstream) {\scriptsize \sffamily{Annotated AST}};
+    
+    \node [right = 2 of parse, rectangle, draw, rounded corners, text width = 24mm, align = center] (tchecker) {\sffamily{\textbf{Back End}}};
+
+    \draw[edge, shorten <= 5pt, shorten >= 5pt] (parse) -> (tchecker);
+
+    \node[below right = 0.1 and -0.15 of parse, text width=20mm, align = center, fill=white] (tstream) {\scriptsize \sffamily{Intermediate Representation}};
+
+    \node[right = 1 of tchecker, text width=10mm, align = center, fill=white] (aast) {\scriptsize \sffamily{Target Code}};
+    
+    \draw[edge, shorten <= 5pt] (tchecker) -> (aast);
+    
+\end{scope}
+\end{tikzpicture}

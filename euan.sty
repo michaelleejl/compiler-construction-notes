@@ -1,0 +1,31 @@
+% %%%%%%%%%%%%%%%%%%%%%%
+% %%     euan.sty     %%
+% %%%%%%%%%%%%%%%%%%%%%%
+%
+% This LaTeX style file is heavily inspired
+% by Evan Chen and Tony Zhang's LaTeX setup
+% Based on Adam Kelly's LaTeX sty file
+
+\ProvidesPackage{euan}
+
+\newif\ifeuanfancyproofs\euanfancyproofsfalse
+\newif\ifeuannoindent\euannoindentfalse
+\newif\ifeuanfancytheorems\euanfancytheoremsfalse
+\newif\ifdraft\draftfalse
+
+\DeclareOption{fancyproofs}{\euanfancyproofstrue}
+\DeclareOption{fancytheorems}{\euanfancytheoremstrue}
+\DeclareOption{noindent}{\euannoindenttrue}
+\DeclareOption{comments}{\drafttrue}
+
+\ProcessOptions\relax
+
+\input{euan-pkg.tex}
+\input{euan-pgs.tex}
+\input{euan-macros.tex}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc} 
+\makeatletter\input{t1cmss.fd}\makeatother
+\DeclareFontShape{T1}{cmss}{bx}{n}%
+  {<5><6><7><8><9><10->ecsx1000}{}

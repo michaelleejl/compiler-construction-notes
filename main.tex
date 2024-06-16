@@ -1,0 +1,225 @@
+\documentclass[12pt,a4paper,twoside,openany, chapterprefix=on]{scrbook} 
+
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-}
+\usepackage{catchfile}
+\usepackage{epigraph}
+\usepackage[export]{adjustbox}
+\usepackage[normalem]{ulem}
+\usepackage{bold-extra}
+\usepackage{hhline}
+\usepackage{cprotect}
+\usepackage[square, numbers]{natbib}
+\usepackage{booktabs}
+\usepackage{multirow}
+% \usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{tikz-qtree}
+\usepackage{tikz-qtree-compat}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{array}
+\usepackage{colortbl}
+\tcbuselibrary{skins}
+\usepackage[
+	fancytheorems, 
+	noindent, 
+	fancyproofs,
+	comments
+]{euan}
+\usepackage[textsize=tiny, textwidth=60,backgroundcolor=yellow, linecolor=yellow, tickmarkheight=10]{todonotes}
+
+\usepackage{float}
+\usepackage[margin=2cm]{geometry}
+\usepackage{ifthen}
+
+\definecolor{codegrey}{rgb}{0.6,0.6,0.6}
+\definecolor{codemagenta}{HTML}{ae2012}
+\definecolor{codeteal}{HTML}{ca6702}
+\definecolor{codepurple}{HTML}{005f73}
+\definecolor{backcolour}{HTML}{F8F8FB}
+
+\definecolor{background}{HTML}{E9EDF0}
+\definecolor{grey}{gray}{0.5}
+\definecolor{lightgrey}{gray}{0.9}
+\definecolor{verylightgrey}{rgb}{0.96,0.96,0.965}
+\let\oldtabularx\tabularx
+\renewcommand*{\tabularx}{\rowcolors{1}{}{white}\oldtabularx}
+
+\usepackage{makecell}
+\renewcommand\theadfont{\bfseries}
+\tcbuselibrary{hooks}
+
+\newtcolorbox{tctabularx}[1]{%
+        enhanced,
+        fonttitle=\sffamily\bfseries,
+        fontupper=\sffamily,
+        colback=verylightgrey,
+        colframe=grey!50!black,colbacktitle=gray,
+        coltitle=black,
+        boxrule=0pt,
+        sharp corners,
+        #1,
+        boxrule=0.5pt,
+        before upper app={\rowcolor{lightgrey}\theadfont{\bfseries}}
+}% end tctabularx        
+
+\setkomafont{dictumtext}{\itshape \small}
+\setkomafont{dictumauthor}{\normalfont}
+\renewcommand*\dictumwidth{.6\linewidth}
+\renewcommand*\dictumauthorformat[1]{--- #1}
+\renewcommand*\dictumrule{}
+
+\usepackage{import}
+
+\raggedbottom
+
+\pagestyle{plain}
+
+% \lstdefinestyle{mystyle}{
+%     backgroundcolor=\color{backcolour},   
+%     commentstyle=\color{codeteal},
+%     keywordstyle=\color{codepurple}\fontfamily{lmtt}\fontseries{b}\selectfont,
+%     numberstyle=\tiny\color{codegrey},
+%     stringstyle=\color{codemagenta},
+%     basicstyle=\ttfamily\footnotesize,
+%     breakatwhitespace=false,         
+%     breaklines=true,                 
+%     captionpos=b,                    
+%     keepspaces=true,                 
+%     numbers=left,                    
+%     numbersep=5pt,                  
+%     showspaces=false,                
+%     showstringspaces=false,
+%     showtabs=false,                  
+%     tabsize=2
+% }
+
+% % \usepackage{pxfonts}
+% \lstdefinelanguage{Python}{
+%   keywords={sum},
+%   % keywordstyle=\color{blue}\bfseries,
+%   % ndkeywords={class, export, boolean, throw, implements, import, this},
+%   % ndkeywordstyle=\color{darkgray}\bfseries,
+%   % identifierstyle=\color{black},
+%   % sensitive=false,
+%   comment=[l]{#},
+%   morecomment=[s]{/*}{*/},
+%   % commentstyle=\color{purple}\ttfamily,
+%   % stringstyle=\color{red}\ttfamily,
+%   morestring=[b]',
+%   morestring=[b]"
+% }
+
+% \lstdefinelanguage{R}{
+%   keywords={sum, <-, c},
+%   % keywordstyle=\color{blue}\bfseries,
+%   % ndkeywords={class, export, boolean, throw, implements, import, this},
+%   % ndkeywordstyle=\color{darkgray}\bfseries,
+%   % identifierstyle=\color{black},
+%   % sensitive=false,
+%   comment=[l]{#},
+%   morecomment=[s]{/*}{*/},
+%   % commentstyle=\color{purple}\ttfamily,
+%   % stringstyle=\color{red}\ttfamily,
+%   morestring=[b]',
+%   morestring=[b]"
+% }
+
+% \lstset{style=mystyle}
+
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{longtable}
+
+\usepackage[hyperfootnotes=false]{hyperref}
+\makeatletter
+\Hy@AtBeginDocument{%
+  \def\@pdfborder{0 0 1}% Overrides border definition set with colorlinks=true
+  \def\@pdfborderstyle{/S/U/W 1}% Overrides border style set with colorlinks=true
+                                % Hyperlink border style will be underline of width 1pt
+}
+\makeatother
+\hypersetup{
+    colorlinks = true,
+    linkcolor = linkcolor,
+    linkbordercolor = linkcolor,
+    citecolor = black,
+    pdfborderstyle={/S/U/W 1},
+    urlcolor = linkcolor,
+    urlbordercolor = linkcolor,
+    citebordercolor = white!0
+}
+\usepackage[nameinlink]{cleveref}
+
+\newcommand\blfootnote[1]{%
+  \begin{NoHyper}%
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \end{NoHyper}%
+}
+
+
+% \SetupFloatingEnvironment{listing}{name=Source Code}
+
+\setlength{\epigraphwidth}{0.6\textwidth}
+\setlength{\epigraphrule}{0pt}
+
+\usepackage{etoolbox}
+    \makeatletter
+    \newlength\epitextskip
+    \pretocmd{\@epitext}{\em}{}{}
+    \apptocmd{\@epitext}{\em}{}{}
+    \patchcmd{\epigraph}{\@epitext{#1}\\}{\@epitext{#1}\\[\epitextskip]}{}{}
+    \makeatother
+
+\usepackage{newfloat}
+\usepackage{inconsolata}
+% \newenvironment{code}{\captionsetup{type=listing}}{}
+\usepackage[section, newfloat]{minted}
+% \SetupFloatingEnvironment{listing}{name=Source Code}
+
+\newcounter{codeCounter}[section]
+\counterwithin{codeCounter}{section}
+\newenvironment{code}[1][]{\centering%
+\refstepcounter{codeCounter}%
+\def\captiontemp{#1}%
+}{\begin{center}%
+\vspace{-5mm}
+{Listing~\thecodeCounter. \captiontemp}%
+\end{center}}
+
+\crefname{codeCounter}{listing}{listings}
+\Crefname{codeCounter}{Listing}{Listings}
+
+%\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+
+\title{Compilers Notes}
+\author{mjll2}
+\date{June 2024}
+
+\setkomafont{chapterprefix}{\Large}
+
+
+\begin{document}
+
+\usetikzlibrary{arrows}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+
+\tikzset{edge/.style = {->,> = latex'}}
+\tikzset{equality/.style = {double, double distance=2.5pt}}
+\tikzset{vertex/.style={text depth=0.4ex}}
+\usetikzlibrary{positioning}
+
+\maketitle
+
+\import{lec01}{introduction}
+
+\import{lec08}{cps}
+
+\end{document}

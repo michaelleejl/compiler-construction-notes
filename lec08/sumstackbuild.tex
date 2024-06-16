@@ -1,0 +1,76 @@
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+\definecolor{mdgrey}{HTML}{9696A0}
+\definecolor{ltgrey}{HTML}{D5D5DC}
+\begin{scope}[execute at end node=\strut]
+    \node[text width=30mm, align = center] (call1) at (0, 0) {\texttt{sum [1;2;3]}};
+    
+    \node [above = 0.2 of call1, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack1) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+
+    \node[right = 6mm of call1, text width=30mm, align = center] (call2){\texttt{sum [2;3]}};
+    
+    \node [above = 0.2 of call2, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack2) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of call2, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack21) {\texttt{ADD 1}};
+
+
+    \node[right = 6mm of call2, text width=30mm, align = center] (call3){\texttt{sum [3]}};
+    
+    \node [above = 0.2 of call3, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack3) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of call3, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack31) {\texttt{ADD 1}};
+
+    \node [above = -0.3mm of stack31, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack32) {\texttt{ADD 2}};
+
+     \node[right = 6mm of call3, text width=30mm, align = center] (call4){\texttt{sum []}};
+    
+    \node [above = 0.2 of call4, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack4) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of call4, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack41) {\texttt{ADD 1}};
+
+    \node [above = -0.3mm of stack41, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack42) {\texttt{ADD 2}};
+
+    \node [above = -0.3mm of stack42, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack43) {\texttt{ADD 3}};
+
+    \node[right = 6mm of call4, text width=30mm, align = center] (app0) {\texttt{APPLY}};
+    
+    \node [above = 0.2 of app0, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack5) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of app0, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack51) {\texttt{ADD 1}};
+
+    \node [above = -0.3mm of stack51, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack52) {\texttt{ADD 2}};
+
+    \node [above = -0.3mm of stack52, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack53) {\texttt{ADD 3}};
+
+    \node [above = -0.3mm of stack53, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack54) {\texttt{VAL 0}};
+    
+    \node[right = 6mm of app0, text width=30mm, align = center] (eval1) {\texttt{EVAL}};
+    
+    \node [above = 0.2 of eval1, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack6) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of eval1, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack5) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of eval1, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack61) {\texttt{ADD 1}};
+
+    \node [above = -0.3mm of stack61, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack62) {\texttt{ADD 2}};
+
+    \node [above = -0.3mm of stack62, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack63) {\texttt{VAL 3}};
+
+    \node[right = 6mm of eval1, text width=30mm, align = center] (eval2){\texttt{EVAL}};
+    
+    \node [above = 0.2 of eval2, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack7) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of eval2, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack71) {\texttt{ADD 1}};
+
+    \node [above = -0.3mm of stack62, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack72) {\texttt{VAL 5}};
+
+    \node[right = 6mm of eval2, text width=30mm, align = center] (eval3){\texttt{EVAL}};
+    
+    \node [above = 0.2 of eval3, rectangle, text width = 15mm, fill = ltgrey, draw=ltgrey, line width=0.3mm, minimum height = 40mm, align = center] (stack8) {\textcolor{mdgrey}{\sffamily{\textbf{Stack Space}}}};
+
+    \node [above = 0.2 of eval3, rectangle, text width = 15mm, fill = white, draw, line width=0.3mm, minimum height = 8mm, align = center] (stack81) {\texttt{VAL 6}};
+    
+\end{scope}
+\end{tikzpicture}
+}

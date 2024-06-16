@@ -1,0 +1,343 @@
+% Title Setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\addtokomafont{subtitle}{\Large}
+\setkomafont{author}{\Large\scshape}
+\setkomafont{date}{\Large\normalsize}
+
+
+% Theorem Setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Colours
+
+\definecolor{mdgrey}{HTML}{8C8C8E}
+\definecolor{examplebg}{HTML}{FFFAF6}
+\definecolor{examplefg}{HTML}{8A3D45}
+\definecolor{notefg}{HTML}{303034}
+\definecolor{terminologybg}{HTML}{FFFAF6}
+\definecolor{terminologyfg}{HTML}{58355E}
+\definecolor{definitionbg}{HTML}{FFFAF6}
+\definecolor{definitionfg}{HTML}{274F6A}
+\definecolor{theorembg}{HTML}{FFFAF6}
+\definecolor{theoremfg}{HTML}{874569}
+\definecolor{theorembody}{HTML}{5E5F63}
+\definecolor{proofbg}{HTML}{F2F2F2}
+\definecolor{prooffg}{HTML}{808080}
+\definecolor{markerbg}{HTML}{E2204C}
+\definecolor{markerfg}{HTML}{FFFFFF}
+\definecolor{packagebg}{HTML}{F5F5F8}
+\definecolor{packagefg}{HTML}{1C6767}
+\definecolor{packagebd}{HTML}{27282C}
+\definecolor{linkcolor}{HTML}{019EC9}
+
+% \AtBeginDocument{%
+%   \setlength{\abovedisplayskip}{0.25\abovedisplayskip}%
+%   \setlength{\belowdisplayskip}{0.4\belowdisplayskip}%
+%   \setlength{\abovedisplayshortskip}{0.25\abovedisplayshortskip}%
+%   \setlength{\belowdisplayshortskip}{0.4\belowdisplayshortskip}%
+% }
+
+\ifeuannoindent
+\mdfsetup{
+    skipabove=0.8\baselineskip,
+    skipbelow=0.3\baselineskip,
+    innertopmargin=10pt,
+    innerbottommargin=14pt,
+    innerleftmargin=12pt,
+    innerrightmargin=12pt,
+    hidealllines=true
+}
+\else
+\mdfsetup{
+    skipabove=0.5\baselineskip,
+    skipbelow=0.5\baselineskip,
+    innertopmargin=10pt,
+    innerbottommargin=14pt,
+    innerleftmargin=12pt,
+    innerrightmargin=12pt,
+    hidealllines=true
+}
+\fi
+
+
+% Proof
+\mdfdefinestyle{mdproofbox}{
+    skipabove=0.4\baselineskip,
+    skipbelow=0.3\baselineskip,
+    backgroundcolor=proofbg,
+    linecolor=prooffg,
+    linewidth=1.5pt,
+    topline=false,
+    innerbottommargin=6pt,
+    rightline=false,
+    bottomline=false,
+    leftline=true
+}
+
+% Example
+\declaretheoremstyle[
+    headfont=\ttfamily\bfseries\scriptsize\color{mdgrey},
+    notefont=\normalsize\sffamily\bfseries\color{examplefg},
+    notebraces={}{},
+    headformat={{\NAME \ \NUMBER} \\[3pt] \NOTE},
+    mdframed={
+        backgroundcolor=examplebg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmexamplebox}
+
+% Definition
+\declaretheoremstyle[
+    headfont=\ttfamily\bfseries\scriptsize\color{mdgrey},
+    notefont=\normalsize\sffamily\bfseries\color{definitionfg},
+    notebraces={}{},
+    headformat={{\NAME \ \NUMBER} \\[3pt] \NOTE},
+    mdframed={
+        backgroundcolor=definitionbg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    % headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmdefinitionbox}
+
+% Terminology
+\declaretheoremstyle[
+    headfont=\ttfamily\bfseries\scriptsize\color{mdgrey},
+    notefont=\normalsize\sffamily\bfseries\color{terminologyfg},
+    notebraces={}{},
+    headformat={{\NAME \ \NUMBER} \\[3pt] \NOTE},
+    mdframed={
+        backgroundcolor=definitionbg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmterminologybox}
+
+% Note
+\declaretheoremstyle[
+    headfont=\ttfamily\bfseries\scriptsize\color{mdgrey},
+    notefont=\normalsize\sffamily\bfseries\color{notefg},
+    notebraces={}{},
+    headformat={{\NAME \ \NUMBER} \\[3pt] \NOTE},
+    mdframed={
+        backgroundcolor=definitionbg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmnotebox}
+
+% Package
+\declaretheoremstyle[
+    headfont=\large\sffamily\bfseries\color{packagefg},
+    notebraces={}{},
+    headformat={\vspace{0mm}\\ {\NAME}},
+    mdframed={
+        backgroundcolor=packagebg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    bodyfont=\color{packagebd},
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmpackagebox}
+
+% Package
+\declaretheoremstyle[
+    headfont=\Large\sffamily\bfseries\color{packagebg},
+    notebraces={}{},
+    headformat={{\NAME}},
+    mdframed={
+        backgroundcolor=packagefg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    bodyfont=\color{white!80},
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmpackageselectedbox}
+
+% Note
+\declaretheoremstyle[
+    headfont=\sffamily\bfseries\color{markerfg},
+    notebraces={}{},
+    headformat={{\NAME}},
+    mdframed={
+        backgroundcolor=markerbg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    bodyfont=\color{markerfg},
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmmarkerbox}
+
+% Theorem
+\declaretheoremstyle[
+    headfont=\ttfamily\bfseries\scriptsize\color{mdgrey},
+    notefont=\normalsize\sffamily\bfseries\color{theoremfg},
+    notebraces={}{},
+    headformat={{\NAME \ \NUMBER} \\[3pt] \NOTE},
+    mdframed={
+        backgroundcolor=definitionbg,
+        nobreak=false,
+        roundcorner=2pt
+    },
+    headpunct={\\[9pt]},
+    postheadspace={3pt}
+]{thmtheorembox}
+
+
+\newcommand{\thistheoremname}{}
+
+\ifeuanfancytheorems
+    \declaretheorem[style=thmtheorembox,name=Theorem,numberwithin=section]{theorem}
+    \declaretheorem[style=thmtheorembox,name=Lemma,sibling=theorem]{lemma}
+    \declaretheorem[style=thmtheorembox,name=Fact,sibling=theorem]{fact}
+    \declaretheorem[style=thmtheorembox,name=Proposition,sibling=theorem]{proposition}
+    \declaretheorem[style=thmtheorembox,name=Corollary,sibling=theorem]{corollary}
+    \declaretheorem[style=thmexamplebox,name=Example,sibling=theorem]{example}
+    \declaretheorem[style=thmdefinitionbox,name=Definition,sibling=theorem]{definition}
+    \declaretheorem[style=thmdefinitionbox,name=Axiom,sibling=theorem]{axiom}
+    \declaretheorem[style=thmtheorembox,name=Theorem,numbered=yes]{theorem*}
+    \declaretheorem[style=thmtheorembox,name=Lemma,numbered=no]{lemma*}
+    \declaretheorem[style=thmtheorembox,name=Claim,numbered=no]{claim*}
+    \declaretheorem[style=thmtheorembox,name=Fact,numbered=no]{fact*}
+    \declaretheorem[style=thmtheorembox,name=Proposition,numbered=no]{proposition*}
+    \declaretheorem[style=thmtheorembox,name=Corollary,numbered=no]{corollary*}
+    \declaretheorem[style=thmexamplebox,name=Example,numbered=no]{example*}
+    \declaretheorem[style=thmexamplebox,name=Question,numbered=no]{question}
+    \declaretheorem[style=thmexamplebox,name=Problem,numberwithin=section]{problem}
+    \declaretheorem[style=thmexamplebox,name=Problem,numbered=no]{problem*}
+    \declaretheorem[style=thmdefinitionbox,name=Definition,numbered=yes]{definition*}
+    \declaretheorem[style=thmdefinitionbox,name=Axiom,numbered=no]{axiom*}
+    \declaretheorem[style=thmnotebox,name=Note,numbered=no]{note*}
+    \declaretheorem[style=thmterminologybox, name=Terminology, numbered=no]{terminology*}
+
+    \declaretheorem[style=thmtheorembox,name=\protect\thistheoremname,numbered=yes]
+    {theorembox_style*}
+    \declaretheorem[style=thmexamplebox,name=\protect\thistheoremname,numbered=no]{examplebox_style*}
+    \declaretheorem[style=thmdefinitionbox,name=Definition,numberwithin=section]{definitionbox_style*}
+    \declaretheorem[style=thmnotebox, name=Note, numberwithin=section]{notebox_style*}
+    \declaretheorem[style=thmmarkerbox, name=\protect\thistheoremname]{markerbox_style*}
+
+    \declaretheorem[style=thmpackagebox, name=\protect\thistheoremname]{packagebox_style*}
+
+
+\else
+    \newtheorem{theorem}{Theorem}[section]
+    \newtheorem{lemma}[theorem]{Lemma}
+    \newtheorem{fact}[theorem]{Fact}
+    \newtheorem{corollary}[theorem]{Corollary}
+    \newtheorem{proposition}[theorem]{Proposition}
+    \newtheorem*{theorem*}{Theorem}
+    \newtheorem*{lemma*}{Lemma}
+    \newtheorem*{fact*}{Fact}
+    \newtheorem*{corollary*}{Corollary}
+    \newtheorem*{proposition*}{Proposition}
+
+    \theoremstyle{definition}
+
+    \newtheorem{example}[theorem]{Example}
+    \newtheorem{definition}[theorem]{Definition}
+    \newtheorem{axiom}[theorem]{Axiom}
+    \newtheorem*{example*}{Example}
+    \newtheorem*{definition*}{Definition}
+    \newtheorem*{axiom*}{Axiom}
+    \newtheorem{terminology*}{Terminology}
+
+    \newtheorem{problem}[theorem]{Problem}
+    \newtheorem*{problem*}{Problem}
+
+    \newtheorem*{theorembox_style*}{\protect\thistheoremname}
+    \newtheorem*{examplebox_style*}{\protect\thistheoremname}
+    \newtheorem*{definitionbox_style*}{\protect\thistheoremname}
+\fi
+
+\newenvironment{theorembox*}[1]
+    {\renewcommand{\thistheoremname}{#1}
+    \begin{theorembox_style*}}
+    {\end{theorembox_style*}}
+
+\newenvironment{examplebox*}[1]
+    {\renewcommand{\thistheoremname}{#1}
+    \begin{examplebox_style*}}
+    {\end{examplebox_style*}}
+   
+\newenvironment{definitionbox*}[1]
+    {\renewcommand{\thistheoremname}{#1}
+    \begin{definitionbox_style*}[#1]}
+    {\end{definitionbox_style*}}
+
+\newenvironment{notebox*}[1]
+    {\renewcommand{\thistheoremname}{#1}
+    \begin{notebox_style*}[#1]}
+    {\end{notebox_style*}}
+
+\newenvironment{markerbox*}[1]
+    {\renewcommand{\thistheoremname}{#1}
+    \begin{markerbox_style*}[#1]}
+    {\end{markerbox_style*}}
+
+\newenvironment{packagebox*}[1]
+    {\renewcommand{\thistheoremname}{#1}
+    \begin{packagebox_style*}[#1]}
+    {\end{packagebox_style*}}
+
+\ifeuanfancyproofs
+\surroundwithmdframed[style=mdproofbox]{proof}
+\else
+\AtBeginEnvironment{proof}{\vspace{-0.5\baselineskip}}
+\fi
+
+\theoremstyle{definition}
+
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{answer}[theorem]{Answer}
+\newtheorem{case}[theorem]{Case}
+% \newtheorem{question}[theorem]{Question}
+\newtheorem{exercise}[theorem]{Exercise}
+% \newtheorem{problem}[theorem]{Problem}
+\newtheorem*{conjecture*}{Conjecture}
+\newtheorem*{answer*}{Answer}
+\newtheorem*{case*}{Case}
+\newtheorem*{joke*}{Joke}
+\newtheorem*{question*}{Question}
+\newtheorem*{exercise*}{Exercise}
+\newtheorem*{notation}{Notation}
+\newtheorem*{remark}{Remark}
+
+
+% Header Setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[headsepline]{scrlayer-scrpage}
+\renewcommand{\headfont}{}
+\addtolength{\textheight}{3.14cm}
+\setlength{\footskip}{0.5in}
+\setlength{\headsep}{10pt}
+\ihead{\footnotesize\textbf{\@author} (\@date)}
+\automark{section}
+\chead{}
+\ohead{\footnotesize\textbf{\@title}}
+\cfoot{\pagemark}
+
+% Fancy Section and Chapter Heads 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage[tocindentauto]{tocbasic}
+%\usetocstyle{KOMAlike}
+
+
+\newenvironment{aside}[1]{
+    \rule{\textwidth}{0.025cm}
+    \vspace{-1.75\baselineskip}
+    \subsection*{#1}}
+{\rule{\textwidth}{0.025cm}}

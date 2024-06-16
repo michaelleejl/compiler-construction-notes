@@ -1,0 +1,287 @@
+% Small Macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\vocab}[1]{\textbf{\color{blue} #1}}
+\DeclareMathOperator{\lcm}{lcm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Delimiters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand\swapifbranches[3]{#1{#3}{#2}}
+\makeatletter
+\MHInternalSyntaxOn
+\patchcmd{\DeclarePairedDelimiter}{\@ifstar}{\swapifbranches\@ifstar}{}{}
+\MHInternalSyntaxOff
+\makeatother
+
+\DeclarePairedDelimiter{\br}{(}{)}
+\DeclarePairedDelimiter{\cbr}{\{}{\}}
+\DeclarePairedDelimiter{\sbr}{[}{]}
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter{\abr}{\langle}{\rangle}
+\DeclarePairedDelimiter{\bra}{\langle}{\rvert}
+\DeclarePairedDelimiter{\ket}{\lvert}{\rangle}
+
+\DeclarePairedDelimiterX{\innerprod}[2]{(}{)}{#1, #2}
+\DeclarePairedDelimiterX{\outerprod}[2]{|}{|}{#1 \delimsize\rangle \delimsize\langle #2}
+
+\DeclarePairedDelimiterX\set[1]{\{}{\}}{\,\SplitSet{#1}\,}
+\NewDocumentCommand\SplitSet{>{\SplitArgument{1}{|}}m}{\BuildSet#1}
+\NewDocumentCommand\BuildSet{mm}{%
+  \IfNoValueTF{#2}{#1}{#1\,\delimsize|\,\mathopen{}#2}%
+}
+
+\DeclarePairedDelimiterX{\bkt}[2]{\langle}{\rangle}{#1 \delimsize| \SplitKet{#2}}
+\NewDocumentCommand{\SplitKet}{>{\SplitArgument{1}{|}}m}{\BuildKet#1}
+\NewDocumentCommand{\BuildKet}{mm}{%
+    \IfNoValueTF{#2}{#1}{#1\delimsize|\mathopen{}#2}%
+}
+
+% Custom Formatting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\lessemph}[1]{\small{\textcolor{paynegrey}{#1}}}
+
+% Math Symbols
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Special sets
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\B}{\mathbb{B}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\V}{\mathbb{V}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\SL}{\operatorname{SL}}
+\newcommand{\OO}{\operatorname{O}}
+\newcommand{\SO}{\operatorname{SO}}
+
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\im}{\operatorname{Im}}
+
+% Groups Stuff
+\newcommand{\image}{\operatorname{img}} % Image
+\newcommand{\kernel}{\operatorname{ker}} % Kernel
+\newcommand{\sym}{\operatorname{Sym}} % Symmetric Set
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\orb}{\operatorname{Orb}}
+\newcommand{\stab}{\operatorname{Stab}}
+\newcommand{\ccl}{\operatorname{ccl}}
+\newcommand{\cay}{\operatorname{Cay}}
+\newcommand{\normal}{\trianglelefteq}
+
+% Numbers and Sets Stuff
+\newcommand{\hcf}{\operatorname{hcf}} % Image
+\newcommand{\power}{\mathcal{P}} % Image
+
+
+% Vectors and Matrices Stuff
+\newcommand{\vv}[1]{\mathbf{#1}}
+\newcommand{\vecspan}{\operatorname{span}}
+
+% Probability
+\newcommand{\PP}{\mathbf{P}}
+\newcommand{\FF}{\mathcal{F}}
+\newcommand{\EE}{\mathbb{E}}
+
+% Boolean Algebra
+\let\xor\oplus
+\let\iff\Longleftrightarrow
+
+\newcommand{\nand}{\,\not{\cdot}\,}
+\newcommand{\nor}{\,\not{+}\,}
+\newcommand\relto{\mathrel{\ooalign{\hfil$\mapstochar\mkern5mu$\hfil\cr$\to$\cr}}}
+
+\newcommand{\defeq}{\stackrel{\mathclap{\normalfont\mbox{\tiny{def}}}}{=}}
+
+% Semantics
+\newcommand{\sass}{\,:=\,}
+\newcommand{\sseq}{;\;}
+\newcommand{\strue}{\textbf{true}}
+\newcommand{\sfalse}{\textbf{false}}
+\newcommand{\sskip}{\textbf{skip}}
+\newcommand{\site}[3]{\textbf{if }#1\textbf{ then }#2\textbf{ else }#3}
+\newcommand{\swhile}[2]{\textbf{while }#1\textbf{ do }#2}
+\newcommand{\dom}{\mathop{\text{dom}}}
+\newcommand{\ran}{\mathop{\text{ran}}}
+\newcommand{\intref}{\mathop{\text{intref}}}
+\newcommand{\typeenv}{\mathop{\text{TypeEnv}}}
+\newcommand{\sref}{\mathop{\text{ref}}}
+\newcommand{\sderef}{\mathop{!}}
+\newcommand{\subtype}{\mathop{\,<:\,}}
+\newcommand{\sfn}[2]{\textbf{fn }#1 \Rightarrow #2}
+\newcommand{\slet}[2]{\textbf{let val }#1 \textbf{ in } #2\textbf{ end}}
+\newcommand{\sint}{\text{int}}
+\newcommand{\srproj}[1]{\mathop{\# #1}}
+\newcommand{\scase}[2]{\textbf{case }#1\textbf{ of }#2}
+\newcommand{\sinl}{\textbf{inl }}
+\newcommand{\sinr}{\textbf{inr }}
+
+% Concurrent & Distributed Systems
+\newcommand{\conc}{\mathop{\Vert}}
+\algblockdefx[ON]{On}{EndOn}[1]{\textbf{on} #1 \textbf{do}}{\textbf{end on}}
+\algblockdefx[TRANSACTION]{Transaction}{EndTransaction}{\textbf{transaction}}{\textbf{end transaction}}
+
+\NewDocumentCommand{\ol}{}{\overline}
+\NewDocumentCommand{\ul}{}{\underline}
+\NewDocumentCommand{\wt}{}{\widetilde}
+\NewDocumentCommand{\wh}{}{\widehat}
+\NewDocumentCommand{\eps}{}{\varepsilon}
+
+\NewDocumentCommand{\e}{}{\mathrm{e}}
+\RenewDocumentCommand{\i}{}{\mathrm{i}}
+
+\RenewDocumentCommand{\arcsin}{}{\sin^{-1}}
+\RenewDocumentCommand{\arccos}{}{\cos^{-1}}
+\RenewDocumentCommand{\arctan}{}{\tan^{-1}}
+\NewDocumentCommand{\arccot}{}{\cot^{-1}}
+\NewDocumentCommand{\arcsec}{}{\sec^{-1}}
+\NewDocumentCommand{\arccsc}{}{\csc^{-1}}
+\NewDocumentCommand{\arcsinh}{}{\sinh^{-1}}
+\NewDocumentCommand{\arccosh}{}{\cosh^{-1}}
+\NewDocumentCommand{\arctanh}{}{\tanh^{-1}}
+\NewDocumentCommand{\arccoth}{}{\coth^{-1}}
+\NewDocumentCommand{\arcsech}{}{\sech^{-1}}
+\NewDocumentCommand{\arccsch}{}{\csch^{-1}}
+
+\NewDocumentCommand{\bA}{}{\mathbb{A}}
+\NewDocumentCommand{\bB}{}{\mathbb{B}}
+\NewDocumentCommand{\bC}{}{\mathbb{C}}
+\NewDocumentCommand{\bD}{}{\mathbb{D}}
+\NewDocumentCommand{\bE}{}{\mathbb{E}}
+\NewDocumentCommand{\bF}{}{\mathbb{F}}
+\NewDocumentCommand{\bG}{}{\mathbb{G}}
+\NewDocumentCommand{\bH}{}{\mathbb{H}}
+\NewDocumentCommand{\bI}{}{\mathbb{I}}
+\NewDocumentCommand{\bJ}{}{\mathbb{J}}
+\NewDocumentCommand{\bK}{}{\mathbb{K}}
+\NewDocumentCommand{\bL}{}{\mathbb{L}}
+\NewDocumentCommand{\bM}{}{\mathbb{M}}
+\NewDocumentCommand{\bN}{}{\mathbb{N}}
+\NewDocumentCommand{\bO}{}{\mathbb{O}}
+\NewDocumentCommand{\bP}{}{\mathbb{P}}
+\NewDocumentCommand{\bQ}{}{\mathbb{Q}}
+\NewDocumentCommand{\bR}{}{\mathbb{R}}
+\NewDocumentCommand{\bS}{}{\mathbb{S}}
+\NewDocumentCommand{\bT}{}{\mathbb{T}}
+\NewDocumentCommand{\bU}{}{\mathbb{U}}
+\NewDocumentCommand{\bV}{}{\mathbb{V}}
+\NewDocumentCommand{\bW}{}{\mathbb{W}}
+\NewDocumentCommand{\bX}{}{\mathbb{X}}
+\NewDocumentCommand{\bY}{}{\mathbb{Y}}
+\NewDocumentCommand{\bZ}{}{\mathbb{Z}}
+
+\NewDocumentCommand{\cA}{}{\mathcal{A}}
+\NewDocumentCommand{\cB}{}{\mathcal{B}}
+\NewDocumentCommand{\cC}{}{\mathcal{C}}
+\NewDocumentCommand{\cD}{}{\mathcal{D}}
+\NewDocumentCommand{\cE}{}{\mathcal{E}}
+\NewDocumentCommand{\cF}{}{\mathcal{F}}
+\NewDocumentCommand{\cG}{}{\mathcal{G}}
+\NewDocumentCommand{\cH}{}{\mathcal{H}}
+\NewDocumentCommand{\cI}{}{\mathcal{I}}
+\NewDocumentCommand{\cJ}{}{\mathcal{J}}
+\NewDocumentCommand{\cK}{}{\mathcal{K}}
+\NewDocumentCommand{\cL}{}{\mathcal{L}}
+\NewDocumentCommand{\cM}{}{\mathcal{M}}
+\NewDocumentCommand{\cN}{}{\mathcal{N}}
+\NewDocumentCommand{\cO}{}{\mathcal{O}}
+\NewDocumentCommand{\cP}{}{\mathcal{P}}
+\NewDocumentCommand{\cQ}{}{\mathcal{Q}}
+\NewDocumentCommand{\cR}{}{\mathcal{R}}
+\NewDocumentCommand{\cS}{}{\mathcal{S}}
+\NewDocumentCommand{\cT}{}{\mathcal{T}}
+\NewDocumentCommand{\cU}{}{\mathcal{U}}
+\NewDocumentCommand{\cV}{}{\mathcal{V}}
+\NewDocumentCommand{\cW}{}{\mathcal{W}}
+\NewDocumentCommand{\cX}{}{\mathcal{X}}
+\NewDocumentCommand{\cY}{}{\mathcal{Y}}
+\NewDocumentCommand{\cZ}{}{\mathcal{Z}}
+
+\NewDocumentCommand{\sA}{}{\mathscr{A}}
+\NewDocumentCommand{\sB}{}{\mathscr{B}}
+\NewDocumentCommand{\sC}{}{\mathscr{C}}
+\NewDocumentCommand{\sD}{}{\mathscr{D}}
+\NewDocumentCommand{\sE}{}{\mathscr{E}}
+\NewDocumentCommand{\sF}{}{\mathscr{F}}
+\NewDocumentCommand{\sG}{}{\mathscr{G}}
+\NewDocumentCommand{\sH}{}{\mathscr{H}}
+\NewDocumentCommand{\sI}{}{\mathscr{I}}
+\NewDocumentCommand{\sJ}{}{\mathscr{J}}
+\NewDocumentCommand{\sK}{}{\mathscr{K}}
+\NewDocumentCommand{\sL}{}{\mathscr{L}}
+\NewDocumentCommand{\sM}{}{\mathscr{M}}
+\NewDocumentCommand{\sN}{}{\mathscr{N}}
+\NewDocumentCommand{\sO}{}{\mathscr{O}}
+\NewDocumentCommand{\sP}{}{\mathscr{P}}
+\NewDocumentCommand{\sQ}{}{\mathscr{Q}}
+\NewDocumentCommand{\sR}{}{\mathscr{R}}
+\NewDocumentCommand{\sS}{}{\mathscr{S}}
+\NewDocumentCommand{\sT}{}{\mathscr{T}}
+\NewDocumentCommand{\sU}{}{\mathscr{U}}
+\NewDocumentCommand{\sV}{}{\mathscr{V}}
+\NewDocumentCommand{\sW}{}{\mathscr{W}}
+\NewDocumentCommand{\sX}{}{\mathscr{X}}
+\NewDocumentCommand{\sY}{}{\mathscr{Y}}
+\NewDocumentCommand{\sZ}{}{\mathscr{Z}}
+
+\NewDocumentCommand{\fA}{}{\mathfrak{A}}
+\NewDocumentCommand{\fB}{}{\mathfrak{B}}
+\NewDocumentCommand{\fC}{}{\mathfrak{C}}
+\NewDocumentCommand{\fD}{}{\mathfrak{D}}
+\NewDocumentCommand{\fE}{}{\mathfrak{E}}
+\NewDocumentCommand{\fF}{}{\mathfrak{F}}
+\NewDocumentCommand{\fG}{}{\mathfrak{G}}
+\NewDocumentCommand{\fH}{}{\mathfrak{H}}
+\NewDocumentCommand{\fI}{}{\mathfrak{I}}
+\NewDocumentCommand{\fJ}{}{\mathfrak{J}}
+\NewDocumentCommand{\fK}{}{\mathfrak{K}}
+\NewDocumentCommand{\fL}{}{\mathfrak{L}}
+\NewDocumentCommand{\fM}{}{\mathfrak{M}}
+\NewDocumentCommand{\fN}{}{\mathfrak{N}}
+\NewDocumentCommand{\fO}{}{\mathfrak{O}}
+\NewDocumentCommand{\fP}{}{\mathfrak{P}}
+\NewDocumentCommand{\fQ}{}{\mathfrak{Q}}
+\NewDocumentCommand{\fR}{}{\mathfrak{R}}
+\NewDocumentCommand{\fS}{}{\mathfrak{S}}
+\NewDocumentCommand{\fT}{}{\mathfrak{T}}
+\NewDocumentCommand{\fU}{}{\mathfrak{U}}
+\NewDocumentCommand{\fV}{}{\mathfrak{V}}
+\NewDocumentCommand{\fW}{}{\mathfrak{W}}
+\NewDocumentCommand{\fX}{}{\mathfrak{X}}
+\NewDocumentCommand{\fY}{}{\mathfrak{Y}}
+\NewDocumentCommand{\fZ}{}{\mathfrak{Z}}
+\NewDocumentCommand{\fa}{}{\mathfrak{a}}
+\NewDocumentCommand{\fb}{}{\mathfrak{b}}
+\NewDocumentCommand{\fc}{}{\mathfrak{c}}
+\NewDocumentCommand{\fd}{}{\mathfrak{d}}
+\NewDocumentCommand{\fe}{}{\mathfrak{e}}
+\NewDocumentCommand{\ff}{}{\mathfrak{f}}
+\NewDocumentCommand{\fg}{}{\mathfrak{g}}
+\NewDocumentCommand{\fh}{}{\mathfrak{h}}
+\NewDocumentCommand{\fri}{}{\mathfrak{i}}
+\NewDocumentCommand{\fj}{}{\mathfrak{j}}
+\NewDocumentCommand{\fk}{}{\mathfrak{k}}
+\NewDocumentCommand{\fl}{}{\mathfrak{l}}
+\NewDocumentCommand{\fm}{}{\mathfrak{m}}
+\NewDocumentCommand{\fn}{}{\mathfrak{n}}
+\NewDocumentCommand{\fo}{}{\mathfrak{o}}
+\NewDocumentCommand{\fp}{}{\mathfrak{p}}
+\NewDocumentCommand{\fq}{}{\mathfrak{q}}
+\NewDocumentCommand{\fr}{}{\mathfrak{r}}
+\NewDocumentCommand{\fs}{}{\mathfrak{s}}
+\NewDocumentCommand{\ft}{}{\mathfrak{t}}
+\NewDocumentCommand{\fu}{}{\mathfrak{u}}
+\NewDocumentCommand{\fv}{}{\mathfrak{v}}
+\NewDocumentCommand{\fw}{}{\mathfrak{w}}
+\NewDocumentCommand{\fx}{}{\mathfrak{x}}
+\NewDocumentCommand{\fy}{}{\mathfrak{y}}
+\NewDocumentCommand{\fz}{}{\mathfrak{z}}
+
