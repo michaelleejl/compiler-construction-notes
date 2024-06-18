@@ -1,4 +1,4 @@
-\chapter{Continuation-Passing Style and Defunctionalisation}
+\chapter{Continuation-Passing Style and Defunctionalisation}\label{chapter:cps}
 
 \dictum[Andrew Appel]{Continuation-passing style (CPS) is a program notation that makes every aspect of control flow and data flow explicit.}
 
@@ -130,7 +130,29 @@ Further, when we reach a value, as in the base case, we now \emph{apply the full
 
 In fact, we can give the ``rest of the computation'' a name -- it is the \textbf{continuation}. Since we are \emph{passing} the continuation along at each step, this is called \textbf{Continuation Passing Style}.
 
-We can then bundle \texttt{sum\_cps} into a single argument function
+Let's visualise how the continuation changes when we apply \texttt{sum\_cps} to an initial argument \texttt{[1;2;3]} and initial continuation \texttt{fun x -> x}. For space reasons, we'll use a slightly different naming convention for functions. We'll take a function \texttt{fun x -> fun y -> x + y} and write it as such $\lambda x. \lambda y. x + y$. 
+
+We'll consider two stages: in the first, we'll \texttt{CALL} \texttt{sum\_cps} recursively, building up the continuation.
+
+\begin{tabular}{ll}
+\textbf{Arguments} & \textbf{Continuation}\\ \hline
+\texttt{[1;2;3]} & $\lambda x. x$ \\
+\texttt{[2;3]} & $\lambda r_1. (\lambda x. x) (r_1 + 1)$\\
+\texttt{[3]} & $\lambda r_2. (\lambda r_1. (\lambda x. x) (r_1 + 1)) (r_2 + 2)$\\
+\texttt{[]} & $\lambda r_3. (\lambda r_2. (\lambda r_1. (\lambda x. x) (r_1 + 1)) (r_2 + 2)) (r_3 + 3)$\\
+\end{tabular}
+
+In the second, we'll \texttt{EVAL}-uate the fully built-up continuation until we get a singular value. 
+
+\begin{tabular}{ll}
+\textbf{Continuation} & \textbf{Value}\\ \hline
+$\lambda r_3. (\lambda r_2. (\lambda r_1. (\lambda x. x) (r_1 + 1)) (r_2 + 2)) (r_3 + 3)$ & $0$ \\
+$\lambda r_2. (\lambda r_1. (\lambda x. x) (r_1 + 1)) (r_2 + 2)$ & $3$\\
+$\lambda r_1. (\lambda x. x) (r_1 + 1)$ & $5$ \\
+$\lambda x. x$ & $6$
+\end{tabular}
+
+Notice how we use the identity function \texttt{fun x -> x} to signify that \emph{nothing further needs to be done}. Using this, we can bundle \texttt{sum\_cps} into a single argument function that users don't need to explicitly pass a continuation to. 
 
 \begin{code}[Wrapping the \texttt{sum\_cps} function]
 \label{code:sum-cps-wrapped-ocaml}
@@ -145,11 +167,7 @@ let sum xs =
 \end{minted}
 \end{code}
 
-We pass in the identity \texttt{fun x -> x} in the initial call, because there is \emph{no additional work} to be done. 
-
-We'd like you to note two things at this point: first, that \emph{continuation passing style} has converted a non-tail recursive function into a tail-recursive one, as promised. 
-
-Second, the continuation \emph{exactly mirrors} the stack! Building up the continuation, using function composition, corresponds to pushing \emph{activation frames} onto the stack. Applying the continuation to a value corresponds to the \texttt{APPLY} step. The value is then successively transformed by the functions in the continuation. This is not a coincidence -- you can, and \emph{should}, think of the continuation as a \emph{functionalised stack}. 
+We'd like you to note two things: first, that cps has converted a non-tail recursive function into a tail-recursive one, as promised. Second, the continuation \emph{exactly mirrors} the stack! Building up the continuation, using function composition, corresponds to pushing \emph{activation frames} onto the stack. Applying the continuation to a value corresponds to the \texttt{APPLY} step. The value is then successively transformed by the functions in the continuation. This is not a coincidence -- you can, and \emph{should}, think of the continuation as a \emph{functionalised stack}. 
 
 \subsection{CPS transforming the fibonacci function}
 \begin{code}[A fibonacci function in \texttt{OCaml}]
@@ -297,7 +315,7 @@ let rec mul_cps xs k =
 
 But this is still not the most optimal, since we will have to go through the \emph{built-up} continuation \texttt{k}, which may be some non-zero sequence of multiplications, before returning. 
 
-However, since continuations are now explicit objects that we can manipulate, we can do something rather devious. Let's \emph{save} the continuation \emph{before} we do any multiplication, and call it \texttt{u}. If we reach a \texttt{0}, let's not apply the built up continuation \texttt{k}, but instead the saved continuation \texttt{u}.
+However, since continuations are now explicit objects that we can manipulate, let's \emph{save} the continuation \emph{before} we do any multiplication, and call it \texttt{u}. If we reach a \texttt{0}, let's not apply the built up continuation \texttt{k}, but instead the saved continuation \texttt{u}.
 
 \begin{code}[An even faster \texttt{OCaml} function that multiplies the elements of a list]
 \label{code:fib-ocaml-again}
@@ -363,7 +381,7 @@ end
 \end{code}
 
 \subsubsection{The CPS transform corresponds to a logical embedding$^{*}$}
-In \texttt{Haskell}, the way you work with continuations is by using two primitives, \texttt{callcc} (``call with current continuation'') and \texttt{throw}.\texttt{callcc} allows the programmer to \emph{name} the current continuation (call stack) and allows your code to reference that continuation. \texttt{throw} is a way of passing a value to a continuation. Fast multiplication with \texttt{callcc} and \texttt{throw} looks like
+In \texttt{Haskell}, the way you work with continuations is by using two primitives, \texttt{callcc} (``call with current continuation'') and \texttt{throw}. \texttt{callcc} allows the programmer to \emph{name} the current continuation (call stack) and allows your code to reference that continuation. \texttt{throw} is a way of passing a value to a continuation. Fast multiplication with \texttt{callcc} and \texttt{throw} looks like
 
 \begin{code}[Fast multiplication with \texttt{callcc} and \texttt{throw}]
 \label{code:mul-ocaml-callcc}
@@ -504,7 +522,7 @@ int g(int x) {
   return -x
 }
 
-int h(int x) {  (* Unreachable *)
+int h(int x) {  // Unreachable
   return x
 }
 \end{minted}
@@ -527,13 +545,13 @@ int g(int x) {
   return -x
 }
 
-int h(int x) {  (* Still unreachable *)
+int h(int x) {  // Still unreachable
   return x
 }
 \end{minted}
 \end{code}
 
-\texttt{h} is still unreachable, but figuring this out is now no longer trivial. Indirection makes analysis harder. This is a major theme in {\sffamily Part II Optimising Compilers}.
+\texttt{h} is still unreachable, but figuring this out is now no longer as easy. Indirection makes analysis harder. This is a major theme in {\sffamily Part II Optimising Compilers}.
 
 \subsection{Defunctionalising the CPS-transformed fibonacci function}
 Now that we've covered defunctionalisation as a technique, let's see how we can perform defunctionalisation on a CPS converted function, and how it helps us make the stack explicit.
@@ -541,11 +559,10 @@ Now that we've covered defunctionalisation as a technique, let's see how we can 
 \begin{code}[A CPS-transformed fibonacci function in \texttt{OCaml}]
 \label{code:defun-fib-0}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let rec fib_cps n k = 
-  match n with
-    | 0 -> k 1
-    | 1 -> k 1
-    | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
+let rec fib_cps n k = match n with
+  | 0 -> k 1
+  | 1 -> k 1
+  | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
 
 let fib_1 n = fib_cps n (fun x -> x)
 \end{minted}
@@ -617,9 +634,9 @@ We've gotten rid of higher order functions --- in doing so, we've turned a deepl
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 (K1(n1, K2(n2, ID)))
 \end{minted}
-We don't seem to have made much progress, but notice that the nesting now clearly has a list structure! We can treat \texttt{ID} as the empty list, and \emph{cons} on \texttt{K2} and \texttt{K1} as appropriate. That is, 
+We don't seem to have made much progress, but notice that the nesting now clearly has a list structure! We can treat \texttt{ID} as the empty list, and \emph{cons} of \texttt{K2} and \texttt{K1} as appropriate. That is, 
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-[K1(n1); K2(n2); ID]
+K1(n1) :: K2(n2) :: []
 \end{minted}
 
 While we're at it, let's give \texttt{K1} and \texttt{K2} more meaningful names. Let's call \texttt{K1} ``\texttt{SUB2}'' and \texttt{K2} ``\texttt{PLUS}''. 
@@ -651,9 +668,7 @@ And so we have our call stack, as described at the start of this chapter.
 We have our call stack, but we should do a couple of clean up steps before calling it a day. 
 
 \subsection{Mutual Recursion}
-One feature that we'd like to get rid of is \emph{mutual recursion} \texttt{apply\_tag\_list\_cont} will call \texttt{fib\_cps\_defun\_tags} and vice versa, so the two functions \textbf{have} to be defined together. 
-
-The good news is that eliminating mutual recursion is \emph{easy}, both conceptually and in practice. Let's see it in a simple setting first. Here are two mutually recursive functions that together, determine if a value is even or odd
+One feature that we'd like to get rid of is \emph{mutual recursion}. \texttt{apply\_tag\_list\_cont} will call \texttt{fib\_cps\_defun\_tags} and vice versa, so the two functions \textbf{have} to be defined together. Eliminating mutual recursion is \emph{easy}, both conceptually and in practice. Let's see it in a simple setting first. Here are two mutually recursive functions for determining the parity of a number.
 
 \begin{code}[A set of mutually recursive functions]
 \label{code:mutual-recursion}
@@ -663,7 +678,7 @@ and is_odd n = n <> 0 && is_even(n-1)
 \end{minted}
 \end{code}
 
-We'll convert this mutual recursion into single recursion by defining a single function, \texttt{is}, and a constructor, \texttt{eo}. We'll get the caller of the function to tell us explicitly if they want us to test for even-ness or odd-ness.
+We'll convert this mutual recursion into single recursion by defining a single function, \texttt{is}, and a constructor, \texttt{eo}.
 
 \begin{code}[Eliminating mutual recursion]
 \label{code:mutual-recursion}
@@ -679,6 +694,7 @@ let is f n =
 The abstract idea that we've shown in this concrete example is that we replace the \emph{two} functions with a single function (in this case replacing \texttt{is\_even} and \texttt{is\_odd} with \texttt{is}), and use a ``tag'' or ``index'' (in this case \texttt{f}) to parameterise the function behaviour.
 
 Applying this technique to our fibonacci function, we get
+
 \begin{code}[Eliminating mutual recursion for our fibonacci function]
 \label{code:defun-list-fib}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
