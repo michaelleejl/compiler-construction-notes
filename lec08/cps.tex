@@ -31,13 +31,13 @@ The goal of this chapter, therefore, is to \emph{take the training wheels off}: 
 \subsection{Roadmap}
 Taking off the training wheels may seem like a really daunting task. In this chapter, what we're going to do is gradually build up to a  a general strategy for doing so, by considering concrete, simple examples.
 
-First, we're going to examine \emph{what a call stack is}, in order to understand what it is that \texttt{OCaml} has given us for free, and what it is we'll need to construct if we want to build it on our own.
+First, in \Cref{section:call-stacks}, we're going to examine \emph{what a call stack is}, in order to understand what it is that \texttt{OCaml} has given us for free, and what it is we'll need to construct if we want to build it on our own.
 
-Second, we'll liberate ourselves from relying on the call stack. The main idea here is to convert a \emph{recursive} function to an \emph{tail-recursive} one. The \emph{continuation-passing style} transformation will give us such a technique.
+Second, in \Cref{section:cps-transform}, we'll liberate ourselves from relying on the call stack. The main idea here is to convert a \emph{recursive} function to an \emph{tail-recursive} one. The \emph{continuation-passing style} transformation will give us such a technique.
 
-Third, we'll see that CPS alone will end up giving us something that has the structure of a call stack, but is not \emph{quite} one. We'll turn it into something more stack like using \emph{defunctionalisation}. 
+Third, we'll see that CPS alone will end up giving us something that has the structure of a call stack, but is not \emph{quite} one. In \Cref{section:defunctionalisation}, we'll turn it into something more stack like using \emph{defunctionalisation}. 
 
-Finall, we'll perform some clean-up, eliminating \emph{mutual recursion} and then doing some refactoring. 
+Finall, in \Cref{section:clean-up}, we'll perform some clean-up, eliminating \emph{mutual recursion} and then doing some refactoring. 
 
 
 
@@ -69,12 +69,12 @@ That's exactly the purpose of the call stack --- we push an \emph{activation fra
 
 As we continue making calls, we'll push \texttt{ADD 2} and \texttt{ADD 3} onto the stack, at which point we hit the base case. Things start to change when we reach the base case -- at this point, we've fully \emph{unravelled} the computation into a sequence of activation frames. We know exactly what we need to do once we have a value, but we don't yet have a value. But luckily, we've hit the base case! So we can simply \emph{pass in} the value (in this case, \texttt{0}), using the \emph{remembered transformations} on the stack to transform the value. After this point, the stack only shrinks as we apply transformation after transformation.
 
-This is summarised graphically in \Cref{fig-sumstack}. It's an extremely important point: when we \emph{build} the stack, we are \emph{remembering what we need to do once we hit a base case}. Don't be fooled by the scary terminology -- p. Once we hit the base case, we simply \emph{unwind} the stack by using the remembered operations to transform our value.
+This is summarised graphically in \Cref{fig-sumstack}. It's an extremely important point: when we \emph{build} the stack, we are \emph{remembering what we need to do once we hit a base case}. Don't be fooled by the scary terminology. Once we hit the base case, we simply \emph{unwind} the stack by using the remembered operations to transform our value.
 
-\section{Continuation Passing Style}
-Continuation Passing Style (CPS) is a technique to convert any \emph{recursive} function into a \emph{tail-recursive} one.
+\section{Continuation Passing Style}\label{section:cps-transform}
+Our first step is to stop using the call stack, by converting recursive functions into tail recursive ones. Continuation Passing Style (CPS) provides us with a technique to convert any \emph{recursive} function into a \emph{tail-recursive} one. In \Cref{subsection:tailrecursion}, we'll first quickly recap tail recursion. In \Cref{subsection:cps-transform,subsection:cps-fib}, we'll use the \texttt{sum} and \texttt{fibonacci} functions to illustrate how to perform the CPS transform, and provide intuition as to what it does. Finally, in \Cref{subsection:cps-benefits} we'll look at benefits of the CPS transform beyond our very narrow setting.
 
-\subsection{Tail Recursion}
+\subsection{Tail Recursion}\label{subsection:tailrecursion}
 We'll quickly recap tail recursion, which was covered in {\sffamily Part IA Foundations of Computer Science}. To tell if a recursive function is tail recursive, just ask yourself: “Whenever I make a recursive call, do I need to do anything after the call returns?”
 
 If the answer is yes, then the function is \textbf{not} tail recursive. Hence, the \texttt{sum} function defined in \Cref{code:sum-ocaml} is not tail recursive, because the recursive expression is \texttt{x + sum xs}. Once the recursive call \texttt{sum xs} returns, there is still work to do in adding \texttt{x}.
@@ -93,7 +93,7 @@ let rec mem x xs =
 
 This is tail recursive because either \texttt{x == y}, in which case we can return true without having to perform the recursive call, or \texttt{x != y}, in which case we can perform the recursive call and simply return the result. 
 
-\subsection{CPS Transformation}
+\subsection{CPS Transformation}\label{subsection:cps-transform}
 Let's consider, once again the \texttt{sum} function defined in \Cref{code:sum-ocaml}. This is \emph{not} tail recursive, since once the recursive call terminates, we still have work to do! Specifically, we need to \texttt{ADD x} once the recursive call is done. 
 
 Let's describe this annoying ``extra work'' in a way that makes its nature more apparent. Rather than saying \texttt{x + sum xs}, we'll say \texttt{(fun res -> x + res) (sum xs)} (where \texttt{res} stands for result). Putting it together, 
@@ -170,25 +170,24 @@ let sum xs =
 We'd like you to note two things: first, that cps has converted a non-tail recursive function into a tail-recursive one, as promised. Second, the continuation \emph{exactly mirrors} the stack! Building up the continuation, using function composition, corresponds to pushing \emph{activation frames} onto the stack. Applying the continuation to a value corresponds to the \texttt{APPLY} step. The value is then successively transformed by the functions in the continuation. This is not a coincidence -- you can, and \emph{should}, think of the continuation as a \emph{functionalised stack}. 
 
 \subsection{CPS transforming the fibonacci function}
+\label{subsection:cps-fib}
 \begin{code}[A fibonacci function in \texttt{OCaml}]
 \label{code:fib-ocaml-again}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let rec fib n = 
-  match n with
-    | 0 -> 1
-    | 1 -> 1
-    | n -> fib n-1 + fib n-2
+let rec fib n = match n with
+  | 0 -> 1
+  | 1 -> 1
+  | n -> fib n-1 + fib n-2
 \end{minted}
 \end{code}
 
 \begin{code}[A CPS-transformed fibonacci function in \texttt{OCaml}]
 \label{code:fib-ocaml-again}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let rec fib_cps n k = 
-  match n with
-    | 0 -> k 1
-    | 1 -> k 1
-    | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
+let rec fib_cps n k = match n with
+  | 0 -> k 1
+  | 1 -> k 1
+  | n -> fib_cps n-1 (fun x -> fib_cps n-2 (fun y -> k (x + y)))
 \end{minted}
 \end{code}
 
@@ -215,7 +214,7 @@ fib n-1 (fun x -> fib n-2 (fun y -> k (x + y)))
 \end{minted}
 
 
-\subsection{The Wonderful World of Continuations}
+\subsection{Benefits of Continuations}\label{subsection:cps-benefits}
 Continuations are \emph{incredibly powerful}. Let's list their merits, and then dig through them in greater detail. Lots of the finer technical details here will be non-examinable, but the key ideas are!
 
 \subsubsection{Every call is a tail call}
@@ -281,10 +280,9 @@ First, fast multiplication of a list. Here's a standard way of multiplying the e
 \begin{code}[Multiplying the elements of a list in \texttt{OCaml}]
 \label{code:mul-ocaml}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let rec mul xs = 
-  match xs with
-    | [] -> 1
-    | x::xs -> x * mul xs
+let rec mul xs = match xs with
+  | [] -> 1
+  | x::xs -> x * mul xs
 \end{minted}
 \end{code}
 
@@ -293,10 +291,9 @@ Which we CPS-convert
 \begin{code}[A CPS-transformed function in \texttt{OCaml} that multiplies the elements of a list]
 \label{code:mul-ocaml-fast}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let rec mul_cps xs k = 
-  match xs with
-    | [] -> k 1
-    | x::xs -> mul_cps xs (fun res -> k (x * res))
+let rec mul_cps xs k = match xs with
+  | [] -> k 1
+  | x::xs -> mul_cps xs (fun res -> k (x * res))
 \end{minted}
 \end{code}
 
@@ -356,16 +353,12 @@ module AMB : sig
 end = struct
   (* Implementation *)
   exception AmbFail
-
-  (*Internal state*)
   let stack: int option cont list ref = ref []
   let fail () = match !stack with
     | [] -> raise AmbFail
     | k::ks -> let _ = stack := ks in (*Remove the last choice point*)
                throw k NONE (*Resume executing from the choice point*)
-  
   let assert b = if b then () else fail ()
-
   let amb xs = match xs with
     | [] -> raise AmbFail
     | x::xs -> let next k = 
@@ -380,7 +373,7 @@ end
 \end{minted}
 \end{code}
 
-\subsubsection{The CPS transform corresponds to a logical embedding$^{*}$}
+\subsection{The CPS transform as a logical embedding$^{*}$}
 In \texttt{Haskell}, the way you work with continuations is by using two primitives, \texttt{callcc} (``call with current continuation'') and \texttt{throw}. \texttt{callcc} allows the programmer to \emph{name} the current continuation (call stack) and allows your code to reference that continuation. \texttt{throw} is a way of passing a value to a continuation. Fast multiplication with \texttt{callcc} and \texttt{throw} looks like
 
 \begin{code}[Fast multiplication with \texttt{callcc} and \texttt{throw}]
@@ -415,17 +408,18 @@ Pierce's Law is an axiom of \emph{Classical Logic} but not of \emph{Constructive
     Every program either terminates or does not terminate.
 \end{center}
 
-In Classical Logic, we know factually, that this is true (and it is provable). In Constructive Logic, in order to prove this to be true, we need to produce an \emph{algorithm} that takes a program and tells us, for any program, if it terminates or does not terminate (which is undecidable, see {\sffamily Part IB Computation Theory}). It turns out that the only axiom you need to add to Constructive Logic to turn it into Classical Logic is Pierce's Law. 
+In Classical Logic, we know factually, that this is true (and it is provable). In Constructive Logic, in order to prove this to be true, we need to produce an \emph{algorithm} that takes a program and tells us, for any program, if it terminates or does not terminate (you can prove such an algorithm does not exist, see {\sffamily Part IB Computation Theory}). It turns out that the only axiom you need to add to Constructive Logic to turn it into Classical Logic is Pierce's Law. 
 
 The discovery that \texttt{callcc}'s type corresponded to Pierce's Law uncovered the \emph{logical} nature of CPS. In {\sffamily Part IB Semantics of Programming Languages}, you'll have touched on the \emph{Curry-Howard Correspondence} --- every concept in programming has a corresponding concept in logic. It turns out that the CPS transform corresponds to a way to \emph{logically embed} Classical Logic into Constructive Logic.
 
 All of this is non-examinable, but if you're interested, you can find out much more in {\sffamily Part II Types}.
 
-\section{Defunctionalisation}
-We've learnt about Continuation Passing Style and continuations, and seen that continuations, logically, \emph{are} call stacks. But this is a course on compilers, and it is not enough to logically \emph{be} the call stack. The biggest difference now is that we have a very high order function, called a continuation, and we want to turn it into a stack. 
+\section{Defunctionalisation}\label{section:defunctionalisation}
+We've seen that the CPS transformation produces continuations, that logically, \emph{are} call stacks. But this is a course on compilers, and it is not enough to logically \emph{be} the call stack. The biggest \emph{structural} difference now is that the continuation is a deeply nested, high-order function, and stacks are flat lists of commands. 
 
-\emph{Defunctionalisation} is a technique for getting rid of higher order functions. We'll apply it to a simple function first, and then apply it to our CPS transformed fibonacci function. 
+\emph{Defunctionalisation} is a technique for getting rid of higher order functions, and thus is exactly what we need in this scenario. We'll first illustrate the technique on simple \texttt{filter} function. Following this, in \Cref{subsection:defun-with-cps}, we'll show how to use defunctionalisation after CPS to produce a call stack with the right structure. Finally, in \Cref{subsection:defun-benefits}, we'll consider the benefits of defunctionalisation beyond our narrow setting.
 
+\subsection{Introducing Defunctionalisation}
 Let's consider the following \texttt{OCaml} function that filters a list.
 
 \begin{code}[An \texttt{OCaml} function for filtering a list]
@@ -492,69 +486,8 @@ let f l y = filter Lt_three l @ filter (Gt y) l (* CHANGED *)
 \end{minted}
 \end{code}
 
-\subsection{Benefits of Defunctionalisation}
-\subsubsection{No higher-order functions}
-Getting rid of higher order functions is useful because while higher order functions make code easier to \emph{write}, they make code harder to \emph{read} --- both for humans, and for machines. This is the main advantage: all other advantages are \emph{consequences} of this.
-
-\subsubsection{Every function is named}
-This is similar to how CPS transform forces you to name every intermediate result. 
-
-\subsubsection{All values are data}
-For example, one consequence is that all values are data --- since higher-order functions are the only way to get functions as values. This is \emph{extremely} useful for analysis, and thus optimisation. There are many uses, but one important one is that \emph{value equality} becomes a lot more straightforward. 
-
-As you will have learnt in {\sffamily Part IB Semantics of Programming Languages}, the problem with functions when it comes to equality is that function definitions are \emph{intensional} rather than \emph{extensional}. Basically, it means that the functions \texttt{fun x -> x + x} and \texttt{fun x -> 2 * x} are different, even though their \emph{graphs} are the same. This complication goes away when all values are data.
-
-\subsubsection{All control flow is first order}
-Another advantage (a consequence of the fact that there are no higher-order functions) is that all control flow is first order (i.e. there is no \emph{indirection}). This makes \emph{analysis} and therefore \emph{optimisation} significantly easier. For example, \emph{reachability analysis} can be used for unreachable procedure elimination. That is, in the following code, the function \texttt{h} is never called, and can therefore be removed to make the program smaller.
-
-\begin{code}[An example of unreachable procedure elimination in \texttt{C}]
-\label{code:unreachable-c}
-\begin{minted}[bgcolor=backcolour, linenos]{C}
-int main () {
-  return f (1)
-}
-
-int f(int x) {
-  return g(x) + 1
-}
-
-int g(int x) {
-  return -x
-}
-
-int h(int x) {  // Unreachable
-  return x
-}
-\end{minted}
-\end{code}
-
-The task of unreachable procedure elimination becomes a lot harder when control flow is not first order. For example,
-
-\begin{code}[Unreachable procedure elimination with function indirection in \texttt{C}]
-\label{code:unreachable-indirection-c}
-\begin{minted}[bgcolor=backcolour, linenos]{C}
-int main () {
-  return f(1, &g)
-}
-
-int f(int x, (*lambda)(int, int)) {
-  return lambda(x) + 1
-}
-
-int g(int x) {
-  return -x
-}
-
-int h(int x) {  // Still unreachable
-  return x
-}
-\end{minted}
-\end{code}
-
-\texttt{h} is still unreachable, but figuring this out is now no longer as easy. Indirection makes analysis harder. This is a major theme in {\sffamily Part II Optimising Compilers}.
-
-\subsection{Defunctionalising the CPS-transformed fibonacci function}
-Now that we've covered defunctionalisation as a technique, let's see how we can perform defunctionalisation on a CPS converted function, and how it helps us make the stack explicit.
+\subsection{Defunctionalising after CPS transform}\label{subsection:defun-with-cps}
+Now that we've covered defunctionalisation as a technique, let's see how we can perform defunctionalisation on a CPS converted function, and how it helps us make the stack explicit. Specifically, we'll use the CPS transformed \texttt{fibonacci} function.
 
 \begin{code}[A CPS-transformed fibonacci function in \texttt{OCaml}]
 \label{code:defun-fib-0}
@@ -664,10 +597,73 @@ let fib_3 n = fib_cps_defun_tags n []
 
 And so we have our call stack, as described at the start of this chapter.
 
-\section{Clean Up}
-We have our call stack, but we should do a couple of clean up steps before calling it a day. 
+\subsection{Benefits of Defunctionalisation}\label{subsection:defun-benefits}
+In this section, we'll consider the benefits of defunctionalisation beyond our very narrow use case.
 
-\subsection{Mutual Recursion}
+\subsubsection{No higher-order functions}
+Getting rid of higher order functions is useful because while higher order functions make code easier to \emph{write}, they make code harder to \emph{read} --- both for humans, and for machines. This is the main advantage: all other advantages are \emph{consequences} of this.
+
+\subsubsection{Every function is named}
+This is similar to how CPS transform forces you to name every intermediate result. 
+
+\subsubsection{All values are data}
+For example, one consequence is that all values are data --- since higher-order functions are the only way to get functions as values. This is \emph{extremely} useful for analysis, and thus optimisation. There are many uses, but one important one is that \emph{value equality} becomes a lot more straightforward. 
+
+As you will have learnt in {\sffamily Part IB Semantics of Programming Languages}, the problem with functions when it comes to equality is that function definitions are \emph{intensional} rather than \emph{extensional}. Basically, it means that the functions \texttt{fun x -> x + x} and \texttt{fun x -> 2 * x} are different, even though their \emph{graphs} are the same. This complication goes away when all values are data.
+
+\subsubsection{All control flow is first order}
+Another advantage (a consequence of the fact that there are no higher-order functions) is that all control flow is first order (i.e. there is no \emph{indirection}). This makes \emph{analysis} and therefore \emph{optimisation} significantly easier. For example, \emph{reachability analysis} can be used for unreachable procedure elimination. That is, in the following code, the function \texttt{h} is never called, and can therefore be removed to make the program smaller.
+
+\begin{code}[An example of unreachable procedure elimination in \texttt{C}]
+\label{code:unreachable-c}
+\begin{minted}[bgcolor=backcolour, linenos]{C}
+int main () {
+  return f (1)
+}
+
+int f(int x) {
+  return g(x) + 1
+}
+
+int g(int x) {
+  return -x
+}
+
+int h(int x) {  // Unreachable
+  return x
+}
+\end{minted}
+\end{code}
+
+The task of unreachable procedure elimination becomes a lot harder when control flow is not first order. For example,
+
+\begin{code}[Unreachable procedure elimination with function indirection in \texttt{C}]
+\label{code:unreachable-indirection-c}
+\begin{minted}[bgcolor=backcolour, linenos]{C}
+int main () {
+  return f(1, &g)
+}
+
+int f(int x, (*lambda)(int, int)) {
+  return lambda(x) + 1
+}
+
+int g(int x) {
+  return -x
+}
+
+int h(int x) {  // Still unreachable
+  return x
+}
+\end{minted}
+\end{code}
+
+\texttt{h} is still unreachable, but figuring this out is now no longer as easy. Indirection makes analysis harder. This is a major theme in {\sffamily Part II Optimising Compilers}.
+
+\section{Clean Up}\label{section:clean-up}
+We have our call stack, but we should do a couple of clean up steps before calling it a day. In \Cref{subsection:mutrec} we'll show how to eliminate mutual recursion, and in \Cref{subsection:refactoring} we'll perform a very simple refactoring to more cleanly separate concerns across functions.
+
+\subsection{Mutual Recursion}\label{subsection:mutrec}
 One feature that we'd like to get rid of is \emph{mutual recursion}. \texttt{apply\_tag\_list\_cont} will call \texttt{fib\_cps\_defun\_tags} and vice versa, so the two functions \textbf{have} to be defined together. Eliminating mutual recursion is \emph{easy}, both conceptually and in practice. Let's see it in a simple setting first. Here are two mutually recursive functions for determining the parity of a number.
 
 \begin{code}[A set of mutually recursive functions]
@@ -713,7 +709,8 @@ let fib_4 n = eval (FIB, n, [])
 \end{minted}
 \end{code}
 
-\subsection{Refactoring}
+
+\subsection{Refactoring}\label{subsection:refactoring}
 Finally, \texttt{eval} is slightly clunky because it's a big function that calls itself recursively, but also has a lot of cases. Ideally, we want a function to either be a large pattern match or call itself recursively. We can do this by using a simple refactoring. 
 
 \begin{code}[Refactoring our fibonacci function]
@@ -734,6 +731,7 @@ let rec driver = function
 let fib_5 n = driver (FIB, n, [])
 \end{minted}
 \end{code}
+
 
 \section{Recap}
 Let's end the chapter by considering where we started, and where we ended. We started with a bog-standard fibonacci function, applied CPS transformation and defunctionalisation, and then eliminated mutual recursion and performed some refactoring. In doing so, we transformed plain, bog-standard \texttt{OCaml} code into something where an explicit list acts like the call stacks we described in \Cref{section:call-stacks}.

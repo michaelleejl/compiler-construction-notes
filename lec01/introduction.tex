@@ -314,6 +314,7 @@ As shown in \Cref{fig:compiler-structure}, a compiler can be divided into three 
     \textbf{\sffamily Front-End}
 \end{minipage}%
 \begin{minipage}[t]{0.85\textwidth}
+    \setlength{\parskip}{.5\baselineskip}
     The Front-End takes in code written by the user, and produces an annotated abstract syntax tree. Its role is threefold: first, to \emph{recover meaning}, second, to perform error-checking, and third, to \emph{discover types}.
 
     By ``recover meaning'', consider a source program such as the fibonacci function in \Cref{code:fib-ocaml}. When we read the code, we are \emph{implicitly} leveraging two types of structure: a \emph{syntactic} structure and a \emph{semantic} structure.
@@ -327,46 +328,41 @@ As shown in \Cref{fig:compiler-structure}, a compiler can be divided into three 
     The second important role of the front-end is error-checking. As one can see in \Cref{fig:frontend-label}, while all the errors that a compiler complains about \emph{look} the same, there are actually three distinct types of error that are caught in three different places. 
 
     The first type of error is an error of lexing. An example of such an error would be if you forget closing quotes, for example
-
-\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+\begin{minted}[bgcolor=backcolour]{ocaml}
 let string = "String
 \end{minted}
-    
     The second type of error is an error of parsing. There is nothing stopping you, as the programmer, from writing something silly like 
-
-\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+\begin{minted}[bgcolor=backcolour]{ocaml}
 let fibonacci x rec
 \end{minted}
-
     Which of course, is totally of the wrong shape and has no meaning. 
-
-    The third type of error is an error of typing, for example
-
-\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let f (x: int) = if x then 3 else 5
-\end{minted}
-
 \end{minipage}
 
 \begin{minipage}[t]{0.15\textwidth}
 \textbf{\sffamily Front-End} \textit{\sffamily (cont.)}    
 \end{minipage}%
-\begin{minipage}[t]{0.85\textwidth}    
-
+\begin{minipage}[t]{0.85\textwidth}
+    \setlength{\parskip}{.5\baselineskip}
+    The third type of error is an error of typing, for example
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let f (x: int) = if x then 3 else 5
+\end{minted}
     By checking for errors, the front-end is responsible for ensuring only \emph{meaningful} expressions are allowed to pass to the middle-end. This is important --- as we'll see, the middle and back-end will transform the source program into something completely unrecognisable, so error-detection at this stage will be nearly useless from a debugging point of view.
 
-    The final responsibility of the front-end is to look at the abstract syntax tree and discover types at each of the nodes. This overlaps a little with error detection, but is useful in its own right. Modern day compilers can leverage type information in order to generate efficient code.
+    The final responsibility of the front-end is to look at the abstract syntax tree and discover types at each of the nodes. This overlaps a little with error detection, but is useful in its own right. Modern day compilers can leverage type information in order to generate efficient code. \strut
 \end{minipage}
 
 \begin{minipage}[t]{0.15\textwidth}
 \textbf{\sffamily Middle-End}    
 \end{minipage}%
-\begin{minipage}[t]{0.85\textwidth}    
-    The role of the Middle-End is twofold. 
+\begin{minipage}[t]{0.85\textwidth}
+    \setlength{\parskip}{.5\baselineskip}
+    
+    The role of the Middle-End is twofold.
 
-    The first is to take the annotated AST and transform it into a re-targetable representation, or an intermediate representation. Examples of such representations include the \texttt{Java Bytecode}, the \texttt{Jargon VM} (which we'll be compiling down to in this course) and \texttt{3 Address Code} ({\sffamily Part II Optimising Compilers}). In a hand-wavy way, you can think of these re-targetable or intermediate representations as the intersection of the capabilities of all the different machines --- \texttt{ARM}, \texttt{x86}, and more. 
+    The first is to take the annotated AST and transform it into a re-targetable representation, or an intermediate representation. Examples of such representations include the \texttt{Java Bytecode}, the \texttt{Jargon VM} (which we'll be compiling down to in this course) and \texttt{3 Address Code} ({\sffamily Part II Optimising Compilers}). In a hand-wavy way, you can think of these re-targetable or intermediate representations as the intersection of the capabilities of all the different machines --- \texttt{ARM}, \texttt{x86}, and more.
 
-    The second role of the middle-end is to apply as many ``generic'' optimisations as possible. A \emph{generic optimisation} is one that is not specific to a machine. To make this even clearer, we will give some examples and some non-examples. 
+    The second role of the middle-end is to apply as many ``generic'' optimisations as possible. A \emph{generic optimisation} is one that is not specific to a machine. To make this even clearer, we will give some examples. 
 
     \textbf{Example 1: Unreachable Code Elimination.} Assume you had a \texttt{C} function
 
@@ -376,7 +372,6 @@ int f(int x) {
    x + 1; // unreachable
 }
     \end{minted}
-
     It is always safe to delete the line after the \texttt{return} statement. 
 
     \textbf{Example 2: Dead Code Elimination.} Assume once again a \texttt{C} function
@@ -387,22 +382,50 @@ int f(int x) {
    // some code which never uses y
 }
     \end{minted}
-
     Given that \texttt{y} is never used, assuming the expression on the right hand side of the assignment does not have any side-effects, it is safe to delete.
-    
-    \textbf{Non-Example: Register Allocation.} There is a trivial way to allocate registers: allocate each variable to its own register, and spill (push to memory) all variables which cannot be allocated a register. This is non-optimal. More optimal strategies are based on \textit{live variable analysis} and \textit{graph colouring} (see {\sffamily Part II Optimising Compilers} for details), but clearly this depends on the number of registers available in the target machine, and whether they are \emph{orthogonal} or if we have some special purpose registers.
 
 \end{minipage}
 
 \begin{minipage}[t]{0.15\textwidth}
 \textbf{\sffamily Back-End}    
 \end{minipage}%
-\begin{minipage}[t]{0.85\textwidth}    
+\begin{minipage}[t]{0.85\textwidth}
+    \setlength{\parskip}{.5\baselineskip}
     The role of the Backend-End is twofold. 
 
     The first is to take the intermediate representation and target it to the specific machine. 
 
-    The second is to apply machine-dependent optimisations. 
+    The second is to apply machine-dependent optimisations. Here are two examples of machine-dependent optimisations.
+        
 \end{minipage}
 
-Note that some compilers, like \texttt{gcc}, allow the programmer to describe how much time and effort the Middle and Back-Ends spend on optimisation. You might have seen this in {\sffamily Part IB C and C++}, where you played with \texttt{gcc}'s different optimisation flags.
+\begin{minipage}[t]{0.15\textwidth}
+\textbf{\sffamily Back-End} \textit{\sffamily (cont.)}    
+\end{minipage}%
+\begin{minipage}[t]{0.85\textwidth}
+    \setlength{\parskip}{.5\baselineskip}
+    \textbf{Example 1: Register Allocation.} Assume that, in the intermediate representation, you have eighteen variables but the processor only has sixteen registers in its ISA (note that because we need to know how many registers we have in the ISA, this is a back-end optimisation). What is the best way to allocate the variables to the registers? Is it possible for variables to share a register? What if certain registers \emph{have} to be used for certain purposes --- for example, let's say register 1 is used for the return values of functions, and addition will always use the values in registers 2 and 3. How do you optimise register allocation in these cases? In {\sffamily Part II Optimising Compilers}, you'll learn techniques based on \emph{graph colouring}.
+    
+    \textbf{Example 2: Instruction Scheduling.} As you'll have learnt in {\sffamily Part IB Computer Architecture}, loads can introduce load-to-use data dependencies and thus stalls. \textit{Load hoisting} can solve the problem, by scheduling loads to run as early as possible. This illustrates a general trend --- try to execute ``slow'' instructions as eagerly as possible, before their results are needed. To do this, we need knowledge of which instructions are slow and which are fast, and this is obviously dependent on the processor.
+\end{minipage}
+
+\section{Compile Time Efficiency$^{*}$}
+At this point, it is important to make explicit two \emph{different} efficiencies that we care about, which we'll call the compile-time and run-time efficiencies.
+
+When we speak about the \emph{compile-time} efficiency, we're talking about the time it takes for the \emph{compiler} to run. In contrast, the \emph{run-time} efficiency refers to the time it takes for the \emph{compiled program} to run.
+
+In general, there is a tension between the two. If we try and do more analysis and more optimisation, we can produce a compiled program that runs faster, but at the expense of longer compile times. If we aim for shorter compile times, we may produce programs that are less efficient at run-time.
+
+You might have seen this in {\sffamily Part IB C and C++}, where you played with \texttt{gcc}'s different optimisation flags. Compiling a program with flag \texttt{-o3} will result in longer compilation times but in general faster programs than compiling with flag \texttt{-o1}.
+
+It may not seem obvious that compile-time efficiency can be as important as run-time efficiency. This is very clearly seen in Data Science. Many data scientists prefer to use languages that are directly interpreted, without any compilation phase, like \texttt{Python} or \texttt{R}. The reason for this is that data scientists often require \emph{very tight feedback loops} --- they can tweak a hypothesis and immediately run it on inputs. While the program might take more time to \emph{complete}, the response time --- the time to the \emph{first} result --- is shorter. 
+
+This leads to a general principle: the degree of \emph{interactivity} needed is the key factor deciding how important the compilation time is. \citet{nielsen-1993} describes three thresholds:
+
+\begin{enumerate}
+    \item \textbf{Instantaneity Threshold}: $0.1$ seconds. The time budget for programs to feel like they're reacting instantaneously to user actions. 
+    \item \textbf{Interactivity Threshold}: $1$ second. The time budget for keeping the user's \emph{train of thought} uninterrupted.
+    \item \textbf{Attention Threshold}: $10$ seconds. The time budget for keeping the user's attention focused on the task at hand.
+\end{enumerate}
+
+While this is not examinable, it could present an interesting dimension (and indeed, one far too often overlooked) when evaluating a compiler --- perhaps one you'll build/extend for your Part II project.
