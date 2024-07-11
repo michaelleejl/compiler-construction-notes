@@ -537,37 +537,42 @@ Thus collapsing the two cases into one.
 If you squint a little, you might be able to see that this looks a lot like differentiation (see $\lor$ as $+$ and $\cdot$ as $\times$) --- hence why it is called a ``derivative''.
 
 \subsubsection{Derivatives and DFAs}
-The notion of such a derivative allows us to automatically tag each state of a DFA with the regular expression it accepts. (This becomes especially obvious when you consider the proof of \Cref{thm:closure-differentiation}). We shall illustrate this using an example. Consider a DFA corresponding to the expression $(b \lor c)(b\lor c)\*$. It looks like this
+The notion of such a derivative allows us to automatically generate tagged DFAs. The tag, in this case, is the regular expression whose language is accepted, treating that state as the start state (This becomes especially obvious when you consider the proof of \Cref{thm:closure-differentiation}). We shall illustrate this using an example. 
+
+Assume we have an alphabet $\Sigma = \{ b, c\}$, and we want to generate a DFA corresponding to the expression $(b \lor c)(b\lor c)\*$. We begin with the start state, which we tag with the regular expression. 
 
 \begin{center}
     \import{figures/derivatives}{lex-with-deriv-1}
 \end{center}
 
-We know what regular expression this DFA corresponds to, so we can tag the start state with it
-
-\begin{center}
-    \import{figures/derivatives}{lex-with-deriv-2}
-\end{center}
-
-Using the rules defined previously, we can state that 
+Given that this is a DFA, we need to specify transitions for $b$ and $c$. Using the rules for derivatives defined previously, we can state that 
 \begin{align*}
     \partial_b (b \lor c)(b \lor c)\* = (b \lor c)\*\\
     \partial_c (b \lor c)(b \lor c)\* = (b \lor c)\*
 \end{align*}
-This allows us to tag state \textit{2} with the regular expression it accepts.
+Which allows us to extend the DFA as follows
 
 \begin{center}
-    \import{figures/derivatives}{lex-with-deriv-3}
+    \import{figures/derivatives}{lex-with-deriv-2}
 \end{center}
+Note that this state is an accepting state because $\epsilon \in L((b \lor c)\*)$. 
 
-Indeed, you can verify that this is consistent, that is
+Repeating this process, we need to define transitions corresponding to seeing $b$ and $c$ in this new state. Once again, we turn to derivatives:
 \begin{align*}
     \partial_b (b \lor c)\* = (b \lor c)\*\\
     \partial_c (b \lor c)\* = (b \lor c)\*
 \end{align*}
 
+Adding these transitions into the DFA, we realise we have added no new states, so we must be done.
+
+\begin{center}
+    \import{figures/derivatives}{lex-with-deriv-3}
+\end{center}
+
+Derivatives thus give us a way of directly creating tagged DFAs.
+
 \subsubsection{Derivative-Based Lexing}
-Armed with this strategy, we can use derivatives to create tagged DFAs in a much more direct way --- tag the start state with a \emph{vector} of regular expressions, ordered by priority. Propagate these tags to the other states by performing element/point-wise differentiation in exactly the method shown above. 
+Lexing is only \emph{slightly} more complicated by the fact that we have a list of regular expressions, ordered by priority. Hence, we begin with a \emph{vector} of regular expressions, ordered by priority. We create new states by performing element/point-wise differentiation in exactly the method shown above. 
 
 A state is accepting if \textit{any} of the regular expressions in its tag vector accepts the empty string $\epsilon$. If there are multiple such regular expressions, use the order to break ties via priority.
 

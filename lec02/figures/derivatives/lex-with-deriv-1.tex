@@ -1,8 +1,8 @@
 \begin{center}
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.5cm,xscale=0.8,yscale=0.8]
-  \node[initial,rectangular state,minimum size=20pt,inner sep=3pt] (plus)      { \small \textit{1} };
-  \node[rectangular state,accepting,minimum size=20pt,inner sep=3pt]   (star) [right of=plus]  { \small \textit{2}  };
-  \path[->]         (plus)  edge node[above] { \small b } node[below] { \small c } (star);
-  \path[->]          (star) edge [loop right] node {\parbox{0.5cm}{\small b\\c}} (star);
+  \node[initial,rectangular state,minimum size=20pt,inner sep=3pt] (plus)      { \small $(b \lor c)(b \lor c)*$};
+  % \node[rectangular state,accepting,minimum size=20pt,inner sep=3pt]   (star) [right of=plus]  { \small $(b \lor c)\*$  };
+  % \path[->]         (plus)  edge node[above] { \small b } node[below] { \small c } (star);
+  % \path[->]          (star) edge [loop right] node {\parbox{0.5cm}{\small b\\c}} (star);
 \end{tikzpicture}
 \end{center}
