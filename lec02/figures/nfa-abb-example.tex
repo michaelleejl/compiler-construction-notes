@@ -1,0 +1,21 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=1.5cm]
+  %% (a + b)*
+\node[state] (aplusb-star-start)                                           { \scriptsize\itshape 1 };
+\node[] (abb1)[below = 1mm of aplusb-star-start]{\scriptsize abb};
+ \node[state] (aplusb-star-end)                 [right of=aplusb-star-start] {\scriptsize\itshape 8  };
+ \node[] (abb2)[below = 1mm of aplusb-star-end]{\scriptsize abb};
+\node[state] (b-aplusb-star-a-end) [right of=aplusb-star-end] { \scriptsize\itshape 9 };
+\node[] (bb)[below = 1mm of b-aplusb-star-a-end]{\scriptsize bb};
+\node[state] (b-aplusb-star-ab-end) [right of=b-aplusb-star-a-end] { \scriptsize\itshape 10 };
+\node[] (bb)[below = 1mm of b-aplusb-star-ab-end]{\scriptsize b};
+\node[state,accepting] (b-aplusb-star-abb-end) [right of=b-aplusb-star-ab-end] { \scriptsize\itshape 11 };
+\node[] (bb)[below = 1mm of b-aplusb-star-abb-end]{\scriptsize $\epsilon$};
+
+
+
+\path[->]         (aplusb-star-start)  edge node {$\epsilon$} (aplusb-star-end) ;
+\path[->] (aplusb-star-end) edge node {a}  (b-aplusb-star-a-end);
+\path[->] (b-aplusb-star-a-end) edge node {b} (b-aplusb-star-ab-end) ;
+\path[->] (b-aplusb-star-ab-end) edge node {b} (b-aplusb-star-abb-end) ;
+
+\end{tikzpicture}

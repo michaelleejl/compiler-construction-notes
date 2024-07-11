@@ -1,0 +1,14 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=0.2cm and 0.7cm]
+
+\node[state] (two_if){ \scriptsize\itshape 2};
+\node(two_if_tag) [right = 0.1cm of two_if]{ {\textcolor{highlight}{\small\textsc{if}}}};
+
+\node[state, accepting] (two_ident) [below = of two_if]{ \scriptsize\itshape 2};
+\node(two_ident_tag) [right = 0.1cm of two_ident]{ {\textcolor{highlight}{\small\textsc{ident}\;\texttt{s}}}};
+
+\node[draw,darkest,opacity=0.3,rounded corners,minimum width=3.4cm,minimum height=3.3cm,anchor=north west,fill=darkest,fill opacity=0.02,text opacity=1.0]
+   at ($(two_if.north west) + (-0.5,0.8)$) { };
+
+\node[rectangular state,accepting, fill=white] (two) at ($(two_if.north) + (0.85, 0.6)$) { \scriptsize\itshape 2:\textsc{ident} };
+
+\end{tikzpicture}

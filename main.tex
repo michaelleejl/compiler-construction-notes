@@ -40,8 +40,8 @@
 \definecolor{codeteal}{HTML}{ca6702}
 \definecolor{codepurple}{HTML}{005f73}
 \definecolor{backcolour}{HTML}{F8F8FB}
+\definecolor{background}{HTML}{F0F0F4}
 
-\definecolor{background}{HTML}{E9EDF0}
 \definecolor{grey}{gray}{0.5}
 \definecolor{lightgrey}{gray}{0.9}
 \definecolor{verylightgrey}{rgb}{0.96,0.96,0.965}
@@ -49,6 +49,10 @@
 \renewcommand*{\tabularx}{\rowcolors{1}{}{white}\oldtabularx}
 
 \usepackage{makecell}
+\usetikzlibrary{intersections}
+\usetikzlibrary{bending,shapes,backgrounds,patterns,shapes.misc}
+\usetikzlibrary{positioning,arrows,automata,arrows.meta,calc}
+\tikzset{rectangular state/.style={draw,rectangle,rounded corners}}
 \renewcommand\theadfont{\bfseries}
 \tcbuselibrary{hooks}
 
@@ -180,6 +184,37 @@
 \usepackage{inconsolata}
 % \newenvironment{code}{\captionsetup{type=listing}}{}
 \usepackage[section, newfloat]{minted}
+\usepackage{listings}
+\lstdefinestyle{manual}{
+  basicstyle=\linespread{0.88}\ttfamily,
+  escapeinside=!!
+}
+\lstdefinelanguage{OCaml}{
+  keywords={
+    and,as,assert,asr,begin,class,constraint,do,done,downto,effect,else,end,exception,
+    external,false,for,fun,function,functor,if,implicit,in,include,inherit,initializer,
+    land,lazy,let,lor,lsl,lsr,lxor,macro,match,method,mod,module,mutable,new,object,
+    of,open,or,private,rec,sig,struct,then,to,true,try,type,val,virtual,when,
+    with,while},
+  comment=[s]{(*}{*)},
+}
+
+\lstdefinestyle{ocaml}{
+  language=OCaml,
+  basicstyle=\linespread{0.88}\scriptsize\ttfamily\codecolor,
+  commentstyle=\color{darkpurple},
+  keywordstyle=\color{darkred}\sffamily,
+  showstringspaces=false,
+  mathescape=true,
+  escapeinside=!!
+}
+
+\lstdefinestyle{pseudocode}{
+  basicstyle=\ttfamily,
+  escapeinside=!!,
+  backgroundcolor=\color{backcolour}
+}
+
 % \SetupFloatingEnvironment{listing}{name=Source Code}
 
 \newcounter{codeCounter}[section]
@@ -205,6 +240,9 @@
 \setkomafont{chapterprefix}{\Large}
 \setlength{\footnotemargin}{2mm}
 
+
+\definecolor{darkred}{HTML}{linkcolor}
+\definecolor{darkest}{HTML}{grey}
 \begin{document}
 
 \usetikzlibrary{arrows}

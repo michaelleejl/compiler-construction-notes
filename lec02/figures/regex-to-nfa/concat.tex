@@ -1,0 +1,14 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2cm]
+\node[state,darkred]           (q0)               {  };
+\node[state,darkred] (q1) [right of=q0] { };
+\node[state,accepting,darkred] (q2) [right of=q1] { };
+
+\node[darkred] (ne1) at ($(q0)!0.5!(q1)$) { \scriptsize $N(e_1)$ };
+\node[darkred] (ne1) at ($(q1)!0.5!(q2)$) { \scriptsize $N(e_2)$ };
+
+\draw[dotted,darkred,rounded corners] ($(q0.south west) + (-0.2,-0.2)$) rectangle ($(q1.north east) + (0.2,0.2)$) ;
+\draw[dotted,darkred,rounded corners] ($(q1.south west) + (-0.2,-0.4)$) rectangle ($(q2.north east) + (0.2,0.4)$) ;
+\draw[dotted,rounded corners] ($(q0.south west) + (-0.4,-0.6)$) rectangle ($(q2.north east) + (0.4,0.6)$) ;
+
+\node[anchor=east] at (q0.west) { $N({\color{darkred}e_1e_2}) \quad=\quad$};
+\end{tikzpicture}

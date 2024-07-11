@@ -1,0 +1,40 @@
+\begin{tikzpicture}
+
+\node (tuple) {$\langle Q,\Sigma,\delta,q_0,F \rangle$};
+
+\node[anchor=east] at (tuple.west) {$M =$};
+
+\node[anchor=south east] (Q) at ($(tuple.north west) + (-0.5,1)$) { states $Q$ };
+\node[anchor=north east] (Sigma) at ($(tuple.south west) + (-0.5,-1)$) { alphabet $\Sigma$ };
+
+\node[anchor=south west] (q0) at ($(tuple.north east) + (0.5,1)$) { start state $q_0 \in Q$ };
+\node[anchor=north west] (F) at ($(tuple.south east) + (0.5,-1)$) { final states $F \subseteq Q$ };
+
+\node[anchor=north west] (dfa-delta) at ($(tuple.south) + (0,-2)$) { \small
+\begin{tabular}{l}
+  For DFAs: \\
+  (\redbf{deterministic}) \\
+$\forall q \in Q$ \\
+$\quad \forall a \in \Sigma$  \\
+$\qquad  \delta(q,a) \in Q$  \\
+\end{tabular}
+};
+\node[anchor=north east] (nfa-delta) at ($(tuple.south) + (0,-2)$) { \small
+\begin{tabular}{l}
+For NFAs: \\
+(\redbf{nondeterministic})\\
+$\forall q \in Q$ \\
+$\quad \forall a \in (\Sigma \cup \{\epsilon\})$ \\
+$\qquad  \delta(q,a) \subseteq Q$ \\
+\end{tabular}
+};
+
+\draw[darkred,->] (Q.south east) to[out=-45,in=90] ($(tuple.north west) + (2.5ex,-0.5ex)$);
+\draw[darkred,->] (Sigma.north east) to[out=45,in=-90] ($(tuple.south west) + (5ex,0.5ex)$);
+\draw[darkred,->] (q0.south west) to[out=-135,in=90] ($(tuple.north east) + (-5ex,-0.5ex)$);
+\draw[darkred,->] (F.north west) to[out=135,in=-90] ($(tuple.south east) + (-2.5ex,0.5ex)$);
+
+\draw[darkred,->] (nfa-delta.north) to[out=45,in=-90] ($(tuple.south) + (-0.2ex,0.5ex)$);
+\draw[darkred,->] (dfa-delta.north) to[out=135,in=-90] ($(tuple.south) + (0.2ex,0.5ex)$);
+
+\end{tikzpicture}

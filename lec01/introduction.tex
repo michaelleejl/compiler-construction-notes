@@ -147,7 +147,7 @@ In some sense, therefore, a compiler is like that one friend who is an utter gen
     \item Design programming languages, understanding how compilers work will help you better weigh the consequences of design decisions. 
     \item Design processors, the vast majority of the code you'll be running won't be written directly by a person, but instead compiled by a compiler, and you'll have to figure out whether your design decisions can be exploited by a compiler effectively
     \item Design algorithms, those algorithms will have to be translated --- how can you have confidence the compiler can take advantage of your novel techniques?
-    \item Evaluate security of systems and processes, you will need to consider the compiler as a possible attack surface, and potentially a way to intelligently build smart protection mechanisms (see \texttt{Rust}, for example)
+    \item Evaluate security of systems and processes, you will need to consider the compiler as a possible attack surface.
 \end{enumerate}
 
 \subsection{Why build compilers?}
@@ -260,7 +260,7 @@ Its merits are hard to see in this trivial example, but it is used widely in com
 
 Which we will actually use to implement \texttt{while} function! {\sffamily Part II Denotational Semantics} will introduce another way to give a semantics to \texttt{while} \footnote{the \emph{Kleene-Tarski fixed-point theorem}}, and indeed this is \emph{another} way of implementing \texttt{while}.
 
-\textbf{Compilers are a Computer Science success story.} Compilers have been around nearly as long as computers themselves, and people have been constantly researching them since they were invented. This means that, unlike \emph{some} other inventions attributed to us as computer scientists, compilers are something we can be proud of --- we generally understand what it means to be a good compiler, what techniques are used in the building of a good compiler, and give guarantees of correctness. It's also still a fast moving field, with lots of exciting research (which we'll hope to give pointers to throughout the course).
+\textbf{Compilers are a Computer Science success story.} Compilers have been around nearly as long as computers themselves, and people have been constantly researching them since they were invented. This means that, unlike \emph{some} other inventions attributed to us as computer scientists, compilers are something we can be proud of --- we generally understand what it means to be a good compiler, what techniques are used in the building of a good compiler, and we're able to give guarantees of correctness. It's also still a fast moving field, with lots of exciting research (which we'll hope to give pointers to throughout the course).
 
 \textbf{Compilers involve self-application.} Compilers process (analyse and transform) programs, but they are \emph{themselves} programs, and so can analyse and transform not only other compilers, but themselves. 
 
@@ -296,7 +296,7 @@ We'll now consider, at a high level, the structure of any compiler.
 
 \begin{figure}[h]
     \centering
-    \import{}{compiler-structure}
+    \import{figures}{compiler-structure}
     \caption{High Level Structure of a compiler}
     \label{fig:compiler-structure}
 \end{figure}
@@ -305,7 +305,7 @@ As shown in \Cref{fig:compiler-structure}, a compiler can be divided into three 
 
 \begin{figure}[h]
     \centering
-    \import{}{frontend-structure}
+    \import{figures}{frontend-structure}
     \caption{The structure of the Front-End of a compiler}
     \label{fig:frontend-label}
 \end{figure}

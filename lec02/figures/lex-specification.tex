@@ -1,0 +1,68 @@
+\begin{tikzpicture}[xscale=3.5]
+\draw (0,0) -- (4.4,0);
+
+\node[anchor=south] at (0.1,0) { \small\texttt{i}};
+\node[anchor=south] at (0.3,0) { \small\texttt{f}};
+\node[anchor=south] at (0.5,0) { \small\texttt{ }};
+\node[anchor=south] at (0.7,0) { \small\texttt{a}};
+\node[anchor=south] at (0.9,0) { \small\texttt{ }};
+\node[anchor=south] at (1.1,0) { \small\texttt{=}};
+\node[anchor=south] at (1.3,0) { \small\texttt{ }};
+\node[anchor=south] at (1.5,0) { \small\texttt{3}};
+\node[anchor=south] at (1.7,0) { \small\texttt{\textbackslash{n}}};
+\node[anchor=south] at (1.9,0) { \small\texttt{t}};
+\node[anchor=south] at (2.1,0) { \small\texttt{h}};
+\node[anchor=south] at (2.3,0) { \small\texttt{e}};
+\node[anchor=south] at (2.5,0) { \small\texttt{n}};
+\node[anchor=south] at (2.7,0) { \small\texttt{ }};
+\node[anchor=south] at (2.9,0) { \small\texttt{b}};
+\node[anchor=south] at (3.1,0) { \small\texttt{ }};
+\node[anchor=south] at (3.3,0) { \small\texttt{e}};
+\node[anchor=south] at (3.5,0) { \small\texttt{l}};
+\node[anchor=south] at (3.7,0) { \small\texttt{s}};
+\node[anchor=south] at (3.9,0) { \small\texttt{e}};
+\node[anchor=south] at (4.1,0) { \small\texttt{ }};
+\node[anchor=south] at (4.3,0) { \small\texttt{c}};
+
+\draw[darkred,thick,dotted] (0.0,0.5) -- ++(0.0,0.2) -- ++(4.4,0,0) -- ++(0.0,-0.2);
+\node[fill=background] at (2.4,0.7) { \color{darkred}\scriptsize \textsf{characters} };
+
+\draw[darkred,thick,dotted] (0.0, -2) -- ++(0.0,-0.2) -- ++(4.4,0,0) -- ++(0.0,0.2);
+\node[fill=background] at (2.4,-2.2) { \color{darkred}\scriptsize \textsf{tokens} };
+
+\begin{scope}[darkest,opacity=0.5]
+\draw (0.0, 0) -- (0.0, 0.3);
+\draw (0.2, 0) -- (0.2, 0.3);
+\draw (0.4, 0) -- (0.4, 0.3);
+\draw (0.6, 0) -- (0.6, 0.3);
+\draw (0.8, 0) -- (0.8, 0.3);
+\draw (1.0, 0) -- (1.0, 0.3);
+\draw (1.2, 0) -- (1.2, 0.3);
+\draw (1.4, 0) -- (1.4, 0.3);
+\draw (1.6, 0) -- (1.6, 0.3);
+\draw (1.8, 0) -- (1.8, 0.3);
+\draw (2.0, 0) -- (2.0, 0.3);
+\draw (2.2, 0) -- (2.2, 0.3);
+\draw (2.4, 0) -- (2.4, 0.3);
+\draw (2.6, 0) -- (2.6, 0.3);
+\draw (2.8, 0) -- (2.8, 0.3);
+\draw (3.0, 0) -- (3.0, 0.3);
+\draw (3.2, 0) -- (3.2, 0.3);
+\draw (3.4, 0) -- (3.4, 0.3);
+\draw (3.6, 0) -- (3.6, 0.3);
+\draw (3.8, 0) -- (3.8, 0.3);
+\draw (4.0, 0) -- (4.0, 0.3);
+\draw (4.2, 0) -- (4.2, 0.3);
+\draw (4.4, 0) -- (4.4, 0.3);
+\end{scope}
+
+\node[anchor=east,rotate=90] at (0.1, 0) { \small{\textsc{if}}};
+\node[anchor=east,rotate=90] at (0.7, 0) { \small{\textsc{ident} "a"}};
+\node[anchor=east,rotate=90] at (1.1, 0) { \small\textsc{equal}};
+\node[anchor=east,rotate=90] at (1.5, 0) { \small{\textsc{int} "3"}};
+\node[anchor=east,rotate=90] at (1.9, 0) { \small\textsc{then}};
+\node[anchor=east,rotate=90] at (2.9, 0) { \small{\textsc{ident} "b"}};
+\node[anchor=east,rotate=90] at (3.3, 0) { \small\textsc{else} };
+\node[anchor=east,rotate=90] at (4.3, 0) { \small{\textsc{ident} "c"}};
+
+\end{tikzpicture}

@@ -1,0 +1,65 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=1.6cm and 2.4cm]
+\node[state,minimum size=2ex,inner sep=3pt] (if-i)  { \scriptsize\itshape 1 };
+\node[state,minimum size=2ex,inner sep=3pt] (if-f) [right of=if-i]  { \scriptsize\itshape 2 };
+\node[state,minimum size=2ex,inner sep=3pt,accepting] (if-end) [right of=if-f]  { \scriptsize\itshape 3 };
+
+\path[->] (if-i) edge node[below] { \scriptsize i } (if-f);
+\path[->] (if-f) edge node[below] { \scriptsize f } (if-end);
+
+\node[state,minimum size=2ex,inner sep=3pt] (then-t) at ($(if-i) + (0,-1.2)$) { \scriptsize\itshape 1 };
+\node[state,minimum size=2ex,inner sep=3pt] (then-h) [right of=then-t]  { \scriptsize\itshape 2 };
+\node[state,minimum size=2ex,inner sep=3pt] (then-e) [right of=then-h]  { \scriptsize\itshape 3 };
+\node[state,minimum size=2ex,inner sep=3pt] (then-n) [below of=then-e]  { \scriptsize\itshape 4 };
+\node[state,minimum size=2ex,inner sep=3pt,accepting] (then-end) [left of=then-n]  { \scriptsize\itshape 5 };
+
+\path[->] (then-t) edge node[below] { \scriptsize t } (then-h);
+\path[->] (then-h) edge node[below] { \scriptsize h } (then-e);
+\path[->] (then-e) edge node[right] { \scriptsize e } (then-n);
+\path[->] (then-n) edge node[above] { \scriptsize n } (then-end);
+
+\node[state,minimum size=2ex,inner sep=3pt] (id-i) at ($(then-t) + (0,-2.6)$) { \scriptsize\itshape 1 };
+\node[state,minimum size=2ex,inner sep=3pt,accepting] (id-f) [right of=id-i]  { \scriptsize\itshape 2 };
+
+\path[->] (id-i) edge node[below] { \scriptsize [a-zA-Z] } (id-f);
+\path[->] (id-f) edge[loop right] node[right] { \scriptsize [a-zA-Z] } (id-f) ; 
+
+\node[state,minimum size=2ex,inner sep=3pt] (digit-i) at ($(id-i) + (0,-1.2)$) { \scriptsize\itshape 1 };
+\node[state,minimum size=2ex,inner sep=3pt,accepting] (digit-f) [right of=digit-i]  { \scriptsize\itshape 2 };
+
+\path[->] (digit-i) edge node[below] { \scriptsize [0-9] } (digit-f);
+\path[->] (digit-f) edge[loop right] node[right] { \scriptsize [0-9] } (digit-f) ; 
+
+
+\node[state,minimum size=2ex,inner sep=3pt] (whitespace-i) at ($(digit-i) + (0,-1.2)$) { \scriptsize\itshape 1 };
+\node[state,minimum size=2ex,inner sep=3pt,accepting] (whitespace-f) [right of=whitespace-i]  { \scriptsize\itshape 2 };
+
+\path[->] (whitespace-i) edge node[below] { \scriptsize [ \textbackslash{t}\textbackslash{n}] } (whitespace-f);
+
+\node[anchor=east] at ($(if-i.west) + (-0.3,0)$) { \small \texttt{if} $\Rightarrow$};
+\node[anchor=east] at ($(then-t.west) + (-0.3,-0.8cm)$) { \small \texttt{then} $\Rightarrow$};
+\node[anchor=east] at ($(id-i.west) + (-0.3,0)$) { \small \texttt{[a-zA-Z][a-zA-Z]*} $\Rightarrow$};
+\node[anchor=east] at ($(digit-i.west) + (-0.3,0)$) { \small \texttt{[0-9][0-9]*} $\Rightarrow$};
+\node[anchor=east] at ($(whitespace-i.west) + (-0.3,0)$) { \small \texttt{[ \textbackslash{t}\textbackslash{n}]} $\Rightarrow$};
+
+\node[draw,darkest,opacity=0.3,rounded corners,minimum width=4.15cm,minimum height=0.9cm,anchor=north west,fill=darkest,fill opacity=0.02,text opacity=1.0]
+   at ($(if-i.north west) + (-0.2,0.2)$) { };
+
+\node[draw,darkest,opacity=0.3,rounded corners,minimum width=4.15cm,minimum height=2.35cm,anchor=north west,fill=darkest,fill opacity=0.02,text opacity=1.0]
+   at ($(then-t.north west) + (-0.2,0.2)$) { };
+
+\node[draw,darkest,opacity=0.3,rounded corners,minimum width=4.15cm,minimum height=0.9cm,anchor=north west,fill=darkest,fill opacity=0.02,text opacity=1.0]
+   at ($(id-i.north west) + (-0.2,0.2)$) { };
+
+\node[draw,darkest,opacity=0.3,rounded corners,minimum width=4.15cm,minimum height=0.9cm,anchor=north west,fill=darkest,fill opacity=0.02,text opacity=1.0]
+   at ($(digit-i.north west) + (-0.2,0.2)$) { };
+
+\node[draw,darkest,opacity=0.3,rounded corners,minimum width=4.15cm,minimum height=0.9cm,anchor=north west,fill=darkest,fill opacity=0.02,text opacity=1.0]
+   at ($(whitespace-i.north west) + (-0.2,0.2)$) { };
+
+\node[anchor=west] at ($(if-i.east) + (3.7,0)$) { \textcolor{highlight}{\small\textsc{if}}};
+\node[anchor=west] at ($(then-t.east) + (3.7,-0.8cm)$) { \textcolor{highlight}{\small\textsc{then}}};
+\node[anchor=west] at ($(id-i.east) + (3.7,0)$) { {\textcolor{highlight}{\small\textsc{ident}\;\texttt{s}}}};
+\node[anchor=west] at ($(digit-i.east) + (3.7,0)$) { \textcolor{highlight}{\small\textsc{int}\;\texttt{n}}};
+\node[anchor=west] at ($(whitespace-i.east) + (3.7,0)$) { \parbox{0.15\textwidth}{\textcolor{highlight}{\small{\itshape skip}} \\
+      \tiny (not really a token) }};
+\end{tikzpicture}

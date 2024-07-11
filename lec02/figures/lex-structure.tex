@@ -1,0 +1,33 @@
+\begin{tikzpicture}
+\node (lexer) {
+$\begin{array}{lcl}
+\texttt{if}              & {\color{darkred}\Rightarrow} & \textsc{if}   \\
+\texttt{then}            & {\color{darkred}\Rightarrow} & \textsc{then} \\
+\texttt{else} & {\color{darkred}\Rightarrow} &  \textsc{else} \\
+\texttt{=} & {\color{darkred}\Rightarrow} &  \textsc{equal} \\
+\texttt{[a-zA-Z][a-zA-Z]\*} \text{ \textbf{as} s} & {\color{darkred}\Rightarrow} & \textsc{ident}\;\text{s}  \\
+\texttt{[0-9][0-9]\*} \text{ \textbf{as} i}       & {\color{darkred}\Rightarrow} & \textsc{int}\;\text{i}\\
+\texttt{[ \textbackslash{t}\textbackslash{n}]}        & {\color{darkred}\Rightarrow} & \text{\textit{skip}}
+\end{array}$
+};
+
+\draw[black,dotted] ($(lexer.south west) + (0.3cm,0)$) -- ++(-0.2cm,0) -- ++(0,3.5cm) -- ++(0.2cm,0);
+\draw[black,dotted] ($(lexer.south east) + (-0.3cm,0)$) -- ++(0.2cm,0) -- ++(0,3.5cm) -- ++(-0.2cm,0);
+\node[rotate=90,darkred,anchor=south] at (lexer.west) { regular expressions };
+\node[rotate=-90,darkred,anchor=south] at (lexer.east) { tokens };
+
+\node[anchor=north west] (type) at ($(lexer.north east) + (2.5cm,-0.6cm)$) {
+\begin{lstlisting}[style=ocaml]
+type token =
+   IF
+ | THEN
+ | ELSE
+ | EQUAL
+ | IDENT of string
+ | INT of int
+ | $\ldots$
+\end{lstlisting}
+};
+
+\node[anchor=south west] at (type.north west) { \scriptsize\color{darkred} Token data type: };
+\end{tikzpicture}

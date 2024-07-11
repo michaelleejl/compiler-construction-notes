@@ -1,9 +1,576 @@
 \chapter{Lexing}
 
 \section{Overview}
-The first part of the compiler we'll look at is the Lexer. We'll start by describing what a lexer is in terms of what it does. Following this, we'll outline the techniques used in actually building a lexer.
+\begin{center}
+\import{figures}{context}
+\end{center}
 
-\subsection{Specification}
-A lexer takes a sequence of characters, and transforms it into a sequence of tokens.  
+The first part of the compiler we'll look at is the Lexer. We'll start by describing what a lexer is in terms of its specification (what it does). Following this, we'll outline the techniques used in actually building a lexer.
 
-\subsection{Roadmap}
+
+\subsection{Lexers}
+In this section, we'll specify the role of the lexer: first at a high level, to get intuition, and then with a little more precision. At a high level, the lexer takes a sequence of characters and transforms it into a sequence of tokens.  
+
+\begin{figure}[H]
+\begin{center}
+\import{figures}{lex-specification}
+\end{center}
+\label{fig:lex-specification}
+\caption{The role of the lexer}
+\end{figure}
+
+In the example in \Cref{fig:lex-specification}, the lexer takes the \emph{characters} \texttt{i f} and groups them into the \textsc{IF} token. It takes the \texttt{a} character and groups it into the \textsc{IDENT} (for \emph{identifier}) token. You might remember \emph{tokenization} from {\sffamily Part IA Machine Learning and Real World Data} --- it's exactly the same principle. 
+
+Holding this high level picture in your head, let's draw out three important characteristics of the lexer: the lexer needs to respect priority, look for the longest match, and ignore whitespace.
+
+First, \emph{the lexer needs to respect priority}. As we'll see in this language, users can choose any alphabetic string to be an identifier (that is, \texttt{zoo} and \texttt{zzzzz} are valid identifiers, \texttt{xtor3} is \textbf{not} a valid identifier). But there's a subtlety --- by this definition, \texttt{if} is an alphabetic string, so it could be an identifier. But it could \emph{also} be the \textsc{If} keyword. As creators of the language, we'll need to express that \textsc{If} has a higher priority than \textsc{Ident}. The lexer then needs to respect this priority: if a character sequence matches two or more tokens, it is classified as the highest priority token. The end result is that \texttt{if} will always be lexed as \textsc{If} and never \textsc{Ident}. 
+
+Second, \emph{the lexer looks for the longest match}. We have established that \texttt{if} will be lexed as \textsc{If} and never \textsc{Ident}. This means that the user cannot use \texttt{if} as a variable name. However, the user \emph{can} use \texttt{ifx}, \texttt{ifeven}, \texttt{ifif}, etcetera, as variable names. This is an important detail! It means the lexer has to look for the \emph{longest match} --- it can't just see \texttt{if} and report that it's seen \textsc{If}, it has to check what comes after too! In particular, \texttt{ifif} should be classified as \textsc{Ident}, not \textsc{If} $\times 2$.
+
+Third, \emph{the lexer ignores whitespace}. You'll notice that not all characters, specifically, whitespace like \verb|\n|, do not have tokens. We can infer, from this, that our language is not whitespace sensitive. We'll introduce a special ``token'', \emph{\sffamily skip}, to indicate that we've seen whitespace, but this token will be special (specially useless), in that on seeing it, we'll immediately bin it. 
+
+\subsection{Lexer Generators}
+\begin{figure}[H]
+    \begin{center}
+        \import{figures}{lex-structure}
+    \end{center}
+    \caption{How to build a lexer}
+    \label{fig:build-lexer}
+\end{figure}
+
+We have covered what a lexer does. How would you go about building a lexer? \Cref{fig:build-lexer} illustrates how a lexer is typically built in a modern day compiler. The programmer specifies an \emph{ordered mapping} from regular expressions to tokens, in which the order encodes \emph{priority} (\textsc{IF} is higher priority than \textsc{THEN}, etc.). Let's say this specification is saved in a \texttt{lexer.mll} file. The programmer then runs \texttt{ocamllex lexer.mll}, and out pops a lexer. You can find more details \hyperlink{https://ocaml.org/manual/5.2/lexyacc.html}{here}.
+
+\texttt{ocamllex} is a lexer \emph{generator}. It's a piece of machinery that takes any specification of a lexer and produces a lexer. So, to be more precise, this chapter will teach you how to build a lexer generator, which you can then use to build your own lexers. 
+
+\subsection{Roadmap: Building lexer generators}
+Recall what a lexer should do: take a sequence of characters and transform it into a sequence of tokens. This means that we can build the lexer in two parts:
+
+\textbf{Step 1} (\textit{Classifier}). Build a \textit{classifier} that takes a sequence of characters and \emph{classify} it as one of the possible tokens (just \emph{one} token, not a sequence). For example, the classifier will classify \texttt{if} as IF, but will fail to classify \texttt{if then} as a token (since this cannot be mapped onto a \emph{single} token). We will build a classifier in two steps.
+
+\begin{addmargin}[1cm]{0cm}
+\textbf{Step 1a} (\textit{Recogniser}). In {\sffamily Part IA Discrete Maths}, you will have learnt about the regular language problem. Given a regular language $\mathcal{L}$ (specified by means of a regular expression $e$), and a string, $s$, we ask if $s \in \mathcal{L}$? You've also learnt that you can build a Discrete Finite Automaton (DFA) to solve this problem. By building a DFA, we will know if a sequence of characters \emph{is} a valid token, or if it is not.
+
+\textbf{Step 1b} (\textit{Classifier}). \textbf{Step 1a} will tell us \emph{if} a sequence of characters is a token or not a token, but will not tell us \emph{which} token, is certainly not guaranteed to return the \emph{highest priority} token. We will use a technique called \emph{tagging} to remedy this. 
+\end{addmargin}
+
+\textbf{Step 2} (\textit{Lexer}). We'll turn the classifier into a full-fledged lexer. Let's consider what happens when the classifier tries to classify \texttt{if then}. It will fail the moment it hits the whitespace, since \emph{no valid token ends in a whitespace}. This means that we can treat failure points as the ``break''s between tokens. By running the classifier until failure, and re-starting it after the failure point (that is, after the whitespace), we will have turned it into a lexer. Additionally, by specifying the operation this way, we will \emph{automatically} ignore whitespace and look for the longest match. 
+
+
+
+Putting it all together, we will first solve the regular language problem. Then, we will use tagging to create a classifier. Finally, we will specify how to use the classifier as a lexer.
+
+\section{Discrete Finite Automata}
+Our goal is to take a \textit{regular expression} $e$ and generate a \textit{lexer}. The first step in this process is to build a \textit{recogniser}. Specifically, we want a Deterministic Finite-Automaton (DFA) that solves the regular language problem for the given $e$. In this section, we will illustrate how to mechanically build such a DFA when given $e$, by first transforming $e$ into a \textbf{Non}-determinstic finite automaton (NFA), and then transforming the NFA into a DFA.
+
+\makeatletter
+
+\def\*{\@postfix*}
+
+\def\@postfix#1{{#1}\@ifnextchar){}{\;}}
+
+\makeatother
+
+\subsection{Preliminary Definitions}
+Before we go into the theory proper, we should first collate a set of definitions that will be useful. 
+
+\begin{minipage}[t]{0.2\textwidth}
+    \textbf{\textsf{Concatenation}}
+\end{minipage}%
+\begin{minipage}[t]{0.8\textwidth}
+Consider sets $X = \{a, b\}$, $Y = \{1, 2\}$. The concatenation $X \cdot Y = \{a1, a2, b1, b2\}$ comprises all sequences where the prefix comes from $X$ and the suffix comes from $Y$. Formally, \[X \cdot Y = \{uw | u \in X, w \in Y \}\]
+\end{minipage}\par
+
+\begin{minipage}[t]{0.2\textwidth}
+    \textbf{\textsf{Exponentiation}}
+\end{minipage}%
+\begin{minipage}[t]{0.8\textwidth}
+A special case of concatenation occurs when $X$ is concatenated onto itself some number of times $n$ (as shorthand, $X^n$). For example, if $X = \{a, b\}$, $X^2 = \{aa, ab, ba, bb\}$. Formally, 
+\begin{align*}
+    X^{0} &= \{ \epsilon \} \\
+    X^{n+1} &= X \cdot X^n
+\end{align*}
+\end{minipage}\par
+
+\begin{minipage}[t]{0.2\textwidth}
+    \textbf{\textsf{Kleene Star}}
+\end{minipage}%
+\begin{minipage}[t]{0.8\textwidth}
+Consider set $X = \{a, b\}$. The kleene star $X \* = \{\epsilon, a, b, aa, ab, ba bb, aaa, $\ldots$\}$ are all possible sequences drawn from $X$. Formally,
+\[X\* = \bigcup_{n \in \mathbb{N}} X^n\]
+\end{minipage}\par
+
+\begin{minipage}[t]{0.2\textwidth}
+    \textbf{\textsf{Alphabet}} ($\Sigma$)
+\end{minipage}%
+\begin{minipage}[t]{0.8\textwidth}
+An alphabet $\Sigma$ is a non-empty set of symbols. Examples include $\{ a, b, c, \ldots \}$ (the English alphabet) and $\{ 0, 1 \}$ (the Binary alphabet).
+\end{minipage}\par
+
+\begin{minipage}[t]{0.2\textwidth}
+    \textbf{\textsf{Words}} $(\Sigma \*)$
+\end{minipage}%
+\begin{minipage}[t]{0.8\textwidth}
+The set of words $\Sigma \*$ is the set of sequences over $\Sigma$. $\epsilon$, $0$, $1$, $00$, $01$, $10$, and $11$ are all words of the binary alphabet.
+\end{minipage}\par
+
+\begin{minipage}[t]{0.2\textwidth}
+    \textbf{\textsf{Language}}
+\end{minipage}%
+\begin{minipage}[t]{0.8\textwidth}
+A language over $\Sigma$ is any subset of $\Sigma\*$. For example, a language of zeros might be defined as $\{ \epsilon, 0, 00, 000, \ldots \}$. Hence, the set of languages over $\Sigma$ is the power-set of $\Sigma\*$. 
+\end{minipage}
+
+\subsection{Regular Languages and Expressions}
+A regular language over $\Sigma$ is defined recursively as follows. 
+
+\textsf{\textbf{Axiom}} \textsc{(Empty)}. The empty language $\emptyset$ is regular.
+
+\textsf{\textbf{Axiom}} \textsc{(Char)}. For all $a$ in $\Sigma$, the language comprising only of $a$, $\{a\}$ is regular.
+
+\textsf{\textbf{Rule}} \textsc{(Or)}. If $\mathcal{L}_1$ and $\mathcal{L}_2$ are regular, then $\mathcal{L}_1 \cup \mathcal{L}_2$ is regular. 
+
+\textsf{\textbf{Rule}} \textsc{(Concat)}. If $\mathcal{L}_1$ and $\mathcal{L}_2$ are regular, then $\mathcal{L}_1 \cdot \mathcal{L}_2$ is regular. 
+
+\textsf{\textbf{Rule}} \textsc{(Kleene)}. If $\mathcal{L}$ is regular,  $\mathcal{L}\*$ is regular. 
+
+\subsubsection{Regular Expressions}
+A regular expression is a convenient way of specifying a regular language as an \emph{expression} rather than a \emph{set}. That is, rather than having to write
+\[ (((((\{ a \} \cup \{ b \})\*) \cdot \{ a \}) \cdot \{ b \}) \cdot \{ b \}) \]
+We can instead write the regular expression
+\[ (a \lor b) \* abb \]
+Formally, the syntax of regular expressions is defined as
+\[ e ::= \emptyset \mid \epsilon \mid a \mid e_1 \lor e_2 \mid e_1 e_2 \mid e\* \]
+Importantly, $\emptyset$ denotes (stands for or represents) the language with \textbf{no words} in it, whereas $\epsilon$ denotes the language with the single \textbf{blank} word in it. To make this relationship between regular expressions and languages very explicit, we define a function $L(-)$ that maps each expression to the language it denotes. For example,
+
+\[
+\begin{array}{rcl}
+L((a \vee b)*abb) = (((((\{ a \} \cup \{ b \})\*) \cdot \{ a \}) \cdot \{ b \}) \cdot \{ b \}) &=& \{ abb, aabb,\\
+&&\;\; babb, aaabb,\\
+&&\;\; ababb,\\
+&&\;\;\ldots\}
+\end{array}
+\]
+
+The $L(-)$ function can be defined inductively:
+
+\[
+\begin{array}{rcl}
+L(\emptyset) &=& \{\}\\[0.2ex]
+L(\epsilon) &=& \{\epsilon\}\\[0.2ex]
+L(a) &=& \{a\}\\[2ex]
+L(e_1  \vee  e_2) &=& L(e_1) \cup L(e_2)\\[2ex]
+L(e_1e_2) &=& L(e_1) \cdot L(e_2) \\[2ex]
+L(e^n) &=& L(e)^n\\[0.2ex]
+L(e*) &=& L(e)\*
+\end{array}
+\]
+
+\subsection{Finite-State Automata}
+Having described regular languages and expressions, we can now define the \textbf{regular language problem}: given a regular expression $e$ and a word $w$, is $w \in L(e)$?
+
+Regular expressions stand for infinite sets, and they're not very feasible for answering the question. The central piece of machinery needed to solve the regular language problem is the finite-state automaton. A finite-state automaton is a finite computational object that acts as a \emph{recognizer} for a regular language. For example, \Cref{fig:nfa-example} is a (\emph{non-deterministic}) finite-state automaton that recognizes the language $L((a \lor b)\* abb)$. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{nfa-example}
+    \captionof{figure}{A finite-state automaton that recognizes the language $\protect{L((a \lor b)\* abb)}$}
+    \label{fig:nfa-example}
+\end{figure}
+
+At a high level, given a word $w$, the finite-state automaton has to decide whether to accept, or reject, the word. Note that every edge has a label (either $\epsilon$ or some character). You can think of the NFA as a weird keyboard, where you have to start from the start state, and then ``type'' by tracing a path in the graph . Building the idea that tracing paths form words, we have a simple strategy for determining if a word is in the given language --- begin in the start state, trace out your desired word, and see if you end up in an accepting state. 
+
+For example, here's how we may use the automaton in \Cref{fig:nfa-example} to decide that ``abb'' is in the language:\par
+
+\begin{figure}[H]
+    \begin{center}
+    \import{figures}{nfa-abb-example}
+    \end{center}
+    \caption{Deciding that ``abb'' is in the language}
+    \label{fig:nfa-decision}
+\end{figure}
+
+Formally, a finite-state automaton $M$ is a five-tuple $\langle Q, \Sigma, \delta, q_0, F \rangle$
+
+\begin{center}
+\import{figures}{automata-definitions}
+\end{center}
+
+\subsubsection{NFAs vs DFAs}
+There are two key differences between a \textit{deterministic} finite automaton (DFA) and a \textit{non-deterministic} finite automaton (NFA)\footnote{Unlike {\sffamily Part IA Discrete Mathematics}, this course makes no distinction between NFAs and NFA-$\epsilon$s.}, and both are apparent in the definition of $\delta$. 
+
+The first difference is that for a DFA, $\delta$ is a transition \emph{function}, whereas for an NFA, $\delta$ is a \emph{relation}. For a DFA, given a state $q$ and a character $a$, $\delta$ specifies \textbf{exactly one} state that we may transition to. In contrast, for an NFA, $\delta$ will specify \emph{some number} of states that we may transition to.
+
+The second difference is the $\epsilon$-transition. An $\epsilon$-transition allows us to move from one state to another ``for free'', that is, without consuming any characters in the input word. An NFA permits $\epsilon$-transitions, whereas a DFA does not. 
+
+Note that \emph{both} these differences inject non-determinism. First, by specifying a transition \emph{relation} rather than a \emph{function}, an NFA would allow multiple possible transition \emph{for the same input}. For example, in \Cref{fig:nfa-example}, state \textit{1} allows for transitions to \textit{2} or \textit{8}. Second, by allowing $\epsilon$-transitions, an NFA would allow two choices on receiving no input --- either stay where you are, or take the epsilon transition. For example, when in state \textit{4}, on seeing no input, we can either remain in state \textit{4} or transition to state \textit{7}.
+
+\textbf{Non-determinism is bad}. Non-determinism makes our lives more difficult, because it forces us to make (potentially \emph{incorrect}) decisions. Considering \Cref{fig:nfa-decision}, how do we know that we should transition from state \textit{1} to state \textit{8}, when we could have just as easily stayed in state \textit{1}, or transitioned to state \textit{2}?
+
+Ideally, we'd like a \emph{deterministic} automaton. However, it is easier to \emph{mechanically} convert a regular expression into an NFA, and then an NFA into a DFA, rather than try to convert a regular expression into a DFA in one step. We shall now proceed to show how to do this.
+
+\subsubsection{Transition Notation}
+Before illustrating the transition from regular expression to NFA, and then NFA to DFA, we shall first introduce some \emph{transition notation}. Good notation should make clear properties about the thing we're studying, and in this case, the transition notation makes clear that the DFA / NFA are string \emph{consumers}, consuming one token at a time. 
+
+\begin{center}
+    \import{figures}{transition-notation}
+\end{center}
+
+\subsection{Regular Expressions to NFAs}
+We will now define a function $N$ that converts \textit{any} regular expression to an equivalent NFA. By ``equivalent'', we mean that it satisfies a correctness theorem -- for any word $w \in \Sigma\*$. $w \in L(e)$ if and only if $w \in L(N(e))$. See these \href{https://courses.engr.illinois.edu/cs373/fa2013/Lectures/lec07.pdf}{lecture notes} for a proof.
+
+We'll consider a really concrete example. Let's create a language $L$ that represents ways to travel from one Cambridge to Lisbon. That is, our alphabet is 
+\[ \Sigma = \{ \text{Great Northern}, \text{ Greater Anglia}, \text{ Ryanair}, \text{ Eurostar}, \ldots\} \]
+A word $w$ is then a valid way of travelling from one city to another. For example, to get to Lisbon from Cambridge, you can take a Greater Anglia train to Stansted, then a Ryanair flight. Hence, 
+\[(\text{Greater Anglia})(\text{Ryanair})\]
+is a valid word.
+But there's no Great Western train that you can take from Cambridge, so 
+\[(\text{Great Western})(\text{Ryanair})\]
+is \textit{not} a valid word. Note that the words correspond to \emph{edges} (Great Western) rather than \emph{nodes} (which you can think of as being \emph{like} cities, but should be cautious to not attach too much physical meaning to them --- as we'll see in a moment!).
+
+Assume we have generated some regular expression $e$ for this language. We'll see how $N$ uncovers a very natural structure! Let's first consider $N(\emptyset)$. Recall that $\emptyset$ means that there are no words in $L(\emptyset)$, so $N(\emptyset)$ looks like:
+
+\begin{center}
+\import{figures/regex-to-nfa}{null}
+\end{center}
+
+This would only really be useful if there were absolutely no way to travel from Cambridge to Lisbon, and not really useful otherwise.
+
+$L(\epsilon)$ accepts the single empty string. In some sense it represents the ability to teleport from one location to another --- which once again, is not immediately useful --- but we'll see it come in handy in a moment.
+
+\begin{center}
+\import{figures/regex-to-nfa}{empty}
+\end{center}
+
+$L(a)$ accepts the single string, $a$, where $a$ is a character in our alphabet $\Sigma$. It corresponds to taking, for example, a Greater Anglia train.
+
+\begin{center}
+\import{figures/regex-to-nfa}{char}
+\end{center}
+
+If we want to realistically model ways to travel from Cambridge to Lisbon, we'll need some way to put together different legs of the journey. Let's assume we had a language $L(e_1)$ that accepted all paths from Cambridge to Stansted, and a language $L(e_2)$ that accepted all paths from Stansted to Lisbon. $L(e_1 e_2)$ will accept all paths from Cambridge to Lisbon via Stansted. This leads to the very obvious construction
+
+\begin{center}
+    \import{figures/regex-to-nfa}{concat}
+\end{center}
+
+More precisely, we take each accepting state of $N(e_1)$ and add an $\epsilon$ edge to the start state of $N(e_2)$. Further, only $N(e_2)$'s accepting states should be considered accepting states (getting to Stansted is no great triumph).  
+
+There may be multiple ways of getting from Cambridge to Lisbon (indeed, there are multiple ways of getting from Cambridge to Stansted!) Let's assume we had a language $L(e_1)$ that accepted all paths from Cambridge to Lisbon via Stansted. Let's also assume we had a language $L(e_2)$ that accepted all paths from Cambridge to Lisbon via Gatwick. Then the language $L(e_1 \lor e_2)$ would accept all paths from Cambridge to Lisbon via Stansted or Gatwick. Once again, this is a very obvious construction:
+\begin{center}
+\import{figures/regex-to-nfa}{or}
+\end{center}
+
+More precisely, we ad a new starting state, and add epsilon transitions from it to the starting states of $N(e_1)$ and $N(e_2)$. Once again, we see the $\epsilon$ transition come in handy as a means of `teleportation'.
+
+There is one final way of travelling from Cambridge to Lisbon: travel to Stansted, travel from London to Stansted and back $n = 0, 1, 2, \ldots$ times, and then finally travel from Stansted to Lisbon. Let's assume $L(e)$ accepts a valid way of travelling from Stansted to London and back. Then $L(e\*)$ accepts all valid ways of travelling from Stansted to London and back $n$ times. 
+
+\begin{center}
+    \import{figures/regex-to-nfa}{kleene}
+\end{center}
+
+Assuming we have $N(e)$ we create $N(e\*)$ as follows: add a new start state and a new accepting state (this will be the sole accepting state, all accepting states in $N(e)$ will no longer be accepting in $N(e\*)$. This is why we should beware attaching too much physical meaning to the nodes in an NFA. Think of the start state in $N(e)$ as ``about to leave Stansted for London'', the accepting states in $N(e)$ as ``returning to Stansted from London''. The new start state in $N(e\*)$ would then be ``reaching Stansted without having travelled to London'', and the new end state in $N(e\*)$ would be ``reaching Stansted with no intention to leave for London''. 
+
+We then add an $\epsilon$ transition from the new start state to the start state of $N(e)$: this signals an intention to travel to London and back at least once. We also add an $\epsilon$ transition from the new start state to the new accepting state: this signals the logical path, the intention to never travel to London and back. 
+
+Symmetrically, we add an $\epsilon$ transition from each accepting state in $N(e)$ (that are no longer accepting states in $N(e\*)$ back to the start state of $N(e)$. This signals returning to Stansted from London with an intention to make another round trip to London. Finally, we add an $\epsilon$ transition from each accepting state in $N(e)$ to the new accepting state in $N(e\*)$, representing returning to Stansted from London with no intention of making another round trip.
+
+\subsubsection{Glushkov's Construction Algorithm}
+An important point is that $N$ is not \emph{unique}, that is, it is not the only function for converting regular expressions to NFAs. \href{https://en.wikipedia.org/wiki/Glushkov\%27s\_construction_algorithm}{\textbf{Glushkov's algorithm} (1961)} produces an equivalent automaton without the $\epsilon$ transitions.
+
+\subsection{NFAs to DFAs: The Power-set Construction}
+Given a regular expression $e$, we may convert it into an NFA $N(e)$. We will now define a function $D$ that converts an NFA into a DFA. $D$ is known as the powerset construction. 
+
+Informally, the powerset construction eliminates non-determinism through a cunning observation: there are two sources of non-determinism, $\epsilon$-transitions and multiple possible transitions on seeing the same character. These constructs introduce non-determinism in the \emph{current state}. However, the set of \emph{possible} states is entirely deterministic. 
+
+Hence, the power-set construction eliminates non-determinism due to $\epsilon$-transitions. Consider, once again \Cref{fig:nfa-example}. Assume we are in state \textit{4}. On seeing nothing, we could remain in \textit{4}, or we could transition to state \textit{7}. The current state is non-deterministic. However, the set of \emph{possible} states we could be in may be determined --- $\{ \textit{4}, \textit{7} \}$. 
+
+Further, the power-set construction eliminates non-determinism due to multiple transitions. Consider state \textit{1}. We could transition to state \textit{2} or state \textit{8}. (Further, these are $\epsilon$ transitions). The current state is not known. However, the set of possible states is known: $\{ \textit{1}, \textit{2}, \textit{8} \}$.
+
+Referring back to our Lisbon example, non-determinism comes because when someone arrives at Stansted, you cannot determine their intentions and history --- do they intend to make a round trip to London? Have they made a round trip to London? Have they taken a coach or a train to Stansted? You group all these non-deterministic possibilities into the deterministic ``they travelled to Stansted by some means, potentially with the intention of making a round-trip to London and back''. That's exactly what the powerset construction does.
+
+Having looked at a concrete example, and developed the intuitions, let's define the \textbf{powerset construction} formally. The powerset construction takes an NFA
+\[
+M = \langle Q,\Sigma,\delta,q_0,F\rangle
+\]
+and constructs a DFA
+\[
+M' = D(M) = \langle Q',\Sigma',\delta',q'_0,F'\rangle
+\]
+The construction also satisfies a correctness theorem (once again, we elide the details). Informally, $M'$ accepts a word $w$ if and only if $M$ does. Formally, for any word $w \in \Sigma\*$, $w \in L(M)$ if and only if $w \in L(M')$. The components of $M'$ are calculated as follows:
+\[
+\begin{array}{rcl}
+Q' &=& \{S \mid S \subseteq Q\}\\[1ex]
+\delta'(S,a) &=& \epsilon\text{-closure}(\{q'\in\delta(q,a)\mid q \in S\})\\[1ex]
+q'_0 &=& \epsilon\text{-closure}\{q_0\}\\[1ex]
+F' &=& \{S \subseteq Q \mid S \cap F \neq \emptyset\}\\[1ex]
+\end{array}
+\]
+The $\epsilon{\text-closure}$ formalises the notion of ``non-determinism due to $\epsilon$ transitions''. Intuitively, the $\epsilon$-closure of a set of nodes $S$ is the set of all nodes you can travel to using only $\epsilon$ edges, starting from a node in $S$. It is defined as follows:
+\[
+\begin{array}{rcl}
+\epsilon\text{-closure}(S) &=& \{q' \in Q \mid \exists q \in S, q \xrightarrow{\epsilon}q'\}
+\end{array}
+\]
+Which you should read as the smallest set of nodes that contains $S$ and is closed under $\epsilon$-transitions. That is, if I pick any node $q$ in $\epsilon{\text-closure}(S)$, and I can transition from $q$ to $q'$ using $\epsilon$, then $q'$ \textit{must} be in $\epsilon{\text-closure}(S)$.
+
+\subsubsection{Computing the $\epsilon$-closure}
+Having defined the $\epsilon$-closure, we now describe, in pseudocode, an algorithm to compute it.
+
+\begin{lstlisting}[style=pseudocode]
+push elements of S onto stack
+result := S
+while stack not empty
+!\quad! pop !$q$! off stack
+!\quad! for each !$u \in \delta(q,\epsilon)$!
+!\quad \quad! if !$u \notin$! result
+!\quad \quad! then result := !$\{u\} \; \cup$! result
+!\quad \quad \quad! push !$u$! on stack
+return result
+\end{lstlisting}
+
+\subsection{Recap: The Regular Language Problem}
+We have now defined two functions: \texttt{$N$: Regex $\rightarrow$ NFA} and \texttt{$D$: NFA $\rightarrow$ DFA}, each satisfying respective correctness theorems. By composing them together, we have a way to convert any regular expression $e$ to a DFA $M$, such that $M$ accepts a word if and only if it is in the language of $e$. We have thus solved the regular language problem.
+
+\section{Tagged DFAs as Classifiers}
+At this stage, we have solved the regular language problem. Let's consider what this gives us. Our starting point is a lexer specification, an ordered map from regular expressions to tokens.
+\begin{center}
+    \import{figures}{lex-outline}
+\end{center}
+
+Using our solution to the regular language problem, we can convert each of these regular expressions into NFAs. If all we care about is \emph{whether} a word is a token (i.e. we want to build a recogniser), then we can simply combine all these NFAs together using $\lor$, and then convert it to a DFA. 
+
+But this is insufficient information! We don't care about whether a word is a token, we care also about \emph{which} token it is.
+
+Our end goal is therefore \Cref{fig:tagged-dfa}, a \emph{tagged} DFA, where each accepting state does not only \emph{accept} the string, but has a tag that tells you which token has been accepted.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{tagged-dfa}
+    \caption{A tagged DFA}
+    \label{fig:tagged-dfa}
+\end{figure}
+
+To construct such a tagged DFA, we need to carry the information about the tags from the start. This means tweaking our $N$ function to produce \textbf{\textcolor{highlight}{tagged}} NFAs, as illustrated in \Cref{fig:tagged-nfas}. You can think of this as a tuple of an NFA and a tag.
+
+\begin{figure}
+    \centering
+    \import{figures}{spec-to-tagged-nfa}
+    \caption{Tweaking the $N$ function to produce \textbf{\textcolor{highlight}{tagged}} NFAs}
+    \label{fig:tagged-nfas}
+\end{figure}
+
+Recall that if we perform the powerset construction on this, then each state in the resulting DFA will correspond to one or more states in their constitutent NFAs. For example, state \emph{2} in \Cref{fig:tagged-dfa} corresponds to states \emph{2} in the \textsc{ident} NFA and \emph{2} in the \textsc{if} NFA.
+
+To produce a tagged DFA, for each \emph{accepting} state in the result of the power-set construction, look at the corresponding states in the constituent NFAs, at least one of which must be accepting. Sort all the accepting states by priority, and tag the state with the highest priority token.
+
+\begin{minipage}[t]{0.5\textwidth}
+    \begin{center}
+    \import{figures}{tagged-nfas-to-tagged-dfa}
+    \end{center}
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+    \begin{center}
+    \import{figures}{tagged-nfas-to-tagged-dfa-3}
+    \end{center}
+\end{minipage}
+
+The result will be a tagged DFA that respects the priority defined by the language designer.
+
+\section{Lexers}
+At this point, we have built a tagged DFA that functions as a \emph{classifier} --- it can take a single word, and tell you both if it is a token, and which token it is. We want a \emph{lexer} --- one that can take a sequence of words and produce a sequence of tokens. 
+
+\begin{center}
+\import{figures}{lex-specification}
+\end{center}
+
+The key insight is that \emph{if} we can identify token boundaries --- that is, when one token ends and another begins --- then constructing the lexer is simply a matter of running the classifier at each of the token boundaries.
+
+How do we identify token boundaries? Recall that we want \emph{longest match semantics} --- concretely, if we have a series of characters \texttt{ifx}, this should match as a \emph{single} token (\textsc{ident}), rather than two tokens (\textsf{if} and \textsc{ident}). Longest match semantics identifies a \emph{unique} set of token boundaries, given a character sequence. 
+
+\begin{center}
+\vspace{5mm}
+\import{figures}{longest-match}
+\end{center}
+
+We can find these boundaries by running the classifier until failure. At this point, we know that there can be no further matches. We can then look at the \emph{last match} (the last accepting state), emit the token at that boundary, and re-start classification from that boundary. This is \emph{the lexing algorithm} 
+
+\begin{center}
+    \begin{minipage}{0.5\textwidth}
+        \import{figures}{lex-algorithm}
+    \end{minipage}
+\end{center}
+
+We now have a \emph{lexer}, that will produce a stream of tokens. The final step is to collate these tokens into a list, noting that if the token is \textit{skip}, then it may be ignored. 
+
+\section{Recap and Example}
+At this point, it may be useful to take a step back, abstract away all the intricate little details, and re-consider the bigger picture: \textit{what exactly have we done}?
+
+We started off with an ordered mapping from regular expressions to tokens. 
+
+\begin{center}
+    \import{figures}{lex-outline}
+\end{center}
+
+By converting these regular expressions to NFAs, and then employing the power-set construction, we managed to turn these regular expressions into a DFA, which we call a \emph{recogniser}. 
+
+\begin{center}
+\import{figures}{untagged-dfa}
+\end{center}
+
+Tweaking our method to produce \emph{tagged} NFAs, we managed to create a \emph{tagged} DFA, which we call a \emph{classifier}.
+
+\begin{center}
+\import{figures}{tagged-dfa}
+\end{center}
+
+Turning our classifier into a lexer is a manner of \emph{using} the classifier in a particular way: \emph{the lexing algorithm}. 
+
+We will now illustrate how, using our classifier, the lexing algorithm successfully lexes the character sequence [\texttt{i f  i f x}] into the token sequence [\textsc{if}; \textsc{ident} \texttt{ifx}]
+
+Pay special attention to \textbf{\textsf{Steps 3-4}}, where we illustrate how failure is used to identify token boundaries and emit tokens.
+
+In addition, \textbf{\textsf{Steps 5-6}} illustrate how we ignore whitespace. Finally, \textbf{\textsf{Steps 8-9}} show how we find the longest match.
+\vspace{3mm}
+
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex1}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex2}
+\end{minipage}
+
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex3}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex4}
+\end{minipage}
+
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex5}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex6}
+\end{minipage}
+
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex7}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex8}
+\end{minipage}
+
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex9}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}
+    \import{figures/example}{ex10}
+\end{minipage}
+
+    
+\section{The (In)-Efficiency of Lexing}
+We have produced a \emph{correct} algorithm, but not necessarily an \emph{efficient} one. Let the number of characters be $n$. In the worst case, the time complexity of the lexer is $O(n^2)$. 
+
+The reason for this is that you can feed a lexer a \emph{pathological} input, which results it having to scan to the very end of the character sequence before failing, and re-starting from the second character. Doing this repeatedly, we get the following expression for the time complexity.
+\[ n + (n-1) + (n-2) + \ldots \]
+Which is obviously $O(n^2)$.
+
+In addition, even if we consider a non-pathological case, where the lexer takes time \emph{linear} in the length of its input, it is still highly inefficient! \citet{sebesta-1993} identifies the lexer as worth investing time to optimise, and empirical evidence (using \texttt{gcc -ftime -report}) found that 50\% to 90\% of the compiler's time budget is spent on the lexer.
+
+This may be surprising, since the work done by the lexer is by far the simplest part of the compiler. The reason for this is that $n$ is the number of \emph{characters}, which is often much larger than the number of \emph{tokens} or \emph{expressions}.
+
+\section{Lexing with Derivatives$^{*}$}
+You might not be particularly pleased with our method for constructing lexers, and you'd be right not to be. The method we've illustrated is rather indirect: each step is more or less simple, but there are a lot of them. In this, \textsf{\textbf{non-examinable}} section, we consider a much more direct and elegant approach. Much of this section will follow \citet{owens-2009}, an excellent tutorial on the subject that you can find \href{https://www.cambridge.org/core/journals/journal-of-functional-programming/article/regularexpression-derivatives-reexamined/E5734B86DEB96C61C69E5CF3C4FB0AFA}{here}.
+
+\subsubsection{Derivative of a regular language}
+\vspace{3mm}
+
+\begin{definition}[Derivative of a regular language]
+    The derivative of a regular language $\mathcal{L}$ with respect to a character $a$, written $\partial_a \mathcal{L}$, is defined as $\{v \in \Sigma^{*} \mid av \in \mathcal{L} \}$
+\end{definition}
+
+Assume you had a word, $w$, and you were interested in determining if $w$ is in the regular language $\mathcal{L}$. Let's say $w = av$, that is, its first character is $a$ and its tail is some $v$ that we don't quite care about.
+
+To determine if $w \in \mathcal{L}$, it is sufficient to show that $v \in f_a(\mathcal{L})$. $f$ is a function that should take every string in $\mathcal{L}$ that begins with $a$, and chop it off. For example, if \[\mathcal{L} = \{ a, b, ab, bb, aab, \ldots \}\] Then we would like \[f_a(\mathcal{L}) = \{ \epsilon, b, ab, \ldots\} \]
+
+Formally, \[f_a(\mathcal{L}) = \{ v \mid av \in \mathcal{L}\}\]
+
+$f_a(L)$ is precisely the derivative of $\mathcal{L}$ with respect to $a$, which we write $\partial_a(\mathcal{L})$. \footnote{It is easy to generalise this definition to consider the derivative of $\mathcal{L}$ with respect to some string $w$ in $\Sigma\*$}
+
+A key insight is that the derivative of a regular language is regular!
+
+\begin{theorem}[Closure under differentiation]
+    \label{thm:closure-differentiation}
+    If $\mathcal{L}$ is regular, then $\forall w \in \Sigma\*, \partial_a(\mathcal{L})$ is regular.
+\end{theorem}
+
+The proof for this is simple: if $\mathcal{L}$ is regular, then there is a DFA $\langle Q, \Sigma, \delta, q_0, F \rangle$ that accepts it. Since this is a DFA, $\delta$ must specify a target state for every source state and character. Hence, $\delta(q_0, a) \in Q$. $\langle Q, \Sigma, \delta, \delta(q_0, a), F \rangle$ is thus a valid DFA. In addition, it is a DFA that recognises $\partial_A(\mathcal{L})$. Since $\partial_A(\mathcal{L})$ is recognised by a DFA, it is regular.
+
+\subsubsection{Derivatives of regular expressions}
+Since every regular expression corresponds to some regular language (and vice versa), this implies that we can differentiate regular expressions to get more regular expressions. A second key insight is that the derivative of a regular expression can be formulated inductively. To be explicit will use $\cdot$ as the concatenation operator. 
+\[\begin{aligned}
+\partial_a \emptyset & = \emptyset&&\\ 
+\partial_a \epsilon & = \emptyset&&\\
+\partial_a a & = \epsilon&&\\
+\partial_a b & = \emptyset && a \neq b&&\\
+\partial_a (e_1 \lor e_2) & = \partial_a e_1 \lor \partial_a e_2&&\\
+\partial_a (e_1 \cdot e_2) & = (\partial_a e_1) \cdot e_2 \lor (\partial_a e_2) && e_1 \text{ nullable}&&\\
+\partial_a (e_1 \cdot e_2) & = (\partial_a e_1) \cdot e_2 && e_1 \text{ not nullable}&&\\
+\partial_a (e\*) & = (\partial_a e) \cdot e\*&&
+\end{aligned}\]
+For the case $\partial_a (e_1 e_2)$, we need to consider the case where $e_1$ is \emph{nullable}, that is, if $\epsilon \in L(e_1)$. If $e_1$ is nullable, then all words in $L(e_2)$ are also in $L(e_1 \cdot e_2)$. Hence, when we ``chop off'' $a$ from $w$ when taking the derivative, we could be chopping it off either from $e_1$ or $e_2$. You might see this written as 
+\[ \partial_a (e_1 \cdot e_2) = (\partial_a e_1) \cdot e_2 \lor \nu(e_1) \cdot (\partial_a e_2)  \]
+This comes from the realisation that the rules can also be written 
+\begin{align*}
+\partial_a (e_1 \cdot e_2) & = (\partial_a e_1) \cdot e_2 \lor (\partial_a e_2) &&= (\partial_a e_1) \cdot e_2 \lor \epsilon(\partial_a e_2) && e_1 \text{ nullable}&&\\
+\partial_a (e_1 \cdot e_2) &= (\partial_a e_1) \cdot e_2 \lor \emptyset &&= (\partial_a e_1) \cdot e_2 \lor \emptyset(\partial_a e_2) && e_1 \text{ not nullable}&&
+\end{align*}
+As a shorthand, we can define $\nu$ as a sort of indicator random variable
+\begin{align*}
+    \nu(e) = \begin{cases} 
+      \epsilon & \text{if $e$ is nullable} \\
+      \emptyset & \text{otherwise}
+   \end{cases}
+\end{align*}
+Thus collapsing the two cases into one.
+
+If you squint a little, you might be able to see that this looks a lot like differentiation (see $\lor$ as $+$ and $\cdot$ as $\times$) --- hence why it is called a ``derivative''.
+
+\subsubsection{Derivatives and DFAs}
+The notion of such a derivative allows us to automatically tag each state of a DFA with the regular expression it accepts. (This becomes especially obvious when you consider the proof of \Cref{thm:closure-differentiation}). We shall illustrate this using an example. Consider a DFA corresponding to the expression $(b \lor c)(b\lor c)\*$. It looks like this
+
+\begin{center}
+    \import{figures/derivatives}{lex-with-deriv-1}
+\end{center}
+
+We know what regular expression this DFA corresponds to, so we can tag the start state with it
+
+\begin{center}
+    \import{figures/derivatives}{lex-with-deriv-2}
+\end{center}
+
+Using the rules defined previously, we can state that 
+\begin{align*}
+    \partial_b (b \lor c)(b \lor c)\* = (b \lor c)\*\\
+    \partial_c (b \lor c)(b \lor c)\* = (b \lor c)\*
+\end{align*}
+This allows us to tag state \textit{2} with the regular expression it accepts.
+
+\begin{center}
+    \import{figures/derivatives}{lex-with-deriv-3}
+\end{center}
+
+Indeed, you can verify that this is consistent, that is
+\begin{align*}
+    \partial_b (b \lor c)\* = (b \lor c)\*\\
+    \partial_c (b \lor c)\* = (b \lor c)\*
+\end{align*}
+
+\subsubsection{Derivative-Based Lexing}
+Armed with this strategy, we can use derivatives to create tagged DFAs in a much more direct way --- tag the start state with a \emph{vector} of regular expressions, ordered by priority. Propagate these tags to the other states by performing element/point-wise differentiation in exactly the method shown above. 
+
+A state is accepting if \textit{any} of the regular expressions in its tag vector accepts the empty string $\epsilon$. If there are multiple such regular expressions, use the order to break ties via priority.
+
+\begin{center}
+    \import{figures/derivatives}{lex-with-deriv-4}
+\end{center}

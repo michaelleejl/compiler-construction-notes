@@ -1,0 +1,100 @@
+\begin{tikzpicture}[yscale=1.8]
+\node (null) {
+\parbox{0.175\textwidth}{\centering
+\color{darkred}\scriptsize Null transition \\ on empty string
+}
+  };
+
+\node (epsilon) at ($(null) + (0,-1)$) {
+\parbox{0.175\textwidth}{\centering
+\color{darkred}\scriptsize Including \\$\epsilon$ transitions
+}
+  };
+
+\node (nonempty) at ($(epsilon) + (0,-1)$) {
+\parbox{0.2\textwidth}{\centering
+\color{darkred}\scriptsize Transition \\on non-empty string
+}
+  };
+
+\node (language) at ($(nonempty) + (0,-1)$) {
+\parbox{0.2\textwidth}{\centering
+\color{darkred}\scriptsize Language of \\an automaton
+}
+  };
+
+\node[anchor=east] (dfa-null) at ($(null.west) + (-0.5,0)$) {
+\small $q\xrightarrow{\epsilon}q$
+};
+
+\node[anchor=east] (dfa-nonempty) at ($(dfa-null.east) + (0,-2)$) {
+\parbox{0.35\textwidth}{\raggedleft
+\small
+$q_1\xrightarrow{aw}q_3$
+
+\smallskip
+
+\footnotesize if  $\delta(q_1,a) = q_2$ and $q_2\xrightarrow{w}q_3$
+}
+};
+
+\node[anchor=east] (dfa-language) at ($(dfa-null.east) + (0,-3)$) {
+\small
+$L(M) = \{w \mid \exists q \in F, q_0 \xrightarrow{w}q \}$
+};
+
+
+\node[anchor=west] (nfa-null) at ($(null.east) + (0.5,0)$) {
+\small $q\xrightarrow{\epsilon}q$
+};
+
+\node[anchor=west] (nfa-epsilon) at ($(nfa-null.west) + (0,-1)$) {
+\parbox{0.35\textwidth}{\raggedright
+\small
+$q_1\xrightarrow{w}q_3$
+
+\smallskip
+
+\footnotesize if $\delta(q_1,\epsilon) \ni q_2$ and $q_2\xrightarrow{w}q_3$
+}
+};
+
+\node[anchor=west] (nfa-nonempty) at ($(nfa-null.west) + (0,-2)$) {
+\parbox{0.35\textwidth}{\raggedright
+\small
+$q_1\xrightarrow{aw}q_3$ 
+
+\smallskip
+
+\footnotesize if $\delta(q_1,a) \ni q_2$ and $q_2\xrightarrow{w}q_3$
+}
+};
+
+\node[anchor=west] (nfa-language) at ($(nfa-null.west) + (0,-3)$) {
+\small
+$L(M) = \{w \mid \exists q \in F, q_0 \xrightarrow{w}q \}$
+};
+
+
+\draw[darkest,opacity=0.5,rounded corners]
+  ($(dfa-language.west|-dfa-null.north) + (0,2ex)$)
+-- node[midway,fill=background,opacity=1.0] { \color{darkred}\small DFA  }
+  ($(dfa-language.east|-dfa-null.north) + (0,2ex)$)
+--
+  ($(dfa-language.east) + (0,-2ex)$)
+--
+  ($(dfa-language.west) + (0,-2ex)$)
+--
+  cycle;
+
+\draw[darkest,opacity=0.5,rounded corners]
+  ($(nfa-language.west|-nfa-null.north) + (0,2ex)$)
+-- node[midway,fill=background,opacity=1.0] { \color{darkred}\small NFA  }
+  ($(nfa-language.east|-nfa-null.north) + (0,2ex)$)
+--
+  ($(nfa-language.east) + (0,-2ex)$)
+--
+  ($(nfa-language.west) + (0,-2ex)$)
+--
+  cycle;
+\end{tikzpicture}

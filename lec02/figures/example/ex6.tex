@@ -1,0 +1,77 @@
+\textbf{\textsf{Step 6}}
+
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.6cm and 1.5cm]
+\node[initial,rectangular state,fill opacity=0.15,text opacity=1.0,fill=linkcolor] (one) { \scriptsize\itshape 1 };
+\node[rectangular state,accepting,fill opacity=0.15,text opacity=1.0,fill=white] (two) [above right of=one] { \scriptsize\itshape 2:\textsc{ident} };
+\node[rectangular state,accepting,fill opacity=0.15,text opacity=1.0,fill=white] (three) [right of=two] { \scriptsize\itshape 3:\textsc{if} };
+\node[rectangular state,accepting,fill opacity=0.15,text opacity=1.0,fill=white] (four) [below right of=one] { \scriptsize\itshape 4:\textit{skip} };
+\node[rectangular state,accepting,fill opacity=0.15,text opacity=1.0,fill=white] (five) [right of=one] { \scriptsize\itshape 5:\textsc{ident} };
+
+\path[->] (one) edge node[above left] {\scriptsize i } (two);
+\path[->] (one) edge node[left] {\scriptsize [ \textbackslash{n}] } (four);
+\path[->] (one) edge node[below] {\scriptsize [a-hj-z] } (five);
+
+\path[->] (two) edge node[below] {\scriptsize f } (three);
+\path[->] (two) edge node[left] {\scriptsize [a-eg-z] } (five);
+
+\path[->] (three) edge node[below right] {\scriptsize [a-z] } (five);
+
+\path[->] (five) edge [loop below] node[below] {\scriptsize [a-z] } (five);
+
+\end{tikzpicture}
+
+\bigskip
+\bigskip
+
+\begin{tikzpicture}[xscale=2.4]
+\draw (0,0) -- (1.2,0);
+
+\node[anchor=south] at (0.1,0) { \small\texttt{i}};
+\node[anchor=south] at (0.3,0) { \small\texttt{f}};
+\node[anchor=south] at (0.5,0) { \small\texttt{ }};
+\node[anchor=south] at (0.7,0) { \small\texttt{i}};
+\node[anchor=south] at (0.9,0) { \small\texttt{f}};
+\node[anchor=south] at (1.1,0) { \small\texttt{x}};
+
+\begin{scope}[darkest,opacity=0.5]
+\draw (0.0, 0) -- (0.0, 0.3);
+\draw (0.2, 0) -- (0.2, 0.3);
+\draw (0.4, 0) -- (0.4, 0.3);
+\draw (0.6, 0) -- (0.6, 0.3);
+\draw (0.8, 0) -- (0.8, 0.3);
+\draw (1.0, 0) -- (1.0, 0.3);
+\draw (1.2, 0) -- (1.2, 0.3);
+\end{scope}
+
+\node (tokens)  at (2.0,0.2) { \footnotesize \color{darkred} tokens: };
+
+\node[anchor=west,minimum width=3.5cm] (token-list)  at (tokens.east) {  };
+
+% \node[fill=linkcolor,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (0,0) { };
+% \node[fill=linkcolor,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (0.2,0) { };
+% \node[fill=linkcolor,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (0.4,0) { };
+\node[fill=linkcolor,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (0.6,0) { };
+% \node<7>[fill=darkred,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (0.8,0) { };
+% \node<8>[fill=darkred,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (1.0,0) { };
+% \node<9->[fill=darkred,fill opacity=0.2,minimum width=0.48cm,minimum height=0.48cm,anchor=south west] at (1.2,0) { };
+
+% \draw[thick,->,darkred] (0.0,-0.5) -- +(0,0.5);
+% \draw[thick,->,darkred] (0.2,-0.5) -- +(0,0.5); % i
+% \draw[thick,->,darkred] (0.4,-0.5) -- +(0,0.5); % if
+\draw[thick,->,darkred] (0.6,-0.5) -- +(0,0.5); % skip
+% \draw<7>[thick,->,darkred] (0.8,-0.5) -- +(0,0.5); % i
+% \draw<8>[thick,->,darkred] (1.0,-0.5) -- +(0,0.5); % if
+% \draw<9>[thick,->,darkred] (1.2,-0.5) -- +(0,0.5); % ifx
+
+
+% \node<2>[anchor=north] at (0.2,-0.5) { \scriptsize \textsc{ident} };
+% \node[anchor=north] at (0.4,-0.5) { \scriptsize \textsc{if} };
+% \node<7>[anchor=north] at (0.8,-0.5) { \scriptsize \textsc{ident} };
+% \node<8>[anchor=north] at (1.0,-0.5) { \scriptsize \textsc{if} };
+% \node<9>[anchor=north] at (1.2,-0.5) { \scriptsize \textsc{ident} };
+
+\node at (0.0,-1.0) { }; % spacing
+
+\node[anchor=west] at (tokens.east) { \footnotesize\color{darkest}\textsc{[if]} };
+% \node<10->[anchor=west] at (tokens.east) { \footnotesize\color{darkest}\textsc{if} \;\;\textsc{ident}\;\texttt{ifx} };
+\end{tikzpicture}

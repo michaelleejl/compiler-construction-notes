@@ -1,0 +1,7 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2cm]
+\node[state]           (q0)               { \scriptsize $q_0$ };
+\node[state,accepting] (q1) [right of=q0] { \scriptsize  $q_1$ };
+\path[->]              (q0)  edge node {$a$} (q1) ;
+\draw[dotted,rounded corners] ($(q0.south west) + (-0.2,-0.2)$) rectangle ($(q1.north east) + (0.2,0.2)$) ;
+\node[anchor=east] at (q0.west) { $N(a) \quad=\quad$};
+\end{tikzpicture}

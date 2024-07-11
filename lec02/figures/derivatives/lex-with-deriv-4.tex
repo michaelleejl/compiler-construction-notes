@@ -1,0 +1,74 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.5cm and 1.5cm,xscale=0.7,yscale=0.7] 
+
+%% s1:
+%%   if
+%%   [a-z]+
+%%   ' '
+ \node[initial,rectangular state] (s1)      {\parbox{5ex}{\centering\scriptsize
+  $\texttt{if}$\\
+  $\texttt{[a-z]+}$\\
+  $\texttt{[ \textbackslash{n}]}$}};
+%% s2:
+%%   f
+%%   [a-z]*
+%%   Ø
+ \node[accepting,rectangular state] (s2)  [above right of=s1]   {\parbox{5ex}{\centering\scriptsize
+  $\texttt{f}$\\
+  $\texttt{[a-z]*}$\\
+  $\emptyset$}};
+
+%% s3:
+%%   ε
+%%   [a-z]*
+%%   Ø
+ \node[accepting,rectangular state] (s3)  [right of=s2]   {\parbox{5ex}{\centering\scriptsize
+  $\epsilon$\\
+  $\texttt{[a-z]*}$\\
+  $\emptyset$}};
+
+%% s4:
+%%   Ø
+%%   [a-z]*
+%%   Ø
+ \node[accepting,rectangular state] (s4)  [below of=s3]   {\parbox{5ex}{\centering\scriptsize
+  $\emptyset$\\
+  $\texttt{[a-z]*}$\\
+  $\emptyset$}};
+
+%% s5:
+%%   Ø
+%%   Ø
+%%   ε
+ \node[accepting,rectangular state] (s5)  [below right of=s1]   {\parbox{5ex}{\centering\scriptsize
+  $\emptyset$\\
+  $\emptyset$\\
+  $\epsilon$}};
+
+\node[rotate=90,anchor=north] at (s2.east) {\footnotesize\color{darkred}\textsc{ident}};
+\node[rotate=90,anchor=north] at (s3.east) {\footnotesize\color{darkred}\textsc{if}};
+\node[rotate=90,anchor=north] at (s4.east) {\footnotesize\color{darkred}\textsc{ident}};
+\node[rotate=90,anchor=north] at (s5.east) {\footnotesize\color{darkred}\textit{skip}};
+  %% \node[rotate=90,anchor=north] at (lpar.east) {\footnotesize\textsc{lpar}};
+  %% \node[rotate=90,anchor=north] at (atom.east) {\footnotesize\textsc{atom}};
+
+%% s1 -i-> s2
+\path[->] (s1) edge node[midway] {\scriptsize i} (s2);
+%% s1 -[a-hj-z]-> s4
+\path[->] (s1) edge node[midway,above right] {\scriptsize [a-hj-z]} (s4);
+%% s1 -[ ]-> s5
+\path[->] (s1) edge node[midway] {\scriptsize [ \textbackslash{n}]} (s5);
+%% s2 -f-> s3
+\path[->] (s2) edge[bend right=35] node[midway] {\scriptsize f} (s3);
+%% s2 -[a-z]-> s4
+\path[->] (s2) edge node[midway,above right] {\scriptsize [a-eg-z]} (s4);
+%% s3 -[a-z]-> s4
+\path[->] (s3) edge node[midway,right] {\scriptsize [a-z]} (s4);
+%% s4 -[a-z]-> s4
+\path[->] (s4) edge[loop below] node[midway] {\scriptsize [a-z]} (s4);
+
+  %% \path[->,bend left]         (s1)  edge node {\footnotesize a \ldots z} (atom);
+  %% \path[->]          (atom) edge [loop below] node {\footnotesize a \ldots z} (atom);
+  %% \path[->]         (s1)  edge node {\footnotesize(} (lpar);
+  %% \path[->,bend right]         (s1)  edge node {\footnotesize)} (rpar);
+  %% \path[->]          (s1) edge [loop below] node {\footnotesize\textvisiblespace\; $\backslash${n}} (s1);
+\end{tikzpicture}

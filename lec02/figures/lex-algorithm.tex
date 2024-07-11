@@ -1,0 +1,25 @@
+\begin{tikzpicture}
+\node[draw=darkest,draw opacity=0.5,rounded corners] (algorithm) {
+\parbox{\textwidth}{\footnotesize
+\bigskip
+
+\; Start in initial state, and repeatedly:
+
+\begin{enumerate}
+\item
+  Read input until failure (no transition)
+
+  Emit tag for last accepting state
+
+\item
+  Reset state to start state
+
+  Reset position to last accepting position
+\end{enumerate}
+
+}
+};
+
+\node[darkred,fill=background] at (algorithm.north) { \footnotesize lexing algorithm };
+
+\end{tikzpicture}
