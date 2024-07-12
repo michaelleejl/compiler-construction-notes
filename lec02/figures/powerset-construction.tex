@@ -1,68 +1,10 @@
-\begin{minipage}[t]{.5\textwidth}
-\scalebox{0.6}{
-\begin{tikzpicture}[remember picture,>=stealth',shorten >=1pt,auto,node distance=1.5cm,xscale=0.6,yscale=0.6]
-  %% (a + b)*
-  \node[state] (aplusb-star-start) at (0, 0)                                          { \scriptsize\itshape 1 };
-
-    %% a + b
-    \node[state] (aplusb-start)                    [right of=aplusb-star-start] { \scriptsize\itshape 2 };
-
-      %% a
-      \node[state] (a-start)                         [above right of=aplusb-start] { \scriptsize\itshape 3 };
-      \node[state] (a-end)                           [right of=a-start] { \scriptsize\itshape 4 };
-      \draw[dotted,rounded corners] ($(a-start.south west) + (-0.2,-0.2)$) rectangle ($(a-end.north east) + (0.2,0.2)$) ;
-
-      %% b
-      \node[state] (b-start)                         [below right of=aplusb-start] { \scriptsize\itshape 5 };
-      \node[state] (b-end)                           [right of=b-start] { \scriptsize\itshape 6 };
-      \draw[dotted,rounded corners] ($(b-start.south west) + (-0.2,-0.2)$) rectangle ($(b-end.north east) + (0.2,0.2)$) ;
-
-    \node[state] (aplusb-end)                      [below right of=a-end] { \scriptsize\itshape 7  };
-    \draw[dotted,rounded corners] ($(aplusb-start.south west) + (-0.2,-1.4)$) rectangle ($(aplusb-end.north east) + (0.2,1.4)$) ;
-
- \node[state] (aplusb-star-end)                 [right of=aplusb-end] {\scriptsize\itshape 8  };
- \draw[dotted,rounded corners] ($(aplusb-star-start.south west) + (-0.2,-1.6)$) rectangle ($(aplusb-star-end.north east) + (0.2,1.6)$) ;
-\node[state] (b-aplusb-star-a-end) [right of=aplusb-star-end] { \scriptsize\itshape 9 };
-\draw[dotted,rounded corners] ($(aplusb-star-end.south west) + (-0.2,-0.2)$) rectangle ($(b-aplusb-star-a-end.north east) + (0.2,0.2)$) ;
-
-\node[state] (b-aplusb-star-ab-end) [right of=b-aplusb-star-a-end] { \scriptsize\itshape 10 };
-\draw[dotted,rounded corners] ($(b-aplusb-star-a-end.south west) + (-0.2,-0.4)$) rectangle ($(b-aplusb-star-ab-end.north east) + (0.2,0.4)$) ;
-
-\node[state,accepting] (b-aplusb-star-abb-end) [right of=b-aplusb-star-ab-end] { \scriptsize\itshape 11 };
-
-\draw[dotted,rounded corners] ($(b-aplusb-star-ab-end.south west) + (-0.2,-0.6)$) rectangle ($(b-aplusb-star-abb-end.north east) + (0.2,0.6)$) ;
-
-\path[->]         (b-start)  edge node {b} (b-end) ;
-\path[->]         (a-start)  edge node {a} (a-end) ;
-\path[->]         (aplusb-start)  edge node {$\epsilon$} (b-start) ;
-\path[->]         (aplusb-start)  edge node {$\epsilon$} (a-start) ;
-\path[->]         (b-end)  edge node {$\epsilon$} (aplusb-end) ;
-\path[->]         (a-end)  edge node {$\epsilon$} (aplusb-end) ;
-\path[->] (aplusb-star-start) edge node {$\epsilon$} (aplusb-start);
-\path[->] (aplusb-end) edge node {$\epsilon$}  (aplusb-star-end);
-\draw[->] (aplusb-end) to[out=90,in=0]  ($(aplusb-end)!0.5!(aplusb-start) + (0,4.2)$) node[above] {$\epsilon$}
-                       to[out=180,in=90] (aplusb-start);
-\path[->] (aplusb-star-start) edge[bend right=70] node[below] {$\epsilon$}  (aplusb-star-end);
-\path[->] (aplusb-star-end) edge node {a}  (b-aplusb-star-a-end);
-\path[->] (b-aplusb-star-a-end) edge node {b} (b-aplusb-star-ab-end) ;
-\path[->] (b-aplusb-star-ab-end) edge node {b} (b-aplusb-star-abb-end) ;
-
-\end{tikzpicture}
-}
-\end{minipage}%
-\begin{minipage}[t]{.18\textwidth}%
-    a
-\end{minipage}
-\begin{minipage}[t]{.3\textwidth}
-\raggedleft
-\scalebox{0.6}{
-\begin{tikzpicture}[remember picture,>=stealth',shorten >=1pt,auto,node distance=3cm]
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=3cm]
 %% s1: 1, 2, 3, 5, 8
 %% s2: 2, 3, 4, 5, 7, 8, 9
 %% s3: 2, 3, 5, 6, 7, 8
 %% s4: 2, 3, 5, 6, 7, 8, 10
 %% s5: 2, 3, 5, 6, 7, 8, 11
-\node[state] (s1) at (0, 0) { \parbox{6ex}{\centering\footnotesize\itshape 1,2,3,\\5,8} };
+\node[state] (s1) { \parbox{6ex}{\centering\footnotesize\itshape 1,2,3,\\5,8} };
 \node[state] (s2) [above right of=s1] { \parbox{6ex}{\centering\footnotesize\itshape 2,3,4,5,\\7,8,9} };
 \node[state] (s3) [below right of=s1] { \parbox{6ex}{\centering\footnotesize\itshape 2,3,5,6,\\7,8}};
 \node[state] (s4) [right of=s3] { \parbox{6ex}{\centering\footnotesize\itshape 2,3,5,6,\\7,8,10}};
@@ -94,5 +36,3 @@
 %% \path[->] (after-a) edge[loop right] node { a }  (after-a) ; 
 %% \path[->] (after-b) edge[loop right] node { b }  (after-b) ; 
 \end{tikzpicture}
-}
-\end{minipage}
