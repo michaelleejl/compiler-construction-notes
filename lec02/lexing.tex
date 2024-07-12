@@ -5,29 +5,28 @@
 \import{figures}{context}
 \end{center}
 
-The first part of the compiler we'll look at is the Lexer. We'll start by describing what a lexer is in terms of its specification (what it does). Following this, we'll outline the techniques used in actually building a lexer.
+The first part of the compiler we'll look at is the lexer. We'll start by describing what a lexer is in terms of its specification (what it does). Following this, we'll outline the techniques used to build a lexer.
 
 
 \subsection{Lexers}
 In this section, we'll specify the role of the lexer: first at a high level, to get intuition, and then with a little more precision. At a high level, the lexer takes a sequence of characters and transforms it into a sequence of tokens.  
 
 \begin{figure}[H]
-\begin{center}
+\centering
 \import{figures}{lex-specification}
-\end{center}
-\label{fig:lex-specification}
 \caption{The role of the lexer}
+\label{fig:lex-specification}
 \end{figure}
 
-In the example in \Cref{fig:lex-specification}, the lexer takes the \emph{characters} \texttt{i f} and groups them into the \textsc{IF} token. It takes the \texttt{a} character and groups it into the \textsc{IDENT} (for \emph{identifier}) token. You might remember \emph{tokenization} from {\sffamily Part IA Machine Learning and Real World Data} --- it's exactly the same principle. 
+In the example in \Cref{fig:lex-specification}, the lexer transforms the \emph{character sequence} \texttt{[i;f]} into the \textsc{if} token. It transforms the sequence \texttt{[a]} into the \textsc{ident} (for \emph{identifier}) token. You might remember \emph{tokenization} from {\sffamily Part IA Machine Learning and Real World Data} --- it's exactly the same principle, except that we're tokenizing \textit{code}, not \textit{natural language}. 
 
-Holding this high level picture in your head, let's draw out three important characteristics of the lexer: the lexer needs to respect priority, look for the longest match, and ignore whitespace.
+Holding this high level picture in your head, let's draw out three important characteristics of this lexer: it needs to respect priority, look for the longest match, and ignore whitespace.
 
-First, \emph{the lexer needs to respect priority}. As we'll see in this language, users can choose any alphabetic string to be an identifier (that is, \texttt{zoo} and \texttt{zzzzz} are valid identifiers, \texttt{xtor3} is \textbf{not} a valid identifier). But there's a subtlety --- by this definition, \texttt{if} is an alphabetic string, so it could be an identifier. But it could \emph{also} be the \textsc{If} keyword. As creators of the language, we'll need to express that \textsc{If} has a higher priority than \textsc{Ident}. The lexer then needs to respect this priority: if a character sequence matches two or more tokens, it is classified as the highest priority token. The end result is that \texttt{if} will always be lexed as \textsc{If} and never \textsc{Ident}. 
+First, \emph{the lexer needs to respect priority}. In this toy language, users can choose any alphabetic string to be an identifier (that is, \texttt{zoo} and \texttt{xtor} are valid identifiers, \texttt{xtor3} is \textbf{not} a valid identifier). But there's a subtlety --- by this definition, the character sequence \texttt{[i;f]} could either be classified as an identifier (since it is an alphabetic string) or the \textsc{if} keyword. As creators of the language, we'll need to express that \textsc{if} has a higher priority than \textsc{ident}. The lexer then needs to respect this priority: a character sequence should be classified as the \textit{highest priority} token whose pattern it matches. Concretely, \texttt{if} should always be lexed as \textsc{if} and never \textsc{ident}. 
 
-Second, \emph{the lexer looks for the longest match}. We have established that \texttt{if} will be lexed as \textsc{If} and never \textsc{Ident}. This means that the user cannot use \texttt{if} as a variable name. However, the user \emph{can} use \texttt{ifx}, \texttt{ifeven}, \texttt{ifif}, etcetera, as variable names. This is an important detail! It means the lexer has to look for the \emph{longest match} --- it can't just see \texttt{if} and report that it's seen \textsc{If}, it has to check what comes after too! In particular, \texttt{ifif} should be classified as \textsc{Ident}, not \textsc{If} $\times 2$.
+Second, \emph{the lexer looks for the longest match}. We have established that \texttt{if} will be lexed as \textsc{if} and never \textsc{ident}. This means that the user cannot use \texttt{if} as a variable name. However, the user \emph{can} use \texttt{ifx}, \texttt{ifeven}, and \texttt{ifif} as variable names. This is an important detail! It means the lexer has to look for the \emph{longest match} --- it can't just see \texttt{if} and report that it's seen \textsc{if}, it has to check what comes after too! In particular, \texttt{ifif} should be classified as \textsc{ident}, not \textsc{if} $\times 2$.
 
-Third, \emph{the lexer ignores whitespace}. You'll notice that not all characters, specifically, whitespace like \verb|\n|, do not have tokens. We can infer, from this, that our language is not whitespace sensitive. We'll introduce a special ``token'', \emph{\sffamily skip}, to indicate that we've seen whitespace, but this token will be special (specially useless), in that on seeing it, we'll immediately bin it. 
+Third, \emph{the lexer ignores whitespace}. Respecting priority and looking for the longest match are traits that \textbf{all} lexers need to share. This particular toy language is not whitespace-sensitive. Hence, whitespace characters like \verb|\n| are not transformed into tokens. We'll introduce a special ``token'', \emph{skip}, to indicate that we've seen whitespace, but this token will be special (specially useless), in that we'll filter it out of our final token sequence. 
 
 \subsection{Lexer Generators}
 \begin{figure}[H]
@@ -38,28 +37,29 @@ Third, \emph{the lexer ignores whitespace}. You'll notice that not all character
     \label{fig:build-lexer}
 \end{figure}
 
-We have covered what a lexer does. How would you go about building a lexer? \Cref{fig:build-lexer} illustrates how a lexer is typically built in a modern day compiler. The programmer specifies an \emph{ordered mapping} from regular expressions to tokens, in which the order encodes \emph{priority} (\textsc{IF} is higher priority than \textsc{THEN}, etc.). Let's say this specification is saved in a \texttt{lexer.mll} file. The programmer then runs \texttt{ocamllex lexer.mll}, and out pops a lexer. You can find more details \hyperlink{https://ocaml.org/manual/5.2/lexyacc.html}{here}.
+The specification of a lexer, illustrated in \Cref{fig:build-lexer}, is therefore simple. It is an \emph{ordered mapping} from regular expressions to tokens, in which the order encodes exactly the priority we want the lexer to respect. Compiler technology has advanced to the point where all you need to \textit{build} a lexer these days is to \textit{specify} it.
 
-\texttt{ocamllex} is a lexer \emph{generator}. It's a piece of machinery that takes any specification of a lexer and produces a lexer. So, to be more precise, this chapter will teach you how to build a lexer generator, which you can then use to build your own lexers. 
+Say this specification is saved in a \texttt{lexer.mll} file. If you run \texttt{ocamllex lexer.mll}, you'll have created a lexer. You can find more details \href{https://ocaml.org/manual/5.2/lexyacc.html}{here}.
+
+\texttt{ocamllex} is a lexer \emph{generator}. It's a piece of machinery that takes any specification of a lexer and produces a lexer. So, to be precise, this chapter will teach you how to build a lexer generator, which you can then use to build your own lexers. 
 
 \subsection{Roadmap: Building lexer generators}
 Recall what a lexer should do: take a sequence of characters and transform it into a sequence of tokens. This means that we can build the lexer in two parts:
 
-\textbf{Step 1} (\textit{Classifier}). Build a \textit{classifier} that takes a sequence of characters and \emph{classify} it as one of the possible tokens (just \emph{one} token, not a sequence). For example, the classifier will classify \texttt{if} as IF, but will fail to classify \texttt{if then} as a token (since this cannot be mapped onto a \emph{single} token). We will build a classifier in two steps.
+\textbf{Step 1} (\textit{Classifier}). Build a \textit{classifier} that takes a sequence of characters and \emph{classify} it as one of the possible tokens (just \emph{one} token, not a sequence). For example, the classifier will classify \texttt{if} as \textsc{if}, but will fail to classify \texttt{if then} as a token (since this cannot be mapped onto a \emph{single} token). We will build a classifier in two steps.
 
 \begin{addmargin}[1cm]{0cm}
-\textbf{Step 1a} (\textit{Recogniser}). In {\sffamily Part IA Discrete Maths}, you will have learnt about the regular language problem. Given a regular language $\mathcal{L}$ (specified by means of a regular expression $e$), and a string, $s$, we ask if $s \in \mathcal{L}$? You've also learnt that you can build a Discrete Finite Automaton (DFA) to solve this problem. By building a DFA, we will know if a sequence of characters \emph{is} a valid token, or if it is not.
+\textbf{Step 1a} (\textit{Recogniser}). We'll first build a machine that determines if a sequence of characters \textit{is} or \textit{is not} a valid token. We will do this by building a Deterministic Finite Automaton to solve an appropriate regular language problem, which you'll have learnt about in {\sffamily Part IA Discrete Maths}.
 
-\textbf{Step 1b} (\textit{Classifier}). \textbf{Step 1a} will tell us \emph{if} a sequence of characters is a token or not a token, but will not tell us \emph{which} token, is certainly not guaranteed to return the \emph{highest priority} token. We will use a technique called \emph{tagging} to remedy this. 
+\textbf{Step 1b} (\textit{Classifier}). \textbf{Step 1a} will tell us \emph{if} a sequence of characters is a token or not a token, but will not tell us \emph{which} token, is certainly not guaranteed to return the \emph{highest priority} token. To remedy this problem, we will introduce tagged DFAs. 
 \end{addmargin}
 
-\textbf{Step 2} (\textit{Lexer}). We'll turn the classifier into a full-fledged lexer. Let's consider what happens when the classifier tries to classify \texttt{if then}. It will fail the moment it hits the whitespace, since \emph{no valid token ends in a whitespace}. This means that we can treat failure points as the ``break''s between tokens. By running the classifier until failure, and re-starting it after the failure point (that is, after the whitespace), we will have turned it into a lexer. Additionally, by specifying the operation this way, we will \emph{automatically} ignore whitespace and look for the longest match. 
+\textbf{Step 2} (\textit{Lexer}). Turning the classifier into a lexer is a matter of \textit{using} it correctly. Let's consider what happens when the classifier tries to classify \texttt{if then}. It will fail the moment it hits the whitespace, since \emph{no valid token ends in a whitespace}. This means that we can treat failure points as the ``break''s, or ``boundaries'', between tokens. By running the classifier until failure, and re-starting it after the failure point (that is, after the whitespace), we will have turned it into a lexer. This is known as \emph{the lexing algorithm}. 
 
 
+Putting it all together, we will first solve the regular language problem. Then, we will use tagging to create a classifier. Finally, we will specify how to use the classifier as a lexer by means of \emph{the lexing algorithm}.
 
-Putting it all together, we will first solve the regular language problem. Then, we will use tagging to create a classifier. Finally, we will specify how to use the classifier as a lexer.
-
-\section{Discrete Finite Automata}
+\section{Deterministic Finite Automata}
 Our goal is to take a \textit{regular expression} $e$ and generate a \textit{lexer}. The first step in this process is to build a \textit{recogniser}. Specifically, we want a Deterministic Finite-Automaton (DFA) that solves the regular language problem for the given $e$. In this section, we will illustrate how to mechanically build such a DFA when given $e$, by first transforming $e$ into a \textbf{Non}-determinstic finite automaton (NFA), and then transforming the NFA into a DFA.
 
 \makeatletter

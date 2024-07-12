@@ -409,6 +409,15 @@ int f(int x) {
     \textbf{Example 2: Instruction Scheduling.} As you'll have learnt in {\sffamily Part IB Computer Architecture}, loads can introduce load-to-use data dependencies and thus stalls. \textit{Load hoisting} can solve the problem, by scheduling loads to run as early as possible. This illustrates a general trend --- try to execute ``slow'' instructions as eagerly as possible, before their results are needed. To do this, we need knowledge of which instructions are slow and which are fast, and this is obviously dependent on the processor.
 \end{minipage}
 
+\subsection{The Focus of this Course}
+In this course, the focus will primarily be on the front-end. The middle and back-end will be treated as a single entity. This is \textbf{not} because nothing interesting happens in the middle and back-end, but rather because of time constraints. The middle and back-end will be explored in much more detail in \textsf{Part II Optimising Compilers}.
+
+As a result, the structure of the compiler, \textit{for the purposes of this course}, looks as follows
+
+\begin{center}
+    \import{figures}{context}
+\end{center}
+
 \section{Compile Time Efficiency$^{*}$}
 At this point, it is important to make explicit two \emph{different} efficiencies that we care about, which we'll call the compile-time and run-time efficiencies.
 
