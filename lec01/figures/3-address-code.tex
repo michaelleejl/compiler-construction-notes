@@ -1,0 +1,22 @@
+\begin{tabular}{ll}
+\texttt{entry} & \texttt{foo} \\
+\texttt{} & \texttt{mov t0, \#0x1000} \\
+\texttt{} & \texttt{mov t1, \#0} \\
+\texttt{} & \texttt{mov t2, \#0} \\
+\texttt{} & \texttt{mov t3, arg0, \#2} \\
+\texttt{} & \texttt{mov t4, arg1, \#4} \\
+\texttt{} & \texttt{mov t5, \#\&lab4} \\
+\texttt{} & \texttt{sti t0, t5} \\
+\texttt{} & \texttt{b lab7} \\
+\texttt{lab1:} & \texttt{mov t6, \#1} \\
+\texttt{} & \texttt{cmpeq t1, arg2, lab3} \\
+\texttt{} & \texttt{mul t7, t4, t4} \\
+\texttt{} & \texttt{cmpeq t1, t7, lab5} \\
+\texttt{} & \texttt{b lab6} \\
+\texttt{} & \texttt{mov t8, \#\&lab5} \\
+\texttt{} & \texttt{sti t0, t8} \\
+\texttt{} & \texttt{b lab5} \\
+\texttt{lab3:} & \texttt{mul t9, t4, t4} \\
+\texttt{...} & \texttt{...} \\
+
+\end{tabular}

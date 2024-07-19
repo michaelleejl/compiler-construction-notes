@@ -1,0 +1,784 @@
+\chapter{Theoretical Foundations of Parsing}\label{chapter:parse-foundations}
+
+\section{Overview}
+\begin{center}
+    \import{figures}{context}
+\end{center}
+
+The parser is responsible for taking the token stream and transforming it into a syntax tree. In doing so, it recovers the structure of the token sequence. Parsers are fairly complicated, and so the next four chapters will be dedicated to them. In this chapter, we'll begin with the theoretical foundations of parsing, by looking at context-free grammars.
+
+When we looked at lexing, we introduced the Regular Expression as the correct mathematical tool for specifying the tokens of a language, and the Finite Automaton as the correct tool for describing how lexers work.
+
+The situation for parsers, unfortunately, is a little more complex. Different parsers are specified using different mathematical tools, and different parsers need to be described using different mathematical machinery. However, it is still possible to take a universal view. At the end of this chapter, we hope to convince you that, in practice, the \textbf{family} of different parser specifications \textit{is best described} by the \textit{unambiguous}, \textit{deterministic} Context-Free Grammar to specify parsers, and the \textbf{family} of different parsers is best conceptualised using the \textit{deterministic} Push-Down Automaton. 
+
+In order to do this, we will first explore what a parser is (\Cref{section:parsers}) and how to specify one (\Cref{section:parser-generators}).
+
+\subsection{Parsers}\label{section:parsers}
+\begin{figure}[h]
+    \centering
+    \import{figures}{par-specification}
+    \caption{The role of the parser is to take a sequence of tokens and turn it into a syntax tree}
+    \label{fig:par-specification}
+\end{figure}
+
+The role of the parser is to take a sequence of tokens, verify that it has the correct grammatical structure, and explicitly layer that structure onto the sequence as syntax tree (\Cref{fig:par-specification}).
+
+It is possible to combine a sequence of valid tokens in an un-grammatical way. Consider
+\begin{minted}[bgcolor=backcolour]{ocaml}
+then b else c
+\end{minted}
+Clearly this should not be a valid expression in any sane programming language --- it is an \texttt{if} statement without a conditional! But it could tokenize just fine, as [\textsc{then}, \textsc{ident} "b", \textsc{else} \textsc{ident} "c"].
+
+What this tells us is that to be a program, it is not enough to be able to produce a sequence of tokens. The tokens must have the right form, or structure. Recovering this structure is \textit{exactly} the job of the parser.
+
+\subsection{Parser Specifications}\label{section:parser-generators}
+A parser checks that programs have the right sort of structure, and makes that structure explicit by constructing an abstract syntax tree. What exactly is the ``right sort of structure'', and how is it specified? Cast your mind back to \textsf{Part IB Semantics of Programming Languages}, where you learnt how to define programming languages. Consider the programming language \textit{L1} from that course, whose syntax is defined as follows
+\begin{align*}
+    e ::= & \, n \mid b \mid e_1 \, \text{op} \, e_2 \mid \textbf{\textsf{if}} \, e_1 \, \textbf{\textsf{then}} \, e_2 \, \textbf{\textsf{else}} \, e_3 \mid \\
+    & \, l := e \mid \, !l \mid \textbf{\textsf{skip}} \mid e_1 ; e_2 \mid \textbf{\textsf{while}} \, e_1 \, \textbf{\textsf{do}} \, e_2
+\end{align*}
+Note that such a specification would immediately eliminate the aforementioned invalid program from consideration --- there is no rule that matches \texttt{then b else c}.
+
+When a specification is written this way, it is known as \textit{Backus-Naur Form} or BNF. It is the standard way to specify the syntactic structure of valid programs, not just for toy languages. For example, here is a small fragment of the \texttt{C} specification, which is written in the same way
+
+\begin{center}
+    \import{figures}{c-syntax}
+\end{center}
+
+Recall, additionally, that in \textsf{Part IB Semantics of Programming Languages}, we defined a notion of a \textit{value}, or an \textit{irreducible} term. Examples of irreducible terms in \textit{L1} are $n$, $b$, and $l$. By irreducible, we mean that they are atomic in some sense --- they cannot stand for / represent anything but themselves. Hence, you'd never write a specification that looks like
+\[ n ::= \ldots \]
+Just like how you can create a lexer by simply specifying it, you can create a parser by declaring its specification. Here is a fragment of a parser specification for \textit{L1}
+
+\begin{minted}[bgcolor=backcolour]{ocaml}
+expr:
+  | expr ADD expr                { Past.Op(get_loc(), $1, Past.ADD, $3) }
+  | IF expr THEN expr ELSE expr  { Past.If(get_loc(), $2, $4, $6) }
+  | WHILE expr DO expr           { Past.While(get_loc(), $2, $4) }
+  | ...
+\end{minted}
+
+Ignoring, for the moment, the scary looking stuff in braces (\texttt{Past.X} is just a \textit{node} in the generated syntax tree, and \texttt{\$i} refers to the $\text{i}^\text{th}$ token in the sequence), this is effectively how you would write the definition of \textit{L1} down on paper. 
+
+Put this definition in a \texttt{parser.mly} file, and run \texttt{ocamlyacc parser.mly}, and you get a parser. \texttt{ocamlyacc} is a parser \textit{generator}. It is one possible technique for automatically constructing a parser from its specification.
+
+\section{Context Free Grammars}\label{section:context-free-grammars}
+When we build parser generators, we want a description of what the language designer can use to describe their parser specification. 
+
+For example, when we defined a lexer generator, we said
+
+\begin{center}
+    The language designer uses \textit{regular expressions} to specify the lexer
+\end{center}
+
+At the beginning of the chapter, we emphasised that there is no corresponding sentence for parsers, because different parsers are specified using different mathematical tools. However, we also argued that we could smooth over the differences to make the following case:
+
+\begin{center}
+    \textbf{The language designer uses \textit{something like an unambiguous, deterministic context-free grammar} to specify the parser}
+\end{center}
+
+This section will therefore smoothen over the differences temporarily, focusing on a universal view of a parser specification. Even then, we won't go all the way --- we will show that the \textit{unambiguous} context-free grammar is \textit{almost} what we want.
+
+To do this, we will define the context-free grammar, without any qualifiers (\Cref{section:cfg-defn}). By performing a quick sanity check, we will re-assure ourselves that it is a sensible starting point (\Cref{section:cfg-and-pl}). 
+
+Building on this starting point, we will investigate the languages that may be generated using a CFG (\Cref{section:cfg-properties}), and illustrate that all words have a structure that can be recovered by a parser (\Cref{section:cfg-syntaxtrees}).
+
+Finally, we will show why we need \textit{unambiguous} context-free grammars, not just context-free grammars (\Cref{section:cfg-ambiguity}).
+
+\subsection{Defining the Context-Free Grammar}\label{section:cfg-defn}
+A context-free grammar is a four tuple, comprising nonterminals $N$, terminals $T$, productions $P$ and a start symbol $S$. 
+
+\begin{center}
+    \import{figures}{cfg-defi}
+\end{center}
+
+For example, we can define a context free grammar, $G_1$, for building arithmetic expressions
+\[G_1 = \langle N_1,T_1,P_1,E \rangle\]
+where
+\[
+\begin{array}[t]{rcl}
+N_1 &=& \{E\}  \\[0.5ex]
+T_1 &=& \{+,*,(,),\text{id}\} \\[1.25ex]
+P_1 &=& 
+  E  \begin{array}[t]{rl}\to & E + E\\
+  \mid & E * E\\
+  \mid & (E) \\
+  \mid & \text{id}
+\end{array}
+\end{array}
+\]
+\label{cfg-g1}
+
+\textbf{NB}: the production rules $P_1$ are written in a style resembling BNF. This is shorthand for the relation
+\[P_1 = \{\langle E, E + E \rangle, \langle E, E * E \rangle, \langle E, (E) \rangle, \langle E, \text{id} \rangle\}\]
+
+Using this example, we can give intuitive meaning to the role played by $N$, $T$, $P$, and $S$.
+
+% \begin{minipage}[t]{0.25\textwidth}
+%     $N$ non-terminal
+% \end{minipage}%
+% \begin{minipage}[t]{0.75\textwidth}
+\subsubsection{Non-terminals $N$}
+Non-terminals represent \textit{placeholders} for valid strings in the language. They should \textbf{not} appear in the final string. Their presence implies that the string is \textit{not yet valid}, and needs to be expanded further. Hence the name --- non-terminal. 
+    
+For example, when we specify \textit{L1}, and write $e_1 + e_2$, we do not mean that the $e_1 + e_2$ is a valid expression, but rather we use $e_1$ and $e_2$ as \textit{placeholders} for valid expressions.
+
+Importantly, in the simple languages you've been exposed to so far, there's only ever been one non-terminal (often labelled $e$). This is not, in the general case, true. Two examples. 
+
+First, in the fragment of the \texttt{C} specification, \textit{declaration}, \textit{declaration\_specifiers}, etc are all (different) non-terminals.
+
+Second, as you will see next year in \textsf{Part II Types}, it can be useful to explicitly disambiguate between \textit{pure} expressions $e$ that have no side effects and \textit{impure} terms $t$ that have side effects. A canonical example of an effectful term is something that writes to a store. So you might choose to write a grammar that looks like
+\begin{align*}
+    e ::=& \, n \mid b \mid e_1 \, \text{op} \, e_2 \mid \textbf{\textsf{if}} \, e_1 \, \textbf{\textsf{then}} \, e_2 \, \textbf{\textsf{else}} \, e_3 \mid \\
+    & \textbf{\textsf{skip}} \mid e_1 ; e_2 \mid \textbf{\textsf{while}} \, e_1 \, \textbf{\textsf{do}} \, e_2 \mid \{ t \} \\
+    t ::= & \, !l \mid l := e \mid \ldots
+\end{align*}
+
+This may seem like just a syntactic difference that isn't particularly meaningful. Recall that the entire point of specifying semantics in this manner, rather than in natural language, is to be \textit{really precise} about every bit of the language. Being able to explicitly separate effectful terms from pure expressions is therefore really useful in being precise, and CFGs give us the power to do this.
+
+\subsubsection{Terminals $T$}
+Terminals can be thought of as characters that appear in the final string --- tokens, or words, in the vocabulary of the language. They should not be expanded further.
+
+In a programming language, \textit{values are terminals}. For example, in \textit{L1}, values like $0, 1$ are terminals. 
+
+But \textit{not all terminals are values}. Operators and other symbols are terminals too! For example, $+$ is a terminal, as are \texttt{if}, \texttt{then}, and \texttt{else}.
+
+You might be thinking that terminals are effectively tokens in the vocabulary of the language (and you'd be right!)
+
+We hope you can see the resemblance between this and the specification of $L1$! This should not, however, be a convincing argument that context free grammars are the right mathematical tool for describing the grammatical structure of \textbf{all} programming languages. 
+
+\subsubsection{Productions $P$}
+Productions are the rules you've hopefully grown familiar with writing when defining languages like $L1$, $L2$, and $L3$. You should already, therefore, have an intuitive feeling for what it is they are. We therefore only have two clarifications.
+
+First, a clarification around terminology. You might read something like
+\[ e ::= e_1 + e_2 \] 
+as $e$ \textit{could stand for} $e_1 + e_2$. This is a natural, algebraic way of thinking about things (for example, when I write $n$, I could mean $0, 1, 2, \ldots$). When talking about context free grammars, you'll often see the phrase ``$e$ \textit{expands to} $e_1 + e_2$''. They mean the same thing.
+
+Second, formal descriptions are important! Let's consider the formal definition of the production
+\[P \subseteq N \times (N \cup T)*\]
+This tells us that a production rule \textit{must} only expand non-terminals. Importantly, this (sensibly) rules out productions that try to expand non-terminals.
+
+Perhaps more subtly, it means that you cannot write a rule that looks like 
+\[*e ::= \ldots\]
+Where $e$ is a non-terminal and $*$ is a terminal or non-terminal. This means that the \textit{context} in which $e$ appears --- which you may remember from \textbf\textsf{Part IB Semantics of Programming Languages} as written $C[e]$ --- \textbf{cannot} affect what $e$ is allowed to expand to. That's where this class of languages/grammars gets its name from. It is \textit{context free}. 
+
+If the context $C$ \textit{is} allowed to affect what $e$ expands to, the language is called context-sensitive. 
+
+\subsubsection{Start Symbol $S$}
+Recall that when we defined $L1$, it was clear what a program was (any expression $e$ is a program). Things are a little more complicated when we introduce more than one non-terminal. For example, when we split pure expressions $e$ and effectful terms $t$
+\begin{align*}
+    e ::=& \, n \mid b \mid e_1 \, \text{op} \, e_2 \mid \textbf{\textsf{if}} \, e_1 \, \textbf{\textsf{then}} \, e_2 \, \textbf{\textsf{else}} \, e_3 \mid \\
+    & \textbf{\textsf{skip}} \mid e_1 ; e_2 \mid \textbf{\textsf{while}} \, e_1 \, \textbf{\textsf{do}} \, e_2 \mid \{ t \} \\
+    t ::= & \, !l \mid l := e \mid \ldots
+\end{align*}
+
+You might be asking what a \textit{program} is in this language. Is it $e$ or $t$? The answer is that it's your choice, but you \textit{do have to choose}. If your answer is $e$, then your \textit{start symbol} is $e$ (and symmetric for $t$).
+
+\subsection{CFGs and Programming Languages}\label{section:cfg-and-pl}
+Before we proceed any further in understanding the CFG, we will perform a quick sanity check to convince ourselves that it is a somewhat sensible starting point. 
+
+As our specification should be formal (it should have mathematically proven and well-understood properties), we will restrict ourselves to the class of formal languages. 
+
+A non-exhaustive list of formal languages \textit{is the Chomsky Hierarchy}, listed in terms of increasing strength
+
+\begin{enumerate}
+    \item Regular Languages
+    \item Context-Free Languages
+    \item Context-Sensitive Languages
+    \item Recursively Enumerable Languages
+\end{enumerate}
+
+% \begin{center}
+%     \import{figures}{formal-languages}
+% \end{center}
+
+We can immediately eliminate Regular Languages, since we know that the language of well-formed parentheses $\{^n \}^n$ is not regular, but any programming language should be able to disambiguate between well-formed and ill-formed parentheses. 
+
+We can also eliminate Recursively Enumerable Languages, as deciding whether a program is well-formed with respect to a Recursively Enumerable Language is, in the general case, undecidable (\textsf{Part IB Computation Theory}). 
+
+Is the syntactic structure of any programming language describable using a context-free grammar? Unfortunately not. For example, the syntax of \texttt{C} \href{https://eli.thegreenplace.net/2007/11/24/the-context-sensitivity-of-cs-grammar#:~:text=There%20is%20no%20way%20to,T%20and%20passed%20to%20func%20.}{is not context-free}.
+
+This is most visibly demonstrated by the \texttt{typedef} problem. What does the following statement in \texttt{C} mean?
+\begin{minted}[bgcolor=backcolour]{C}
+f (x)
+\end{minted}
+The answer is -- depends on if \texttt{f} is a type, or if \texttt{f} is a function. If \texttt{f} is a type, then this has the same semantics as the declaration ``\texttt{x} has type \texttt{f}''. For example, swapping \texttt{int} for \texttt{f},
+\begin{minted}[bgcolor=backcolour]{C}
+int (x)
+\end{minted}
+This ambiguity is known as \href{https://www.gnu.org/software/bison/manual/bison.html#Semantic-Tokens}{the \texttt{typedef} problem}, and is a symptom of context-sensitivity.
+
+This does \textit{not} mean, however, that our parsers should accept all context sensitive specifications. Two observations support this.
+
+First, the syntax for almost all languages can \textbf{mostly} be described using a CFG. Without going into too much detail, \citet{kernighan-1978} write ``With one further change, namely [solving the \texttt{typedef} problem], this grammar is acceptable to the YACC parser-generator.''. In other words, it is not that the entire language is context-sensitive, but \textit{select language features} require context-sensitivity. In addition, some programming languages, like \texttt{OCaml}, can be described entirely using a CFG.
+
+It is thus feasible to build a parser for a language that is context sensitive requires \textit{extending} a context-free parser (for example, one generated using a parser generator) with some additional facilities for processing context sensitivity. 
+
+Second, while we \textit{can} build parsers that accept context sensitive specifications, the best known parser generators are in \textsf{P-SPACE} (which, when you do \textsf{Part IB Complexity Theory}, you'll learn is formal-speak for ``probably extremely difficult''). Further, they mostly are not needed --- and not just because only select language features require context sensitivity! Context sensitive grammars are \textit{incredibly} expressive: as a reference point, and as you'll learn in \textsf{Part IB Formal Models of Language}, most natural languages, like English, are only \textit{mildly} context sensitive.
+
+Therefore, we can be convinced that context-free grammars are a good starting point. The context sensitive syntactic constructs in these other languages are myriad and interesting, but they are outside the scope of this course.
+
+\subsection{Context-Free Languages}\label{section:cfg-properties}
+We have seen the definition of a context-free grammar, and hopefully you are convinced that it is a good starting point. We shall now investigate the space of languages that may be generated by context-free grammars. Recall the definition of a CFG:
+\[ M = \langle N, T, P, S \rangle \]
+First, what do we mean when we refer to the ``language generated by a CFG''? Concretely, we know that we can define \textit{L1} as a context-free grammar, that looks something like
+\[ M_{\textit{L1}} = \langle N_{\textit{L1}}, T_{\textit{L1}}, P_{\textit{L1}}, e \rangle \]
+In addition, we can use $e$ to refer to ``all grammatically correct programs in \textit{L1}''. Implicitly, we treat $e$ as a malleable object that we can mold (using $P_{\textit{L1}}$) into any program in $L1$ (whose tokens are in $T_{\textit{L1}}$). 
+
+Using $M_\textit{L1}$ in this way, we treat it as a \textit{generator} for \textit{L1} programs. This view of CFGs allows us to speak of ``the language generated by a context-free grammar, $L(M)$'', in a similar way that we speak about ``the language represented by a regular expression''.
+
+In this section, we'll formalise this notion of a context-free grammar as a \textit{producer} of words in a language. Specifically, we'll consider the \textit{process} by which these words are produced, which are called \textit{derivations}.
+
+\subsubsection{Notation}
+Before we formalise the notion of a CFG as a language producer, we should establish some notational convention. 
+
+It would be extremely helpful if we were able to identify which bits of a string were \textit{non-terminals}, which were \textit{terminals}, and which were \textit{a mixture}. 
+
+We'll use the following notational convention: lowercase symbols like $a$ refer to terminals. Uppercase symbols like $A$ refer to non-terminals. Greek letters like $\alpha$ refer to some \textit{sequence} of terminals and non-terminals.
+\begin{align*}
+    a, b, c, \ldots \in & \, T \\
+    A, B, C, \ldots \in & \, N \\
+    \alpha, \beta, \gamma, \ldots \in & \, (N \cup T)*
+\end{align*}
+
+We'll also be defining the notion of a \textit{derivation step}.  Assume we had the production rule 
+\[A \rightarrow \gamma\]
+Using our notational convention, we know that this means that the \textit{non-terminal} $A$ can expand to a sequence of terminal and non-terminals $\gamma$. Assume we had some string
+\[\alpha A \beta \]
+Recall that this means some sequence of terminals and non-terminals $\alpha$, followed by a non-terminal $A$, followed by some sequence of terminals and non-terminals $\beta$. 
+
+Then a \textit{derivation step} is written
+\[\alpha A \beta \Rightarrow \alpha \gamma \beta \]
+Which we know means ``expanding $A$ to $\gamma$ in the context $\alpha - \beta$''.
+
+% \textbf{Note:} At this stage, it is \textit{incredibly important} to clarify the difference between $\rightarrow$ and $\Rightarrow$. 
+
+% \begin{addmargin}[1.4cm]{0cm}
+% $\rightarrow$ is a \textit{definition}. On the left hand side, it tells us a pattern to look for, and on the right hand side, it tells us what we can transform that pattern to. Since this is context-free, $\alpha A \beta$ should \textbf{not} occur on the left hand side of $\rightarrow$, since this would mean that the context surrounding $A$ affects what it can expand to.
+
+% $\Rightarrow$ is an \textit{application}. On the left hand side, it tells us what pattern has been matched, and on the right, the result of applying \textit{one of the pre-defined production rules}. Hence, $\alpha A \beta$ \textit{is} a valid sequence of the left hand side of $\Rightarrow$, since it means ``Since $A$ expands to $\gamma$ no matter what the context is, it can (by instantiation) expand to $\gamma$ in the context $\alpha - \beta$''.
+% \end{addmargin}
+
+We will use $\Rightarrow^{*}$ to refer to ``zero or more derivation steps'' and $\Rightarrow^{+}$ to refer to ``one or more derivation steps''.
+
+These definitions are collated in \Cref{tab:par-collated-notation}.
+
+\begin{table}[]
+    \centering
+    \begin{tabular}{l|l}
+        \textbf{Notation} & \textbf{Meaning} \\ \hline
+        $a, b, c, \ldots$ & Terminal \\
+        $A, B, C, \ldots$ & Non-terminal \\
+        $\alpha, \beta, \gamma, \ldots$ & Sequence of terminals and non-terminals \\
+        $\Rightarrow$ & Derivation step\\
+        $\Rightarrow^{*}$ & Zero or more derivation steps\\
+        $\Rightarrow^{+}$ & One or more derivation steps
+    \end{tabular}
+    \caption{Collated Definitions}
+    \label{tab:par-collated-notation}
+\end{table}
+
+% In doing so, it makes explicit the structure of the program --- how tokens are organised together. It is possible to write a program that passes the lexer but fails the parser, for example
+
+% For example, consider a programming language that lets you write arithmetic statements. Consider the two expressions, which are clearly semantically different
+% \begin{align*}
+%     1 + (2 \times 3)\\
+%     (1 + 2) \times 3
+% \end{align*}
+
+\subsubsection{Derivations}
+\newcommand{\selectedNonTerminal}[1]{{\tcbox{\textbf{\textsf{\textcolor{white}{#1}}}}}}
+\newcommand{\nonterminal}[1]{{\textbf{\textsf{\textcolor{nonterminal}{#1}}}}}
+
+Recall our goal for this section --- to formalise the notion of a context-free grammar as a \textit{producer} of words in a language. 
+
+The \textit{derivation} of a word $w$ refers to the \textit{means of production}. It is a sequence of one or more derivation steps that go from our start symbol to the word $w$. For example, recalling our context-free grammar $G_1$, defined on \Cpageref{cfg-g1}, we can produce a derivation for the word $(x + y) * (z + x)$. 
+
+We shall use $\nonterminal{E}$ to indicate a non-terminal $E$ that \textit{can} be expanded.
+\import{figures}{example-deriv}
+We hope you realise that this is \textbf{not} the only derivation of $(x + y) * (z + x)$! Any time we have multiple non-terminals, we can choose to expand \textit{any} one of them. For example, we could have chosen to expand the second $\nonterminal{E}$ on line 2, resulting in an alternate (but valid!) derivation.
+
+We shall use $\selectedNonTerminal{E}$ to indicate that \textit{this} is the non-terminal we have chosen to expand.
+
+% \DeclareMathOperator{\selectedNonTerminal}{selectedNonTerminal}
+% \DeclareMathOperator{\nonterminal}{nonterminal}
+
+\begin{center}
+\begin{minipage}[t]{0.25\textwidth}
+    \centering
+    \begin{array}{rcl}
+      {\selectedNonTerminal{E}} &\Rightarrow& {\selectedNonTerminal{E} * \nonterminal{E}} \\
+      &\Rightarrow& (\selectedNonTerminal{E}) * \nonterminal{E}\\
+     &\Rightarrow& \ldots\\
+    \end{array}
+\end{minipage}%
+\begin{minipage}[t]{0.25\textwidth}
+    \centering
+        \begin{array}{rcl}
+     {\selectedNonTerminal{E}} &\Rightarrow& {\selectedNonTerminal{E} * \nonterminal{E}} \\
+      &\Rightarrow& (\nonterminal{E}) * \selectedNonTerminal{E}\\
+      &\Rightarrow&  \ldots\\
+    \end{array}
+\end{minipage}
+\end{center}
+
+As a result of this non-determinism, the \textit{same} word will have \textbf{multiple} derivations. We distinguish two special types of derivation, a \textit{left-most} derivation and a \textit{right-most} derivation. When faced with multiple non-terminals that could be expanded, a left-most derivation will always choose the left-most, whereas a right-most derivation will always choose the right-most \footnote{The example on the previous page is a left-most derivation}. \label{definition:leftmostderivation}
+
+\begin{minipage}[t]{.5\textwidth}
+    A \textbf{left-most} derivation
+    \import{figures}{leftmost-deriv}
+\end{minipage}%
+\begin{minipage}[t]{.5\textwidth}
+    A \textbf{right-most} derivation
+    \import{figures}{rightmost-deriv}
+\end{minipage}
+
+\subsubsection{The Language Generated by a Context-Free Grammar}
+We can now speak of the language $L(G)$ generated by a context-free grammar $G$.
+
+Informally, the language generated by $G$ is all the words that can be derived in some number of steps from the starting symbol. 
+
+Formally, 
+\[L(G) = \{w \in T* \mid S \Rightarrow^{+} w \}\]
+
+There are two important points in the definition. First, a word must contain no non-terminals ($w \in T\*$). Second, we must take at least one derivation step, since $S$ is a non-terminal ($\Rightarrow^{+}$, not $\Rightarrow^{*}$). 
+
+\subsubsection{CFGs are More Powerful than Regular Expressions}
+We have established that CFGs are language producers. We have also introduced the notion of a \textit{derivation}, as a mechanism for producing words in a language. In this section, we investigate the \textit{space} of languages that can be produced using a CFG. In particular, we make the argument that CFGs are \textbf{more powerful} than regular expressions. 
+
+This argument has two parts.
+
+First, every regular language can be generated by an appropriate Context-Free Grammar. Second, there exist context free grammars that can generate languages that are not regular. 
+
+The first part of this argument is a little tricky, because we don't have the right characterisation of regular languages! We've seen regular languages characterised in terms of regular expressions, and in terms of finite automata. We have seen context-free grammars characterised by production rules. 
+
+There are two possible approaches. The first is to characterise regular languages in terms of production rules, and the second is to characterise CFGs in terms of some form of automata. Both are possible, and in fact we'll do the second in a minute. 
+
+However, as a sneak preview of \textsf{Part IB Formal Models of Language}, we choose the first. We argue that every regular language can be described as a four tuple
+\[ M= \langle N, T, P, S \rangle \]
+Where $N$ is a set of non-terminals, $T$ is a set of terminals, $P$ is a set of production rules, and $S$ is a start symbol. 
+
+So far, this is exactly the same as a CFG. There is only one difference.
+\[P_\text{reg} \subseteq T\* \cup (T\*N)\]
+That is, every production rule must be \textit{either} of the form
+\[A \rightarrow wB\]
+or 
+\[A \rightarrow w\]
+Where $w$ is some sequence of terminals and $A, B$ are non-terminals.
+
+In contrast, a CFG's production rules are drawn from $(T \cup N)*$, meaning they may be of the form
+\[A \rightarrow \alpha\]
+Where $\alpha$ is any sequence of terminals and non-terminals. 
+
+Clearly, we have
+\[(T\* \cup (T\*N)) \subseteq (T \cup N)*\]
+And so every regular language can be produced by an appropriate CFG.
+
+How to prove that every regular language obeys these production rules is an interesting exercise! \textbf{Hint: } The cunning trick is to let every state in your NFA be a non-terminal, and encode transitions as productions. This idea will be explored further in \textsf{Part IB Formal Models of Language}.
+
+For the second part of this argument, recall that in \textsf{Part IA Discrete Mathematics}, you used the Pumping Lemma to show that the language
+\[ L = \{ a^nb^n \mid n \in \mathbb{N}\}\]
+is not regular. However, consider grammar $G$, with terminals $a, b, \epsilon$, non-terminal $S$, and production rules
+\[S \rightarrow aSb \mid \epsilon \]
+We claim $L(G) = L$, and leave a proof of this as an exercise.
+
+
+\subsection{CFGs and Syntax Trees}\label{section:cfg-syntaxtrees}
+One perspective of CFGs is that they generate \textit{words} and therefore \textit{languages}. This, however, is an incomplete description of CFGs. The words that a CFG generates have a particular structure to it. In this section, we'll see how \textit{derivation trees}, also known as parse trees or concrete syntax trees, overlay this structure on top of a word.
+
+Consider a word generated by CFG $G_1$
+\[(x + y) * (z + x)\]
+It's unlikely you read this as a purely flat sentence. Rather, it has structure to it!
+
+$(x + y) * (z + x)$
+
+\begin{tcbleftbar}
+% \begin{addmargin}[0.5cm]{0cm}
+$E = E_1 * E_2$\\
+At the top level, we are doing a multiplication $*$ between two sub-expressions
+\vspace{3mm}
+% \end{addmargin}
+\begin{tcbleftbar}
+$E_1 = E_{11} + E_{12}$\\
+The first sub-expression is the addition $+$ of two further sub-expressions
+\vspace{3mm}
+\begin{tcbleftbar}
+$E_{11} = x$\\
+The first sub-sub-expression is the identifier $x$
+\end{tcbleftbar}
+\begin{tcbleftbar}
+$E_{12} = y$\\
+The second sub-sub-expression is the identifier $y$
+\end{tcbleftbar}
+\end{tcbleftbar}
+\begin{tcbleftbar}
+$E_2 = E_{21} + E_{22}$\\
+The second sub-expression is the addition $+$ of two further sub-expressions
+\vspace{3mm}
+\begin{tcbleftbar}
+$E_{21} = z$\\
+The first sub-sub-expression is the identifier $z$
+\end{tcbleftbar}
+\begin{tcbleftbar}
+$E_{22} = x$\\
+The second sub-sub-expression is the identifier $x$
+\end{tcbleftbar}
+\end{tcbleftbar}
+\end{tcbleftbar}
+
+Hopefully you see that there is a tree-like structure here, and indeed this is present in the CFG derivation. We can see each derivation step as adding children to a node in the tree. For example, the derivation step
+\[\nonterminal{E} \Rightarrow \nonterminal{E} * \nonterminal{E}\]
+Corresponds to augmenting a tree as follows
+\begin{center}
+    \import{figures}{past-construction}
+\end{center}
+The result is the following \textit{parse tree}
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{concrete-syntax-tree}
+    \caption{The concrete syntax tree for $(x+y)*(z+x)$}
+    \label{fig:par-cst}
+\end{figure}
+
+Which, modulo parentheses, is exactly the same structure as the one we discovered. 
+
+We can convert this parse tree into the word, by reading off the leaves of the syntax tree from left-to-right. This means that we can see CFGs as generating words with a hidden structure, exposed by the tree.
+
+Importantly, note that it does not matter whether we choose a left-most or right-most derivation, they will result in the same derivation tree. Hence, the parse tree \textit{reconciles} different derivation orders. 
+
+\subsubsection{Digression: Abstract Syntax Trees}
+Recall that the ultimate goal of the front-end is to produce annotated abstract syntax trees. We hope you have noted (a) first, that by constructing a parse tree, we are \textit{almost} at our end-goal, and (b) that we are not \textit{quite} at our end goal yet.
+
+While the structure of the concrete syntax tree happens to be very useful for the middle end, much more so than the flat word $(x+y)*(z+x)$, it also contains a little \textit{too} much information than is necessary. For efficiency purposes, therefore, it is useful to strip away all unnecessary information. 
+
+An \textbf{abstract syntax tree} is created by taking a concrete syntax tree and stripping away all information that is not needed to generate an intermediate representation. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{abstract-syntax-tree}
+    \caption{The abstract syntax tree for $(x+y)*(z+x)$}
+    \label{fig:par-ast}
+\end{figure}
+
+\subsection{Unambiguous CFGs}\label{section:cfg-ambiguity}
+We have stated that we want an \textit{unambiguous} CFG. What is an \textit{ambiguous} CFG, do they exist, and why are they a problem?
+
+An ambiguous CFG $G$ is one where there exists some word $w \in L(G)$ for which there exists more than one parse tree. Since parse trees reconcile different derivation orders, an equivalent formulation is as follows:
+
+An ambiguous CFG $G$ is one where there exists some word $w \in L(G)$ for which $w$ has more than one left-most derivation.
+
+\begin{definition}[Ambiguous CFG]
+    A CFG is ambiguous when there exists a word $w$ for which there are two different parse trees
+\end{definition}
+
+Ambiguous CFGs do exist. For example, consider the word $x + y * z$. This has two different parse trees
+
+\import{figures}{ambiguous-parse}
+
+Ambiguity is a huge practical problem --- a sensible interpreter will treat these two parse-trees differently! For example, letting $x = 1$, $y = 2$, and $z = 3$, the first parse-tree will evaluate to $9$ and the second to $7$. 
+
+If we allow ambiguous CFGs, then we will allow some compilers to compile $1 + 2 * 3$ to $9$, and others to $7$. Clearly, we do \textbf{not} want this, so we will enforce that the specification must be an \textit{unambiguous CFG}.
+
+\subsubsection{Eliminating Ambiguity}\label{section:ambiguity-elim}
+It is often possible to eliminate ambiguity. For example, consider
+\[
+\begin{array}{rcll}
+G_2 &=& \langle N_2, T_1, P_2, E \rangle\\[1ex]
+\textit{where} \\
+P_2 &=& \begin{array}{rcll}
+E &\to& E + T \mid T & \text{(expressions)}\\
+T &\to& T * F \mid F & \text{(terms)}\\
+F &\to& (E) \mid id & \text{(factors)}\\
+\end{array}
+\end{array}
+\]
+Is a grammar such that $L(G_1) = L(G_2)$: remember languages are defined in terms of \textit{words}, not trees. We leave the proof of this as an exercise.
+
+Effectively, we have encoded the operator precedence rule ($*$ before $+$). The following then becomes the unique derivation for $x + y * z$:
+
+\begin{center}
+    \import{figures}{unambiguous-parse}
+\end{center}
+
+Generally, ambiguity is eliminated through a combination of \textit{precedence} and \textit{associativity} rules. 
+
+\textit{Precedence} is a technique for resolving an ambiguous order between two different operators. It helps us answer the question --- between $*$ and $+$, which should I do first?
+
+\textit{Associativity} is a technique for resolving an ambiguous order between two of the same operator. Some operators are left-associative, meaning you do the one on the left first. For example
+\[a + b + c \cong (a + b) + c\]
+Others are right-associative, meaning you do the one on the right first,
+\[a := b := c \cong a:= (b := c) \]
+\subsubsection{Facts about Ambiguity}
+We end this section by asking two sensible questions. First, is there a way to systematically \textit{check} for ambiguity in a language? Second, is there a way to systematically \textit{eliminate} ambiguity in a language?
+
+Unfortunately, the answer to both of these questions is no, and for several reasons
+\begin{enumerate}
+\item Checking for \textbf{ambiguity} in an arbitrary CFG is \textbf{not decidable}.
+\item Even if checking for ambiguity \textit{were} decidable, given two grammars $G_1$ and $G_2$, checking
+\textbf{$L(G_1) = L(G_2)$ is not decidable}. So there is no way to prove that you have eliminated ambiguity while keeping the language the same.
+\item Even if both of these were possible, some context-free languages are \textbf{inherently ambiguous}. There is no unambiguous CFG that generates the language. For example,
+\[
+\begin{array}{lll}
+  L &=& \{ a^nb^nc^md^m \mid m \ge 1, n \ge 1 \}\\
+  &\cup& \{ a^nb^mc^md^n \mid m \ge 1, n \ge 1 \}
+\end{array}
+\]
+\end{enumerate}
+
+\section{Pushdown Automata}
+At the beginning of this chapter, we promised to introduce two concepts --- the unambiguous, deterministic Context-Free Grammar as \textit{more or less} the right tool to give to language designers, and the deterministic Push-Down Automaton as \textit{more or less} the right tool for describing parsers.
+
+We have so far described the unambiguous Context-Free Grammar, which generate unambiguous trees, and (as a consequence) unambiguous languages. 
+
+We will now turn our attention to the Push-Down Automaton, which are consumers of Context-Free Languages (Just as finite automata are consumers of regular languages). 
+
+Informally, a Pushdown Automaton (PDA) is a Finite Automaton augmented with a stack. For example, here's a finite automaton that accepts the language $L(\text{a}^*\text{b}^*)$
+\begin{center}
+    \import{figures}{dfa-ab}
+\end{center}
+By extending this finite automaton with a stack, we are able to create a pushdown automaton that accepts the language $L(\text{a}^n\text{b}^n)$ (which, if you recall, is not regular)
+\begin{center}
+    \import{figures}{pda-ab}
+\end{center}
+
+In this particular example, you can think of the stack as scratch space. In state q$_1$, we are using the stack to count the number of `a's we see. In state q$_2$, we are using the stack to make sure the number of `b's is equal to the number of `a's.
+
+Formally, a PDA is a 7-tuple
+\begin{center}
+    \import{figures}{pda}
+\end{center}
+
+You should already be familiar with $Q$, $\Sigma$, and $\q_0$ --- these are exactly the same as that of a finite automaton.
+
+$\Gamma$ and $Z$ are new. $\Gamma$ describes the space of stack symbols, and $Z$ the initial stack symbol (think of it as the stack's initial state).
+
+The transition relation, $\delta$, is similar to that of an NFA. An NFA's transition relation looked like
+\[\delta(q, a) \subseteq Q\]
+Hence, we could say that $q' \in \delta(q, a)$ means that when the machine is in state $q$, and sees character $a$ in the input, it can transition to state $q'$.
+
+In contrast, for a PDA, the transition relation looks like
+\[\delta(q, a, X) \subseteq Q \times \Gamma^{*}\]
+Hence, we can speak about the meaning of $\langle q', \beta \rangle \in \delta(q, a, X)$. You should read this as ``when the machine is in state $q$, reading character $a$ from the sequence of characters, and with $X$ at the top of the stack, it can transition to state $q'$ and replace $X$ with $\beta$ (pop $X$ off the stack and push $\beta$ on the stack)''
+
+As an example, in the PDA for $\text{a}^n\text{b}^n$, we have the transition
+\[\delta(\text{q}_1, \text{a}, \text{S}) = \{(\text{q}_1, \text{SS})\}\]
+Which means that when we are in state q$_1$, we see the character `a' in the input, and we see the stack symbol `S' at the top of the stack, we transition back into state q$_1$ and push `S' onto the stack (the transition specifies `SS' since the first \textit{replaces} the `S' we have popped off the stack, and the second pushes a new `S' onto the stack).
+
+You should also note that, by definition, PDAs are non-deterministic. For finite automata, this does not matter too much, since non-deterministic finite automata and deterministic finite automata are in some sense equivalent. Hopefully, this is also the case for PDAs, since non-deterministic PDAs are not very feasible to construct, and thus not very useful. \footnote{Given that we specified that we would consider \textit{deterministic} PDAs, you should be getting a sinking feeling that we will not be so lucky.}
+
+\subsection{Instantaneous Description}
+We have defined --- both informally and formally --- the pushdown automaton. Our notation leaves a little to be desired, though. We'd like to consider the pushdown automaton as a \textit{dynamic} machine, but our description so far is \textit{static}. We want some way to describe a \textit{snapshot} of a pushdown automaton in motion. 
+
+\begin{center}
+    \import{figures}{instantaneous-description}
+\end{center}
+
+To fully describe this snapshot, we need to identify three things
+\begin{enumerate}
+    \item The state we're currently in,
+    \item The rest of the string we have yet to consume, whose first character we are currently looking at, and
+    \item The state of the stack
+\end{enumerate}
+
+We'll collate these three pieces of information into a tuple, that we will call an \textit{instantaneous description}.
+
+Formally, for all $q \in Q$, $w \in \Sigma\*$, $\alpha \in \Gamma\*$, $\langle q, w, \alpha \rangle$ is an instantaneous description.
+
+The power of an instantaneous description is that it lets us talk about the transitions of a PDA, by defining a relation $\rightarrow$. We can encode each transition described by $\delta$,
+\[\langle q', \beta \rangle \in \delta(q, a, X)\]
+As a transition between instantaneous descriptions
+\[\langle q, aw, X\alpha \rangle \rightarrow \langle q', w, \beta\alpha \rangle\]
+
+An epsilon transition, which is represented by
+\[\langle q', \beta \rangle \in \delta(q, \epsilon, X)\]
+is encoded as
+\[\langle q, w, X\alpha \rangle \rightarrow \langle q', w, \beta\alpha \rangle\]
+
+Our usual convention carries over to $\rightarrow$. That is, $\rightarrow^{*}$ represents zero or more transitions (the reflexive-transitive closure of $\rightarrow$), and $\rightarrow^{+}$ represents one or more transitions (the transitive closure of $\rightarrow$).
+
+\subsection{The Language Accepted by a Pushdown Automaton}
+We can now define the language accepted / consumed by a PDA $M$.
+
+Informally, a word $w$ is accepted by a PDA if we start:
+\begin{enumerate}
+    \item In the start state, $q_0$,
+    \item Looking at the first character of the word $w$, and
+    \item With the stack in its initial state, $Z$
+\end{enumerate}
+And end 
+\begin{enumerate}
+    \item In \textit{any} state $q$,
+    \item With an empty word $\epsilon$, and
+    \item With an empty stack $\epsilon$
+\end{enumerate}
+
+We can make this definition formal using our definition of instantaneous description
+\[L(M) = \{w \mid \exists q. \; \langle q_0, w, Z \rangle \rightarrow^{+} \langle q, \epsilon, \epsilon \rangle \} \]
+
+\subsection{Putting Everything Together: An Example}
+Putting everything together, we can see how the given PDA accepts the string `aaabbb' \vspace{3mm}
+
+\begin{center}
+    \import{figures/example}{ex1}\vspace{3mm}
+\end{center}
+
+\begin{center}
+    \import{figures/example}{ex2}\vspace{3mm}
+    \import{figures/example}{ex3}\vspace{3mm}
+    \import{figures/example}{ex4}\vspace{3mm}
+    \import{figures/example}{ex5}\vspace{3mm}
+    \import{figures/example}{ex6}\vspace{3mm}
+    \import{figures/example}{ex7}\vspace{3mm}
+    \import{figures/example}{ex8}
+\end{center}
+
+\subsection{Equivalence of CFGs and PDAs}
+We have seen the CFG, and the PDA, and have argued that the languages produced by CFGs are consumed by PDAs. This is non-obvious, and we will explore this equivalence in this section.
+
+First, what do we mean by equivalence? Here are two theorems about PDAs.
+
+\begin{theorem}[PDA to CFG]
+    For every PDA $M$, there exists a CFG $G$ such that $L(M) = L(G)$
+\end{theorem}
+
+\begin{theorem}[CFG to PDA]
+    For every CFG $G$, there exists a PDA $M$ such that $L(G) = L(M)$
+\end{theorem}
+
+This is what we mean by equivalence.
+
+\subsubsection{Proof of Equivalence$^{*}$}
+The proofs for these two theorems are \textbf{\textsf{non-examinable}}. You are encouraged to look at \citet{sipser-2006} (Chapter 2, Page 115) for details.
+
+However, we will outline the \textit{idea} behind the proof. 
+
+Recall that for every regular language, it is possible to define production rules of the form
+\[A \rightarrow wB\]
+Where $w$ is some sequence of terminals, and $A$ and $B$ are terminals. Recall also that this precisely corresponds to the transition
+\begin{center}
+    \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.8cm]
+
+\node[state] (q1) [right of=q0]{ $A$ };
+\node[state] (q2) [right of=q1]{ $B$ };
+
+\path[->] (q1)  edge[above] node {$w$} (q2);
+
+\end{tikzpicture}
+\end{center}
+
+For every context-free language, we will have production rules of the form
+\[A \rightarrow \alpha\]
+Where $\alpha$ is some sequence of terminals and non-terminals.
+
+We can deconstruct $\alpha$ as $wB\beta$, where $w$ is some (possibly empty) sequence of terminals, $B$ is the first non-terminal, and $\beta$ is some sequence of terminals and non-terminals. This means that we can consider transitions of the form 
+\[A \rightarrow wB\beta \]
+The key idea is to make this correspond to the transition
+\begin{center}
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=3.8cm]
+
+\node[state] (q1) [right of=q0]{ q$_1$ };
+\node[state] (q2) [right of=q1]{ q$_2$ };
+
+\path[->] (q1)  edge node {$w$, \color{highlight}$A\gamma \rightarrow B\beta\gamma$} (q2);
+
+\end{tikzpicture}
+\end{center}
+
+In this sense, you can see the stack as storing the result of the latest derivation step, with transitions corresponding to derivations that also check that the terminal sequence match up with the given character sequence.
+
+\subsection{Deterministic PDAs}
+We currently have constructed non-determinstic PDAs that accept Context-Free Languages. This is quite unsatisfactory. We \textit{really} want our PDAs to be deterministic --- though, unlike ambiguity, this is not \textit{technically} necessary.
+
+For regular languages, we had a way of converting a non-deterministic finite automaton into an equivalent deterministic finite automaton. Is this possible, and if so, how?
+
+Unfortunately, this is not possible. Non-deterministic PDAs are strictly more powerful than deterministic PDAs. 
+
+Consider a context free grammar for generating palindromes. It has terminals $\{a, b, \epsilon \}$, non-terminal (and start symbol) $S$, and production rules
+\[\begin{array}{rcl}
+     S & \rightarrow & aSa  \\
+     & \mid & bSb \\
+     & \mid & a \\
+     & \mid & b \\
+     & \mid & \epsilon
+\end{array}\]
+
+We claim that there is no deterministic PDA that accepts the language generated by this grammar. We leave the proof of this as an exercise, but the key idea is that we want to discover the structure 
+\[ w w^R\] 
+Where $w^R$ is $w$ reversed.
+
+This involves pushing $w$ onto a stack to recognise it, and then popping it off (to recognise $w^R$). But when to stop pushing symbols onto the stack, and to start popping, cannot be known in advance. A deterministic PDA has to commit to a decision without being allowed to backtrack, so it cannot accept this language. 
+
+Non-determinism is bad, because it implies that we need back-tracking (in this case, we need to exhaustively explore all possible positions for the mid-point of the palindrome), which makes the parser very inefficient!
+
+Hence, we may want our parser generator to be a \textit{deterministic PDA}, and therefore we require that the language designer specifies a \textit{deterministic CFG}.
+
+\subsubsection{Relationship Between Non-Determinism and Ambiguity}
+We therefore have two constraints on our CFG. We want it to be \textit{unambiguous}, and we want it to be \textit{deterministic}. Are they, in some sense, the same?
+
+Unfortunately not. There are unambiguous grammars that are non-deterministic. In fact, the grammar of palindromes is unambiguous! We leave the proof of this as an exercise.
+
+However, all deterministic CFGs are unambiguous. We also leave this as an exercise.
+
+We can now answer \textbf{\textsf{Challenge 2}} (\Cpageref{section:challenge-2}). The reason why the sentence 
+\begin{center}
+    \textit{The cotton clothing is made of grows in Mississippi}
+\end{center}
+Is difficult to understand on first-read (difficult to \textit{parse}) is that while its meaning is \textit{unambiguous}, it is \textit{not} deterministic! In particular, the first three words
+\begin{center}
+    \textit{The cotton clothing}
+\end{center}
+Can be arranged into two parse trees, one where cotton is a noun (which has the same semantics ``the cotton that is used to make clothing''), and one where cotton is an adjective (which has the same semantics as ``the clothing that is made out of cotton''). We need to make a non-deterministic choice as to which of the two parse trees we wish to construct. If we choose the wrong parse tree, then we will need to \textit{backtrack}, or re-read the start of the sentence with fresh eyes. 
+
+This example thus illustrates that unambiguousness does not imply determinism.
+
+\section{Top-Down and Bottom Up Parsing}
+We have so far taken a universal view of what parser specifications are, and what parsers are. \textbf{Any universal view of parsing is an over-simplification}. As we outlined at the start of this chapter, in practice, different types of parsers are specified, and built, using different mathematical tools.
+
+The reason for this fragmentation is that while unambiguous, deterministic CFGs afford the language designer much flexibility, this expressiveness  tends not to be the only consideration. Other considerations include:
+
+\begin{enumerate}
+    \item Efficiency. If you can restrict the set of grammars your generator accepts, and get a linear time parser, is it worth it? Alternatively, if efficiency is not at all a constraint, might it be worth accepting non-deterministic but unambiguous CFGs?
+    \item Scalability and Maintainability. If you can build a really efficient and expressive parser, but one that relies on really esoteric techniques, is it worth it?
+    \item Error-Checking. As you will see, some ways of parsing can parse more grammars than others, but sacrifice the ability to give incredibly detailed and precise error reporting. Is this worth it?
+\end{enumerate}
+
+Obviously, different situations will result in different priorities. As a result, there is no \textit{one} technique for specifying a parser, no \textit{one} way to describe a parser, and no \textit{one} way to transform a specification into a parser. There are a \textit{tapestry} of different approaches. In the next four chapters, we will cover four different approaches. For each of these, we hope to answer the following questions questions
+
+\begin{enumerate}
+    \item How do we specify a parser, and what sub-set of unambiguous CFGs are we considering?
+    \item How do we describe the resulting parser, and what sub-set of PDAs are we considering?
+    \item What techniques do we use transform from specification to parser?
+\end{enumerate}
+
+For now, we will simply give a brief overview. The four different approaches are traditionally classified into two categories, depending on the technique for transforming from specification to parser
+
+\textbf{Top-Down Techniques} attempt a \textit{left-most} derivation
+\begin{center}
+\begin{tabular}{cc}
+\parbox{0.2\textwidth}{\centering
+  {Recursive descent}\\
+ (hand coded)
+} &
+\parbox{0.2\textwidth}{\centering
+  {Predictive parsing} \\
+    (table driven)
+}
+\end{tabular}
+\end{center}
+
+\textbf{Bottom-Up Techniques} attempt a \textit{right-most} derivation, backwards
+\begin{center}
+\begin{tabular}{cc}
+\parbox{0.2\textwidth}{\centering
+  {SLR(1)}\\
+  (Simple LR(1))
+} &
+\parbox{0.2\textwidth}{\centering
+  {LR(1)} \\~
+}
+\end{tabular}
+\end{center}
+
+What do we mean by ``backwards''? Tecall that the key goal of parsing is to construct a parse tree. There are two ways of doing this. You can either start from the root (the starting non-terminal), and expand the tree downwards towards the leaves --- this is the forwards / top-down approach. Alternatively, you can start from the leaves (the terminals) and construct upwards towards the root, unifying sub-trees --- this is the backwards / bottom-up approach.
+
+As we will see, bottom-up techniques are slightly more difficult, and struggle with error checking, but can parse a larger subset of deterministic CFGs than top-down techniques.

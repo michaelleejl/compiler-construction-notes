@@ -1,0 +1,53 @@
+\scalebox{0.88}{
+\begin{minipage}{0.75\textwidth}\scriptsize
+\begin{framed}
+{\footnotesize\bfseries 6.7 Declarations}
+
+\textbf{Syntax}
+
+\medskip
+
+\centering
+\begin{minipage}{0.9\textwidth}
+\itshape
+
+declaration:
+
+\qquad declaration-specifiers init-declarator-list$_{\text{opt}}$ ;
+
+\qquad static-assert-declaration
+
+\smallskip
+
+declaration-specifiers:
+
+\qquad storage-class-specifier declaration-specifiers$_{\text{opt}}$
+
+\qquad type-specifier declaration-specifiers$_{\text{opt}}$
+
+\qquad type-qualifier declaration-specifiers$_{\text{opt}}$
+
+\qquad function-specifier declaration-specifiers$_{\text{opt}}$
+
+\qquad alignment-specifier declaration-specifiers$_{\text{opt}}$
+
+\smallskip
+
+init-declarator-list:
+
+\qquad init-declarator
+
+\qquad init-declarator-list , init-declarator
+
+\smallskip
+
+init-declarator:
+
+\qquad declarator
+
+\qquad declarator = initializer
+
+\end{minipage}
+\end{framed}
+\end{minipage}
+}

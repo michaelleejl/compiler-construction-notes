@@ -1,0 +1,30 @@
+{
+\definecolor{b}{HTML}{00E7E7}
+\definecolor{g}{HTML}{00E865}
+\definecolor{y}{HTML}{FFB300}
+\definecolor{r}{HTML}{FF0022}
+\pgfdeclarehorizontalshading{grad}{100bp}{
+    color(0cm)=(g);
+    color(10bp)=(g);
+    color(48bp)=(y);
+    color(52bp)=(y);
+    color(90bp)=(r);
+    color(100bp)=(r)
+}
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.4cm]
+    \fill[shading=grad,shading angle=0] (0, -.25cm) ++ (0cm,0cm) rectangle ++ (\textwidth,-0.35cm);
+
+    \node (start) at (0, 0) {};
+    \node (mark1) at (.14\textwidth, 0) {\sffamily \small Easier to recognise};
+
+    \node (mark2) at (.86\textwidth, 0) {\sffamily \small Harder to recognise};
+    \node (end) at (\textwidth, 0) {};
+
+    \draw[black,->] ($(mark1.west)$) to[out=-180,in=0] (start); 
+    \draw[black,->] ($(mark2.east)$) to[out=0,in=180] (end); 
+
+    \node[xscale=10, yscale=2, rotate=-90,anchor=south west] (parsing-brace) at (-0.04cm, -0.4cm) { \large \} };
+    
+\end{tikzpicture}
+}
+

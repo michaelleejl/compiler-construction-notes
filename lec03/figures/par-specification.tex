@@ -1,0 +1,40 @@
+\begin{tikzpicture}[xscale=3.5]
+
+% \draw[darkred,thick,dotted] (0.6,0.5) -- ++(0.0,0.2) -- ++(3.2,0,0) -- ++(0.0,-0.2);
+
+% \draw[darkred,thick,dotted] (0.0, -2) -- ++(0.0,-0.2) -- ++(4.4,0,0) -- ++(0.0,0.2);
+% \node[fill=background] at (2.4,-2.2) { \color{darkred}\scriptsize \textsf{tree} };
+
+\node[anchor=west, align=center] (tokens) at (0, 0) { \small{\textsc{if} \textsc{ident} "a" \textsc{equal} \textsc{int} "3" \textsc{then} \textsc{ident} "b" \textsc{else} \textsc{ident} "c"}};
+
+\draw[rounded corners,dotted,black] ($(tokens.south west) + (-0.1cm,-0.1cm)$) rectangle ($(tokens.north east) + (0.1cm,0.2cm)$);
+
+\node[fill=background] at (1.55,0.5) { \color{darkred}\scriptsize \textsf{tokens} };
+
+\node (if) [below = 1.5cm of tokens] {\small\textsc{if}};
+
+\node (equal) [below left = 1.08cm and 2cm of if] {\small\textsc{equal}};
+
+\node (identa) [below left = 1cm and -0.4cm of equal] {\small{\textsc{ident} "a"}};
+
+\node (int3) [below right = 1cm and -0.4cm of equal] {\small{\textsc{int} "3"}};
+
+\node (identb) [below = 1cm of if] {\small{\textsc{ident} "b"}};
+
+\node (identc) [below right = 1cm and 2cm of if] {\small{\textsc{ident} "c"}};
+
+\path[-] (if) edge (equal)
+\path[-] (equal) edge (identa)
+\path[-] (equal) edge (int3)
+\path[-] (if) edge (identb)
+\path[-] (if) edge (identc)
+
+\draw[rounded corners,dotted,black] ($(identa.south west) + (-0.1cm,-0.1cm)$) rectangle ($(identc.north east) + (0.42cm,1.8cm)$);
+
+
+\node[fill=background] at (1.55,-1.5) { \color{darkred}\scriptsize \textsf{syntax tree} };
+
+\path[->] ($(tokens.south) + (0cm,-0.4cm)$) edge ($(if.north) + (0cm,0.8cm)$)
+
+
+\end{tikzpicture}

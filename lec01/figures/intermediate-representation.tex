@@ -1,0 +1,21 @@
+\begin{tabular}{l}
+\\[-0.5ex]
+{\verb!MK_CLOSURE(L1, 0)!}              \\ % & Make closure for second lambda            \\
+{\verb!MK_CLOSURE(L0, 0)!}              \\ % & Make closure for first lambda             \\
+{\verb!APPLY!}                          \\ % & do application                            \\
+{\verb!HALT!}                           \\[1ex] % & the end!                                  \\
+{\verb!L0:!}         \\ % & code for first lambda           \\
+{\verb!PUSH STACK_INT 21!}         \\ % & push 21            \\
+{\verb!PUSH STACK_INT 17!}              \\ % & push 17                                   \\
+{\verb!MK_PAIR!}                        \\ % & make the pair on the heap                 \\
+{\verb!LOOKUP STACK_LOCATION -2!}       \\ % & push code for second lambda on stack      \\
+{\verb!APPLY!}                          \\ % & apply first lambda                        \\
+{\verb!RETURN!}                         \\[1ex] % & return from first lambda                  \\
+{\verb!L1:!}  \\ % & code for second lambda \\
+{\verb!LOOKUP STACK_LOCATION -2!}  \\ % & push arg on stack \\
+{\verb!SND!}                            \\ % & extract second part of pair               \\
+{\verb!LOOKUP STACK_LOCATION -2!}       \\ % & push arg on stack again                   \\
+{\verb!FST!}                            \\ % & extract first part of pair                \\
+{\verb!MK_PAIR!}                        \\ % & construct a new pair                      \\
+{\verb!RETURN!}                         \\ % & return from second lambda                 \\
+\end{tabular}

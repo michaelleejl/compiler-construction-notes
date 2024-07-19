@@ -1,9 +1,9 @@
 \begin{tikzpicture}
-\node[draw,darkred,rounded corners,anchor=north east,minimum height=0.1\textheight,fill=linkcolor] (lexing)
- at (0, 0) { \textcolor{white}{\scriptsize \textbf{\textsf{lexing}}} };
+\node[draw,darkred,rounded corners,anchor=north east,minimum height=0.1\textheight,fill=white] (lexing)
+ at (0, 0) {{\scriptsize {\textsf{lexing}}} };
 
-\node[draw,darkred,rounded corners,anchor=west,minimum height=0.1\textheight] (parsing) at ($(lexing.east) + (0.5cm,0)$)
-{ \textsf{\scriptsize parsing }};
+\node[draw,darkred,rounded corners,anchor=west,minimum height=0.1\textheight, fill=linkcolor] (parsing) at ($(lexing.east) + (0.5cm,0)$)
+{ \textcolor{white}{\textbf{\textsf{\scriptsize parsing}}}};
 
 \node[draw,darkred,rounded corners,anchor=west,minimum height=0.1\textheight] (typechecking) at ($(parsing.east) + (0.5cm,0)$)
 { \textsf{\scriptsize typing }};

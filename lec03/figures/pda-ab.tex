@@ -1,0 +1,15 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.8cm]
+
+\node[state,initial] (q1) [right of=q0]{ q$_1$ };
+\node[state] (q2) [right of=q1]{ q$_2$ };
+\node[state,accepting] (q3) [right of=q2]{ q$_3$ };
+
+\path[->] (q1)  edge[loop above] node (sss) {a,\color{highlight}\textsc{s} $\to$ \textsc{ss}} (q1);
+\node[anchor=south] at (sss.north) {a,\color{highlight}\textsc{z} $\to$ \textsc{sz}};
+\path[->] (q1)  edge node {$\epsilon$} (q2);
+\path[->] (q2)  edge[loop above] node (se) {b,\color{highlight}\textsc{s} $\to$ $\epsilon$} (q2);
+\path[->] (q2)  edge node {$\epsilon$,\color{highlight}\textsc{z} $\to$ $\epsilon$} (q3);
+
+\node[draw=darkred,rounded corners,draw opacity=0.5] at ($(q3) + (1.5cm,1.5cm)$) { a$^n$b$^n$ };
+
+\end{tikzpicture}

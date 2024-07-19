@@ -1,0 +1,13 @@
+ \[
+  \begin{array}{rcl}
+    \selectedNonTerminal{E} &\Rightarrow& \nonterminal{E} * \selectedNonTerminal{E} \\
+      &\Rightarrow& \nonterminal{E} * ( \selectedNonTerminal{E} )\\
+      &\Rightarrow& \nonterminal{E} * ( \nonterminal{E} + \selectedNonTerminal{E} )\\
+      &\Rightarrow& \nonterminal{E} * ( \selectedNonTerminal{E} + x )\\
+      &\Rightarrow& \selectedNonTerminal{E} * ( z + x ) \\
+      &\Rightarrow& (\selectedNonTerminal{E}) * ( z + x )\\
+      &\Rightarrow& (\nonterminal{E} + \selectedNonTerminal{E} )*(z+x)\\
+      &\Rightarrow& (\selectedNonTerminal{E}+y)*(z+x)\\
+      &\Rightarrow& (x+y)*(z+x)\\
+  \end{array}
+  \]

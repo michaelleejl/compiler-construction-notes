@@ -1,0 +1,356 @@
+\chapter{Recursive Descent and Parser Combinators}
+
+\begin{center}
+    \import{figures}{context}
+\end{center}
+
+\section{Overview}
+In the previous chapter, we searched for a universal way to describe parser specifications and parsers, concluding that parser specifications are \textit{non-ambiguous, deterministic context-free grammars}, and parsers are \textit{deterministic push-down automata}. We also noted that as the result of practical considerations, the space of parser specifications and parser generators is a lot more fragmented and complicated than this universal view, promising to examine this with more specificity. 
+
+In this chapter, we will look at the first such concrete example: the recursive descent parser. 
+
+\begin{center}
+{
+\sffamily
+\def\arraystretch{1.5}%
+\newcommand{\pro}[0]{\textcolor{selected}{$+$}}
+\newcommand{\con}[0]{\textcolor{highlight}{$-$}}
+    \begin{tabular}[t]{|l|l|}
+    \hline
+     \multicolumn{2}{|l|}{\Large \textbf{Fact Sheet}}  \\ \hline
+     \textbf{Type} & Top-Down, Left-Most Derivation \\ \hline
+     \textbf{Specification} & Non-left-recursive, unambiguous CFGs \\ \hline
+     \textbf{Properties} & 
+        \begin{tabular}[t]{@{}ll@{}}  
+        \pro & Easy to construct \\ 
+        \con & Inefficient $^*$ \\ 
+        \con & Not expressive \\ 
+        \con & No clean declarative reading $^*$ 
+        \end{tabular} \\ \hline
+\end{tabular}
+}
+\end{center}
+
+\section{Recursive Descent Parser}
+The best way to get a feeling for the recursive descent parser is to actually see an example. Consider the grammar $G_3$, which produces the language of arithmetic expressions. It has the following production rules
+\[
+\begin{array}{lcl}
+  E  &\to& T \;E' \\
+  E' &\to& + \;T\; E' \;\mid\; \epsilon\\
+  T  &\to& F\; T'\\
+  T' &\to& * \;F\; T' \;\mid\; \epsilon\\
+  F  &\to& (\;E\;) \;\mid\; \text{id}\\
+\end{array}
+\]
+Note that $L(G_3) = L(G_2) = L(G_1)$, where $G_2$ is defined on \Cpageref{section:ambiguity-elim} and $G_1$ on \Cpageref{section:cfg-defn}.
+
+A recursive descent parser for $G_3$ looks as follows
+
+\begin{code}[A recursive descent parser for $G_3$ in \texttt{OCaml}]
+\label{code:ocaml-recursive-descent}
+\begin{minted}[bgcolor=backcolour, linenos, texcomments]{ocaml}
+let rec
+    e toks = e' (t toks)                      (* $E \rightarrow T E'$ *)
+and e' = function
+  | ADD :: toks -> e' (t toks)                (* $E' \rightarrow + T E'$ *)
+  | toks        -> toks                       (* $E' \rightarrow \epsilon$ *)
+and t toks = t' (f toks)                      (* $T  \rightarrow F T'$ *)
+and t' = function
+  | MUL :: toks -> t' (f toks)                (* $T'  \rightarrow * F T'$ *)
+  | toks        -> toks                       (* $T' \rightarrow \epsilon$ *)
+and f = function
+    | LPAREN :: toks ->
+      (match e toks with
+      | RPAREN :: toks -> toks                (* $F \rightarrow (E)$ *) 
+      | _              -> failwith "RPAREN")
+    | IDENT _ :: toks -> toks                 (* $F \rightarrow \text{id}$ *)
+    | _               -> failwith "F"
+\end{minted}
+\end{code}
+
+We hope you notice that the structure of the recursive descent parser almost immediately mirrors the structure of our context-free grammar. We will now make this correspondence more explicit.
+
+Assume that our parser is parsing the word $(x + y) * z$ --- that is, verifying it has the right structure and constructing a parse tree. The starting symbol is $E$, so in other words we are verifying that $E$ can expand to $(x + y) * z$
+
+Assume there exists a derivation sequence
+\[E \Rightarrow^{+} (x+y) * z\]
+There is only one production for $E$, so the derivation sequence must be of the form
+\[
+\begin{array}{rll}
+E&\Rightarrow&TE'\\
+&{\Rightarrow^{+}}&(x+y) * z
+\end{array}
+\]
+This means the derivation sequence $E \Rightarrow^{+} (x+y) * z$ exists if and only if the derivation sequence $TE' \Rightarrow^{+} (x+y) * z$.
+
+Put another way, we must be able to find $u$ and $v$ such that $(x + y) * z$ can be split into $uv$, and there exists derivation sequences
+\[
+\begin{array}{rcl}
+T&{\Rightarrow^{+}}&u\\
+{E'}&{\Rightarrow^{+}}&v
+\end{array}
+\]
+Operationally, assume we had a function \texttt{t} that could take $uv$, match $u$, and return $v$. Assume we had a function \texttt{e'} that could take $v$ and return $\epsilon$ (indicating success). Then we could construct a function \texttt{e} that \textit{chains} \texttt{t} and \texttt{e'}, as follows
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+let e uv =
+    let v = t uv in
+    e' v
+\end{minted}
+We can inline \texttt{v} as such
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+let e uv = e' (t uv)
+\end{minted}
+Renaming \texttt{uv} to \texttt{toks}, we get the definition of \texttt{e} as in \Cref{code:ocaml-recursive-descent}.
+
+Therefore, we can say each function takes a sequence of \texttt{toks}, matches some prefix of \texttt{toks}, and returns some suffix of \texttt{toks}.
+
+Note how the language features --- higher-order functions and pattern matching --- are effectively deployed to build a parser. This is what we mean by recursive descent parsers being ``easy to construct''.
+
+\subsection{Backtracking and Efficiency}
+We should also note that this is not the only way, or even a canonical way, to write a recursive descent parser. You'll often see recursive descent parsers written with a lot of backtracking \texttt{try / catch} statements.
+
+One advantage of this is that it can parse non-deterministic (but unambiguous) context-free grammars. However, it does so at the expense of efficiency. Many recursive descent parsers have exponential time complexity (exponential in the number of tokens).
+
+\section{Left Recursive Grammars}
+Inefficiency, however, is \textit{not} the biggest problem with recursive descent parsers. That dishonour belongs to the left-recursive problem. Consider $G_3$ --- why do you think it looks so weird? Why did we not use $G_2$?
+
+Consider the $G_2$ production rule
+\[ E \rightarrow E + T \]
+We call this rule \textit{left-recursive}: \textit{recursive} because $E$ appears both on the left and right-hand side of the arrow, and \textit{left} because it is the first symbol on the right hand side of the token.
+
+Perhaps you can spot why this won't work! Turning this into a recursive descent function, we get 
+\begin{minted}[bgcolor=backcolour]{ocaml}
+    let rec e toks = match e toks with (*infinite loop*)
+      | PLUS :: toks -> t toks
+\end{minted}
+
+The \textit{first} thing \texttt{e} does is call itself. 
+
+Note that left-recursion is even more sinister than this. The following grammar is also left recursive
+\[\begin{array}{lcl}
+     A & \rightarrow & Cd  \\
+     B & \rightarrow & Ce \\
+     C & \rightarrow & A \mid B \mid f
+\end{array}\]
+Because we can go from $A \rightarrow Cd \rightarrow Ad$. Importantly, in this sequence of expansions, there are no terminals on the left. If there \textit{was} a terminal, this would be fine, since you'd be doing some work. However, as it stands, you would be looping in a non-productive, futile way.
+
+By the way, we call the first type of left-recursion (where there is a rule of the form $A \rightarrow A\alpha$) \textit{direct} left-recursion, and the second type \textit{indirect} left-recursion.
+
+Therefore, formally, a grammar is left-recursive if there exists a non-terminal $A$ and sequence $\alpha$ such that
+\[ A \Rightarrow^{+} A\alpha \]
+
+\subsection{Eliminating Left Recursion}
+Thankfully, you can \textit{always} eliminate left recursion. We can do this in a two-step process.
+
+\begin{enumerate}
+    \item Convert indirect left recursion to direct left recursion.
+    \item Eliminate direct left recursion.
+\end{enumerate}
+
+We can convert indirect left recursion to direct left recursion via a process of inlining. Basically, establish an order on non-terminals (in this case, $A \prec B \prec C$). Starting with the greatest, whenever you see a non-terminal, replace it with its productions, as such:
+
+After 1 iteration, we only have direct, rather than indirect recursion.
+\[\begin{array}{lcl}
+     A & \rightarrow & Cd  \\
+     B & \rightarrow & Ce \\
+     C & \rightarrow & Cd \mid Ce \mid f
+\end{array}\]
+
+To eliminate direct recursion, note that whenever you have a left-recursive rule of the form
+\[ A \rightarrow A\alpha \]
+You must also have a left-recursive base-case, of the form
+\[A \rightarrow \beta \]
+For example, considering $G_2$,
+\[
+\begin{array}{rcl}
+E &\to& E + T \mid T\\
+T &\to& T * F \mid F\\
+F &\to& (E) \mid id\\
+\end{array}
+\]
+Whenever we have a direct left-recursive rule $E \to E + T$, we also have a base case $E \to T$.
+
+The fundamental idea is that when we have a left-recursive rule $E \to E + T$, we do want the left-recursive $E$ to expand to $T$ at some point (we want to hit the base case), we're just not sure which point that is. Therefore, conceptually, we can replace $E$ with $T E'$
+\[ E \to T E' \]
+We now need to figure out what $E'$ can expand to. To do this, let's consider all the things $E$ can expand to
+\[
+\begin{array}{rcl}
+   E&\Rightarrow^{+}&T\\
+   E&\Rightarrow^{+}&T+T\\
+   E&\Rightarrow^{+}&T+T+T\\
+   \ldots&
+\end{array}
+\]
+We replace $E$ with $TE'$
+\[
+\begin{array}{rcl}
+   TE'&\Rightarrow^{+}&T\\
+   TE'&\Rightarrow^{+}&T+T\\
+   TE'&\Rightarrow^{+}&T+T+T\\
+   \ldots&
+\end{array}
+\]
+Dropping $T$ from both sides
+\[
+\begin{array}{rcl}
+   E'&\Rightarrow^{+}&\epsilon\\
+   E'&\Rightarrow^{+}&+T\\
+   E'&\Rightarrow^{+}&+T+T\\
+   \ldots&
+\end{array}
+\]
+Hopefully, you can see that we can describe this using the rule
+\[ E' \rightarrow +TE' \mid \epsilon \]
+We have thus eliminated left-recursion. Note also that this is exactly the rule for $E'$ in $G_2$.
+
+More generally, whenever we have a direct left recursive production rule of the form
+\[ A \rightarrow A\alpha_1 \mid A\alpha_2 \mid \ldots \mid \beta_1 \mid \beta_2 \mid \ldots \]
+We can replace this with the following pair of rules
+\[
+\begin{array}{rcl}
+   A&\rightarrow&\beta_1A' \mid \beta_2A' \ldots \\
+   A'&\rightarrow&\epsilon \mid \alpha_1A' \mid \alpha_2A' \ldots \\
+\end{array}
+\]
+In order to solve the left-recursive problem, our grammar no longer has a clean, declarative reading.
+
+\section{Recovering the Push-Down Automaton}
+One final point worth noting is that the recursive-descent parser we have seen looks nothing like the push-down automata we claimed were at the heart of parsers. For example, where has the stack gone? What are states?
+
+The state you can think of as the instruction that you are currently executing.
+
+The stack is \textit{implicit} in the \textit{call stack} of the program. You may recall from \textsf{Part IA Foundations of Computer Science} that programming languages have call stacks, that store ``the rest of the work that needs to be done after the function executes''. Let's examine the call stack when we parse $x + y * z$
+
+\begin{minipage}[t]{0.5\textwidth}
+    \begin{tabular}{rl}
+    \ttfamily
+    & {\texttt{e toks}}\\[1ex]
+    $\leadsto$ & {\texttt{e' (t toks)}}\\[1ex]
+    $\leadsto$ & {\texttt{e' (t' f toks)}}\\[1ex]
+    $\leadsto$ & $\ldots$
+    \end{tabular}
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+    \begin{tabular}{ll}
+    & {\text{Stack: $E$}}\\[1ex]
+    $\text{Pop $E$, Push $E'$, Push $T$}$ & {\text{Stack: $T, E'$}}\\[1ex]
+    $\text{Pop $T$, Push $T'$, Push $F$}$ & {\text{Stack: $F, T', E'$}}\\[1ex]
+    $\ldots$ & $\ldots$
+    \end{tabular}
+\end{minipage}%
+\section{Parser Combinators$^*$}
+Recursive descent might seem ad-hoc and unsatisfactory. We can make this less ad-hoc by the technique of parser combinators. A parser combinator is a higher-order function that allow us to construct larger parsers from smaller parsers. A parser combinator \textit{library} exposes a suite of combinators that lets us build parsers in a less ad-hoc way. In fact, if you build your library in a smart way, it can negate a lot of the disadvantages of parser combinators! Much of this section follows \citet{krishnaswami-2019}, which you can read \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{here}.
+
+We begin by investigating the parser combinator. The key observation is to notice that many functions follow the same format, for example
+
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+e toks = e' (t toks)
+(*$\ldots$*)
+t toks = t' (f toks)
+\end{minted}
+
+Let's try to extract out the underlying, general structure, and make it an interface! Recall that the \texttt{e} function takes two parsers, \texttt{e'} and \texttt{t}, and creates a parser that matches \texttt{t} \textit{then} \texttt{e'}.
+
+% Assume we have a parser \texttt{p} that matches some CFG $A$, with production rules $P_A$. Assume we have a parser \texttt{q} that matches some CFG $B$, with production rules $P_B$. We can construct a CFG $C$ that matches patterns of the form ``$A$ then $B$'' 
+% \[
+% \begin{array}{lcl}
+%      C & \rightarrow & AB \\
+%      A & \rightarrow &\ldots\\
+%        & \rightarrow &(\text{production rules for } A)\\
+%      B & \rightarrow &\ldots\\
+%        & \rightarrow &(\text{production rules for } B)
+% \end{array}
+% \]
+We can generalise this technique to construct a \textit{parser combinator} that, given \texttt{p} and \texttt{q}, produces a parser that matches ``\texttt{p} then \texttt{q}''
+
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+let seq p q = 
+   let pq toks = q p (toks)
+\end{minted}
+And then we can \textit{use} the parser combinator 
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+let e = seq t e'
+\end{minted}
+As another example, we can consider
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+e' toks =
+| ADD :: toks -> e' (t toks)
+| toks        -> toks
+\end{minted}
+Which attempts to match \textit{either} \texttt{e'} then \texttt{t} \textit{or} $\epsilon$. We can generalise this technique to construct a parser combinator that, given parsers \texttt{p} and \texttt{q}, produces a parser that matches ``\texttt{p} or \texttt{q}''
+
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+let alt p q = 
+   let pq toks = try p toks except _ -> q toks
+\end{minted}
+
+Which we can then \textit{use} to create the \texttt{e'} function
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+let case1 = function
+   | ADD :: toks -> (seq e' t) toks
+   | _           -> fail
+and case2 = function
+   | toks -> toks
+and rec e' = alt case1 case2
+\end{minted}
+
+\subsection{An Example Parser Combinator Library}
+\begin{minted}[bgcolor=backcolour]{ocaml}
+type 'a t
+val eps : unit t
+val bot : 'a t
+val chr : char -> char t
+val seq : 'a t -> 'b t -> ('a * 'b) t
+val alt : 'a t -> 'a t -> 'a t
+val fix : ('b t -> 'b t) -> 'b t
+val map : ('a -> 'b) -> 'a t -> 'b t
+\end{minted}
+
+Breaking this down, \texttt{'a t} is the type of a parser that consumes a sequence of tokens and returns a value of type \texttt{'a}. 
+
+\texttt{eps} is a base parser that parses the empty string. \texttt{bot} is the parser that always fails. \texttt{chr} is a function that takes in a character, like \texttt{a}, and returns a parser for the character. 
+
+\texttt{seq} and \texttt{alt} are parser combinators, as described in the previous section.
+
+\texttt{fix} is a fixed-point combinator for parsers. We don't want to get drawn into a digression on fixed points. As you will learn in \textsf{Part IB Computation Theory}, fixed points are the fundamental mechanism behind recursion. In effect, this combinator allows us to define parsers recursively.
+
+\texttt{map} allows us to wrap a user-defined function around the output of a parser.
+
+\subsection{User-Defined Abstractions Over Parsing Primitives}
+One advantage of parser combinators is that they allow users to define abstractions over parsing primitives. 
+
+First, some syntactic sugar.
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let always x = fun _ -> x
+let (++) = seq
+let (==>) p f = map f p
+\end{minted}
+We define an \texttt{always} function that will return \texttt{x} no matter its input. We also define infix operators \texttt{++} and \texttt{==>}, such that 
+\[
+\begin{array}{rcl}
+\texttt{seq p q} &\cong& \texttt{p ++ q}\\
+\texttt{map f p}&\cong&\texttt{p ==> f}
+\end{array}
+\]
+Which allows us to define user abstractions such as \texttt{any}, a generalisation of \texttt{alt} that works for more than two arguments
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let any (ps: 'a list) = foldl bot ps
+\end{minted}
+\texttt{option}, which accepts either the empty string or whatever \texttt{p} can parse
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let option p = any [eps ==> always None;
+                    p   ==> fun x -> Some x
+                   ]
+\end{minted}
+And finally \texttt{star}, which, if you remember the definition of the Kleene star, matches whatever \texttt{p} can parse any number of times
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let star p = fix (q -> any [eps    ==> always [];
+                            p ++ q ==> fun (x, xs) -> x::xs
+                           ])
+\end{minted}
+
+\subsection{Infix Operators in Parser Combinators}
+Using these user abstractions, we can get a more declarative reading of our grammar, by wrapping up the nasty transformation out of a left-recursive grammar in a function 
+
+\subsection{Linear-Time Parser Combinators}
+Finally, we can use the \textit{type} system to ensure that our parser combinator has \textit{no backtracking} --- that is, it is guaranteed to take time linear in the number of tokens. The details can be found in the paper, but a very understandable introduction can be found \href{https://semantic-domain.blogspot.com/2023/07/linear-time-parser-combinators.html}{here}.

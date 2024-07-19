@@ -1,0 +1,13 @@
+ \[
+  \begin{array}{rcl}
+    \nonterminal{E} &\Rightarrow& \nonterminal{E}*\nonterminal{E} \\
+      &\Rightarrow& (\nonterminal{E})*\nonterminal{E}\\
+      &\Rightarrow& (\nonterminal{E}+\nonterminal{E})*\nonterminal{E}\\
+      &\Rightarrow& (x+\nonterminal{E})*\nonterminal{E}\\
+      &\Rightarrow& (x+y)*\nonterminal{E}\\
+      &\Rightarrow& (x+y)*(\nonterminal{E})\\
+      &\Rightarrow& (x+y)*(\nonterminal{E}+\nonterminal{E})\\
+      &\Rightarrow& (x+y)*(z+\nonterminal{E})\\
+      &\Rightarrow& (x+y)*(z+x)\\
+  \end{array}
+  \]

@@ -1,0 +1,17 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.8cm]
+
+%% \node{\LARGE TODO: $a*b*$ };
+
+\node[state,initial] (q1) [right of=q0]{ q$_1$ };
+\node[state] (q2) [right of=q1]{ q$_2$ };
+\node[state,accepting] (q3) [right of=q2]{ q$_3$ };
+
+\path[->] (q1)  edge[loop above] node {a} (q1);
+\path[->] (q1)  edge node {$\epsilon$} (q2);
+\path[->] (q2)  edge[loop above] node {b} (q2);
+\path[->] (q2)  edge node {$\epsilon$} (q3);
+
+
+\node[draw=darkred,rounded corners,draw opacity=0.5] at ($(q3) + (1.5cm,1.5cm)$) { a*b* };
+
+\end{tikzpicture}

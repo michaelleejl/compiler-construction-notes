@@ -7,6 +7,7 @@
 
 The first part of the compiler we'll look at is the lexer. We'll start by describing what a lexer is in terms of its specification (what it does). Following this, we'll outline the techniques used to build a lexer.
 
+Somewhat confusingly, we will \textbf{not} teach you how to build a lexer. Rather, we will teach you how to build programs that build lexers from their specifications. These programs are known as \textbf{lexer generators}.
 
 \subsection{Lexers}
 In this section, we'll specify the role of the lexer: first at a high level, to get intuition, and then with a little more precision. At a high level, the lexer takes a sequence of characters and transforms it into a sequence of tokens.  
@@ -41,7 +42,7 @@ The specification of a lexer, illustrated in \Cref{fig:build-lexer}, is therefor
 
 Say this specification is saved in a \texttt{lexer.mll} file. If you run \texttt{ocamllex lexer.mll}, you'll have created a lexer. You can find more details \href{https://ocaml.org/manual/5.2/lexyacc.html}{here}.
 
-\texttt{ocamllex} is a lexer \emph{generator}. It's a piece of machinery that takes any specification of a lexer and produces a lexer. So, to be precise, this chapter will teach you how to build a lexer generator, which you can then use to build your own lexers. 
+\texttt{ocamllex} is a lexer \emph{generator}. It's a piece of machinery that takes any specification of a lexer and produces a lexer. Once again, this chapter will teach you how to build a lexer generator, which you can then use to build your own lexers, rather than how to build \textit{a} lexer for \textit{a} specification.
 
 \subsection{Roadmap: Building lexer generators}
 Recall what a lexer should do: take a sequence of characters and transform it into a sequence of tokens. This means that we can build the lexer in two parts:
@@ -49,7 +50,7 @@ Recall what a lexer should do: take a sequence of characters and transform it in
 \textbf{Step 1} (\textit{Classifier}). Build a \textit{classifier} that takes a sequence of characters and \emph{classify} it as one of the possible tokens (just \emph{one} token, not a sequence). For example, the classifier will classify \texttt{if} as \textsc{if}, but will fail to classify \texttt{if then} as a token (since this cannot be mapped onto a \emph{single} token). We will build a classifier in two steps.
 
 \begin{addmargin}[1cm]{0cm}
-\textbf{Step 1a} (\textit{Recogniser}). We'll first build a machine that determines if a sequence of characters \textit{is} or \textit{is not} a valid token. We will do this by building a Deterministic Finite Automaton to solve an appropriate regular language problem, which you'll have learnt about in {\sffamily Part IA Discrete Maths}.
+\textbf{Step 1a} (\textit{Recogniser}). We'll first build a machine that determines if a sequence of characters \textit{is} or \textit{is not} a valid token. We will do this by building a Deterministic Finite Automaton to solve an appropriate regular language problem, which you'll have learnt about in {\sffamily Part IA Discrete Mathematics}.
 
 \textbf{Step 1b} (\textit{Classifier}). \textbf{Step 1a} will tell us \emph{if} a sequence of characters is a token or not a token, but will not tell us \emph{which} token, is certainly not guaranteed to return the \emph{highest priority} token. To remedy this problem, we will introduce tagged DFAs. 
 \end{addmargin}
@@ -405,6 +406,8 @@ How do we identify token boundaries? Recall that we want \emph{longest match sem
 
 We can find these boundaries by running the classifier until failure. At this point, we know that there can be no further matches. We can then look at the \emph{last match} (the last accepting state), emit the token at that boundary, and re-start classification from that boundary. This is \emph{the lexing algorithm} 
 
+\textbf{Error-Checking.} What happens if there are \textbf{no} matches between start and end? Recall that the lexer additionally handles error checking --- this is an error of lexing (for example, an unclosed string), and should be reported to the user.
+
 \begin{center}
     \begin{minipage}{0.5\textwidth}
         \import{figures}{lex-algorithm}
@@ -428,7 +431,7 @@ By converting these regular expressions to NFAs, and then employing the power-se
 \import{figures}{untagged-dfa}
 \end{center}
 
-Tweaking our method to produce \emph{tagged} NFAs, we managed to create a \emph{tagged} DFA, which we call a \emph{classifier}.
+Tweaking our method to produce \emph{tagged} NFAs, we created a \emph{tagged} DFA / \emph{classifier}.
 
 \begin{center}
 \import{figures}{tagged-dfa}
@@ -436,7 +439,6 @@ Tweaking our method to produce \emph{tagged} NFAs, we managed to create a \emph{
 
 Turning our classifier into a lexer is a manner of \emph{using} the classifier in a particular way: \emph{the lexing algorithm}. We will now illustrate how, using our classifier, the lexing algorithm successfully lexes the character sequence [\texttt{i f  i f x}] into the token sequence [\textsc{if}; \textsc{ident} \texttt{ifx}]
 
-\vspace{3mm}
 
 \begin{minipage}{0.5\textwidth}
     \import{figures/example}{ex1}
@@ -498,7 +500,7 @@ You might not be particularly pleased with our method for constructing lexers, a
 
 Assume you had a word, $w$, and you were interested in determining if $w$ is in the regular language $\mathcal{L}$. Let's say $w = av$, that is, its first character is $a$ and its tail is some $v$ that we don't really care about.
 
-To determine if $w \in \mathcal{L}$, it is sufficient to show that $v \in f_a(\mathcal{L})$. $f$ is a function that should take every string in $\mathcal{L}$ that begins with $a$, and chop it off. For example, if \[\mathcal{L} = \{ a, b, ab, bb, aab, \ldots \}\] Then we would like \[f_a(\mathcal{L}) = \{ \epsilon, b, ab, \ldots\} \]
+Let's invent a function $f_a$ such that to determine if $w \in \mathcal{L}$, it is sufficient to show that $v \in f_a(\mathcal{L})$. $f_a$ is a function that should take every string in $\mathcal{L}$ that begins with $a$, and chop it off. For example, if \[\mathcal{L} = \{ a, b, ab, bb, aab, \ldots \}\] Then we would like \[f_a(\mathcal{L}) = \{ \epsilon, b, ab, \ldots\} \]
 
 Formally, \[f_a(\mathcal{L}) = \{ v \mid av \in \mathcal{L}\}\]
 
@@ -508,10 +510,10 @@ A key insight is that the derivative of a regular language is regular!
 
 \begin{theorem}[Closure under differentiation]
     \label{thm:closure-differentiation}
-    If $\mathcal{L}$ is regular, then $\forall w \in \Sigma\*, \partial_a(\mathcal{L})$ is regular.
+    If $\mathcal{L}$ is regular, then $\forall a \in \Sigma, \partial_a(\mathcal{L})$ is regular.
 \end{theorem}
 
-The proof for this is simple: if $\mathcal{L}$ is regular, then there is a DFA $\langle Q, \Sigma, \delta, q_0, F \rangle$ that accepts it. Since this is a DFA, $\delta$ must specify a target state for every source state and character. Hence, $\delta(q_0, a) \in Q$. $\langle Q, \Sigma, \delta, \delta(q_0, a), F \rangle$ is thus a valid DFA. In addition, it is a DFA that recognises $\partial_A(\mathcal{L})$. Since $\partial_A(\mathcal{L})$ is recognised by a DFA, it is regular.
+The proof for this is simple: if $\mathcal{L}$ is regular, then there is a DFA $\langle Q, \Sigma, \delta, q_0, F \rangle$ that accepts it. Since this is a DFA, $\delta$ must specify a target state for every source state and character. Hence, $\delta(q_0, a) \in Q$. $\langle Q, \Sigma, \delta, \delta(q_0, a), F \rangle$ is thus a valid DFA. In addition, it is a DFA that recognises $\partial_a(\mathcal{L})$. Since $\partial_a(\mathcal{L})$ is recognised by a DFA, it is regular.
 
 \subsubsection{Derivatives of regular expressions}
 Since every regular expression corresponds to some regular language (and vice versa), this implies that we can differentiate regular expressions to get more regular expressions. A second key insight is that the derivative of a regular expression can be formulated inductively. To be explicit will use $\cdot$ as the concatenation operator. 

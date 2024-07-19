@@ -1,0 +1,29 @@
+\begin{tikzpicture}[
+    every tree node/.style={align=center,anchor=north},
+    level distance=50pt,
+    sibling distance=-4pt,
+    ]
+  \Tree [.{$\constructor{LetRecFun}$ \\ $\annotation{int}$} 
+           {$\terminal{fib}$ \\ $\annotation{int $\rightarrow$ int}$}
+           [.{$\constructor{Lambda}$ \\ $\annotation{int $\rightarrow$ int}$} {$\terminal{n}$ \\ $\annotation{int}$}
+              [.{$\constructor{Match}$ \\ $\annotation{int}$}  {$\terminal{n}$ \\ $\annotation{int}$} {$\terminal{0}$ \\ $\annotation{int}$} {$\terminal{0}$ \\ $\annotation{int}$}
+                 [.{$\constructor{Match}$ \\ $\annotation{int}$}  {$\terminal{n}$ \\ $\annotation{int}$} {$\terminal{1}$ \\ $\annotation{int}$} {$\terminal{1}$ \\ $\annotation{int}$}
+                 [.{$\constructor{MatchAll}$ \\ $\annotation{int}$} {$\terminal{n}$ \\ $\annotation{int}$}
+                    [.{$\constructor{Plus}$ \\ $\annotation{int}$}
+                       [.{$\constructor{App}$ \\ $\annotation{int}$} {$\terminal{fib}$  \\ $\annotation{int $\rightarrow$ int}$}
+                          [.{$\constructor{Minus}$  \\ $\annotation{int}$} {$\terminal{n}$ \\ $\annotation{int}$} {$\terminal{1}$ \\ $\annotation{int}$}
+                          ]
+                       ]
+                       [.{$\constructor{App}$ \\ $\annotation{int}$} {$\terminal{fib}$  \\ $\annotation{int $\rightarrow$ int}$}
+                          [.{$\constructor{Minus}$  \\ $\annotation{int}$} {$\terminal{n}$ \\ $\annotation{int}$} {$\terminal{2}$ \\ $\annotation{int}$}
+                          ]
+                       ]
+                    ]
+                 ]
+                 ]
+              ]
+           ]
+           [.$\constructor{App}$ {$\terminal{fib}$ \\ $\annotation{int $\rightarrow$ int}$} {$\terminal{0}$ \\ $\annotation{int}$}
+           ]
+    ]
+\end{tikzpicture}

@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+
+\node (tuple) {$\langle Q,\Sigma,\Gamma,\delta,q_0,Z \rangle$};
+
+\node[anchor=east] at (tuple.west) {$M =$};
+
+\node[anchor=north east] (Q) at ($(tuple.north west) + (-1,1.5)$) { states $Q$ };
+\node[anchor=south east] (Sigma) at ($(tuple.south west) + (-1,-1.5)$) { alphabet $\Sigma$ };
+\node[anchor=south] (Gamma) at ($(tuple.north) + (0,1.5)$) { stack symbols $\Gamma$ };
+
+\node[anchor=north west] (q0) at ($(tuple.north east) + (1,1.5)$) { start state $q_0 \in Q$ };
+\node[anchor=south west] (Z) at ($(tuple.south east) + (1,-1.5)$) { initial stack symbol \textsc{z} $\in \Gamma$ };
+\node[anchor=north] (delta) at ($(tuple.south) + (0,-2)$) { 
+  \parbox{0.4\textwidth}{\small
+transitions $\delta$:\\
+$\forall q \in Q,$\\
+$~\quad a \in (\Sigma \cup \{\epsilon\}),$\\
+$~\qquad X \in \Gamma,$\\
+$~\qquad\quad\delta(q,a,X) \subseteq Q \times \Gamma^*$
+}
+};
+
+\draw[darkred,->] (Q.south east) to[out=-45,in=90] ($(tuple.north west) + (2.5ex,-0.5ex)$);
+\draw[darkred,->] (Sigma.north east) to[out=45,in=-90] ($(tuple.south west) + (5ex,0.5ex)$);
+\draw[darkred,->] (Gamma.south) to ($(tuple.north) + (-1.5ex,0.5ex)$);
+\draw[darkred,->] (q0.south west) to[out=-135,in=90] ($(tuple.north east) + (-5ex,-0.5ex)$);
+\draw[darkred,->] (F.north west) to[out=135,in=-90] ($(tuple.south east) + (-2.5ex,0.5ex)$);
+\draw[darkred,->] ($(delta.north) + (-0.5,-0.2)$) to ($(tuple.south) + (1.5ex,0.5ex)$);
+
+\end{tikzpicture}

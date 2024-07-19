@@ -1,0 +1,67 @@
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=2.4cm]
+
+\node[state,initial,fill opacity=0.1,fill=white,text opacity=1.0] (q1) [right of=q0]{ q$_1$ };
+\node[state,fill opacity=0.1,fill=highlight,text opacity=1.0] (q2) [right of=q1]{ q$_2$ };
+\node[state,fill opacity=0.1,fill=white,text opacity=1.0,accepting] (q3) [right of=q2]{ q$_3$ };
+
+
+\path[->] (q1)  edge[loop above] node (sss) {a,\textsc{s} $\to$ \textsc{ss}} (q1);
+\node[anchor=south] at (sss.north) {a,\textsc{z} $\to$ \textsc{sz}};
+\path[->] (q1)  edge node {$\epsilon$} (q2);
+\path[->] (q2)  edge[loop above] node (se) {b,\textsc{s} $\to$ $\epsilon$} (q2);
+\path[->] (q2)  edge node {$\epsilon$,\textsc{z} $\to$ $\epsilon$} (q3);
+
+\begin{scope}[xscale=2.4,xshift=31.4ex,yshift=7ex]
+\draw (0,0) -- (1.2,0);
+
+\node[anchor=south] at (0.1,0) { \footnotesize\texttt{a}};
+\node[anchor=south] at (0.3,0) { \footnotesize\texttt{a}};
+\node[anchor=south] at (0.5,0) { \footnotesize\texttt{a}};
+\node[anchor=south] at (0.7,0) { \footnotesize\texttt{b}};
+\node[anchor=south] at (0.9,0) { \footnotesize\texttt{b}};
+\node[anchor=south] at (1.1,0) { \footnotesize\texttt{b}};
+
+\draw[draw opacity=0.0,fill=highlight,fill opacity=0.1] (1.0,0) rectangle (1.2,0.4);
+
+\begin{scope}[darkest,opacity=0.5]
+\draw (0.0, 0) -- (0.0, 0.3);
+\draw (0.2, 0) -- (0.2, 0.3);
+\draw (0.4, 0) -- (0.4, 0.3);
+\draw (0.6, 0) -- (0.6, 0.3);
+\draw (0.8, 0) -- (0.8, 0.3);
+\draw (1.0, 0) -- (1.0, 0.3);
+\draw (1.2, 0) -- (1.2, 0.3);
+\end{scope}
+\end{scope}
+
+\node[draw,minimum height=8ex,minimum width=4ex,text opacity=1.0, fill=highlight, fill opacity = 0.1] (stack) at ($(q3) + (38ex,2.5ex)$) { };
+\draw[darkest,opacity=0.3] ($(stack.south west) + (0,4ex)$) -- ++(4ex,0);
+% \draw[darkest,opacity=0.3] ($(stack.south west) + (0,8ex)$) -- ++(4ex,0);
+% \draw[darkest,opacity=0.3] ($(stack.south west) + (0,12ex)$) -- ++(4ex,0);
+\node (z) at ($(stack.south) + (0,2ex)$) { \textsc{z} };
+\node (sz) at ($(stack.south) + (0,6ex)$) { \textsc{s} };
+% \node (ssz) at ($(stack.south) + (0,10ex)$) { \textsc{s} };
+% \node (sssz) at ($(stack.south) + (0,14ex)$) { \textsc{s} };
+
+% \node[anchor=south west,minimum height=\stackheight,minimum width=4ex,fill=highlight,fill opacity=0.1] (stackfill) at (stack.south west) { };
+
+\node[anchor=north] (state) at ($(q3) + (4ex,-5ex)$) {\footnotesize
+$\begin{array}{l}
+\langle q_2, b, \textsc{sz} \rangle
+% \only<7>{\color{highlight}}  \langle q_2, \epsilon, \textsc{z} \rangle \\[0.1ex]
+% \only<8>{\color{highlight}}  \langle q_3, \epsilon, \epsilon \rangle 
+\end{array}$
+};
+
+% \node (id) at ($(q3) + (0,-17ex)$) {
+% \small
+% ID $\langle {\color{highlight}q_2}, {\color{highlight}bbb}, {\color{highlight}sssz} \rangle$
+%   };
+
+% \draw[draw opacity=0.0,fill=background,inner sep=0]
+%   ($(state.north west) + (0,\statereveal)$)
+%   rectangle
+%   (state.south east);
+
+
+\end{tikzpicture}

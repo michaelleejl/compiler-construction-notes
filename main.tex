@@ -41,14 +41,29 @@
 \definecolor{codepurple}{HTML}{005f73}
 \definecolor{backcolour}{HTML}{F8F8FB}
 \definecolor{background}{HTML}{F0F0F4}
+\definecolor{darkest}{gray}{0.3}
+\definecolor{nonterminal}{HTML}{006B71}
+\definecolor{selected}{HTML}{00AB97}
+
 
 \definecolor{grey}{gray}{0.5}
 \definecolor{lightgrey}{gray}{0.9}
 \definecolor{verylightgrey}{rgb}{0.96,0.96,0.965}
 \let\oldtabularx\tabularx
 \renewcommand*{\tabularx}{\rowcolors{1}{}{white}\oldtabularx}
-
+\colorlet{selected}{selected}
+\usepackage[most]{tcolorbox}
+\newtcolorbox{tcbleftbar}[1][]{
+blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt}{0pt}{grey}, #1
+}
+\tcbset{on line, 
+        boxsep=4pt, left=0pt,right=0pt,top=0pt,bottom=0pt,
+        colframe=white,colback=nonterminal!100,  
+        highlight math style={enhanced}
+        }
+        
 \usepackage{makecell}
+\usepackage{xcolor}
 \usetikzlibrary{intersections}
 \usetikzlibrary{bending,shapes,backgrounds,patterns,shapes.misc}
 \usetikzlibrary{positioning,arrows,automata,arrows.meta,calc}
@@ -233,17 +248,8 @@
 %\usepackage{natbib}
 \bibliographystyle{abbrvnat}
 
-\title{Compilers Notes}
-\author{mjll2}
-\date{June 2024}
-
 \setkomafont{chapterprefix}{\Large}
 \setlength{\footnotemargin}{2mm}
-
-
-\definecolor{darkred}{HTML}{linkcolor}
-\definecolor{darkest}{HTML}{grey}
-\begin{document}
 
 \usetikzlibrary{arrows}
 \usetikzlibrary{positioning}
@@ -254,11 +260,21 @@
 \tikzset{vertex/.style={text depth=0.4ex}}
 \usetikzlibrary{positioning}
 
+\title{Compilers Notes}
+\author{mjll2}
+\date{June 2024}
+
+\begin{document}
+
 \maketitle
 
 \import{lec01}{introduction}
 
 \import{lec02}{lexing}
+
+\import{lec03}{context-free-grammars}
+\import{lec03}{parser-combinators}
+
 
 \import{lec08}{cps}
 

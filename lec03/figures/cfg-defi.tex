@@ -1,0 +1,19 @@
+\begin{tikzpicture}
+
+\node (tuple) {$\langle N,T,P,S \rangle$};
+
+\node[anchor=east] at (tuple.west) {$M =$};
+
+\node[anchor=south east] (Q) at ($(tuple.north west) + (-0.5,1)$) { nonterminals $N$ };
+\node[anchor=north east] (Sigma) at ($(tuple.south west) + (-0.5,-1)$) { terminals $T$ };
+
+\node[anchor=south west] (q0) at ($(tuple.north east) + (0.5,1)$) { productions $P \subseteq N \times (N \cup T)*$ };
+\node[anchor=north west] (F) at ($(tuple.south east) + (0.5,-1)$) { start symbol $S \in N$ };
+
+\draw[->] (Q.south east) to[out=-45,in=90] ($(tuple.north west) + (2.5ex,-0.5ex)$);
+\draw[->] (Sigma.north east) to[out=45,in=-90] ($(tuple.south west) + (5ex,0.5ex)$);
+\draw[->] (q0.south west) to[out=-135,in=90] ($(tuple.north east) + (-5ex,-0.5ex)$);
+\draw[darkred,->] (F.north west) to[out=135,in=-90] ($(tuple.south east) + (-2.5ex,0.5ex)$);
+
+
+\end{tikzpicture}

@@ -1,0 +1,10 @@
+\begin{minipage}{0.5\textwidth}\centering
+\begin{tikzpicture}
+  \Tree [.$\nonterminal{E}$ [.$\nonterminal{E}$ [.$\nonterminal{E}$ {x} ] {+} [.$\nonterminal{E}$ {y} ] ] {*} [.$\nonterminal{E}$ {z} ] ]
+\end{tikzpicture}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}\centering
+\begin{tikzpicture}
+  \Tree [.$\nonterminal{E}$ [.$\nonterminal{E}$ {x} ] {+} [.$\nonterminal{E}$ [.$\nonterminal{E}$ {y} ] {*} [.$\nonterminal{E}$ {z} ] ] ]
+\end{tikzpicture}
+\end{minipage}

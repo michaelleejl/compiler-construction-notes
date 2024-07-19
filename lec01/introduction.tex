@@ -15,7 +15,9 @@ let rec fibonacci n =
 \end{minted}
 \end{code}
 
-And turns it into something that a processor understands, like \footnote{If you're interested in how the output was generated, I used \href{https://godbolt.org/}{The Compiler Explorer}, which lets you play around with the output of a compiler.}
+And turns it into something that a processor understands, like \Cref{code:fib-assembly} \footnote{If you're interested in how the output was generated, I used \href{https://godbolt.org/}{The Compiler Explorer}, which lets you play around with the output of a compiler.}
+
+You don't have to understand the code in \Cref{code:fib-assembly}! We just want to show you the shape of the output of a compiler.
 
 \begin{code}[A Fibonacci function in \texttt{x86 Assembly}]
 \label{code:fib-assembly}
@@ -153,7 +155,64 @@ In some sense, therefore, a compiler is like that one friend who is an utter gen
 \subsection{Why build compilers?}
 The second question is why \emph{build} compilers? What \emph{practical} skills will building compilers actually teach you --- and will they, like the theory, extend beyond the course?
 
-The answer to this is that you can view the fundamental goal of a compiler as just one instance of a recurrent theme that of \emph{analysis $+$ transformation}. A compiler first \emph{analyses} the user input to understand its meaning, and then \emph{transforms} it in a way that respects the meaning, into something that the machine can execute. This general strategy can be seen in programs such as:
+The answer is that there are three recurrent themes that extend beyond the course: \emph{representation}, \emph{analysis}, and \emph{transformation}. 
+
+In a compiler, you will see many different \textit{representations} of the same program. As a sneak preview, here are some of them:
+
+\begin{enumerate}
+    \item Human-facing code, that is well-typed, readable, has lots of syntactic sugar, etcetera
+    \item A de-sugared, un-typed version of that same code
+    \item Straight-line code, where nested expressions, like \texttt{if} expressions, have been eliminated
+    \item Code where functions are explicitly allocated as closures on a heap
+    \item Machine code
+\end{enumerate}
+
+Each of these different representations is useful in its own right, making certain properties clearer than others. This makes it easier to conduct certain types of analysis. For example, straight-line code can make data dependencies between instructions much more explicit. This makes it easier to perform analysis to re-order code.
+
+\begin{center}
+    \import{figures}{data-dependencies}
+\end{center}
+
+\textit{In this example, we can move \textit{\texttt{4}} freely, but the other instructions are fixed}.
+
+This idea of different \textit{representations} being useful for different types of \textit{analysis} is not a new one, nor is it isolated to compilers! Here is an example from mathematics. There are three different ways to represent the same complex number
+
+\begin{minipage}[t]{0.33\textwidth}
+    \begin{center}
+        $x + iy$\\
+        \small\textit{Cartesian}
+    \end{center}
+\end{minipage}%
+\begin{minipage}[t]{0.33\textwidth}
+    \begin{center}
+        $r(\cos \theta + i \sin\theta)$\\
+        \small\textit{Polar}
+    \end{center}
+\end{minipage}%
+\begin{minipage}[t]{0.33\textwidth}
+    \begin{center}
+        $re^{i \theta}$\\
+        \small\textit{Eulerian}
+    \end{center}
+\end{minipage}
+
+With each representation being useful for different types of \textit{analysis} and manipulation. 
+
+The Cartesian form is useful for adding two complex numbers
+\[x_1 + iy_1 + x_2 + iy_2 = (x_2 + x_2) + i(y_1 + y_2)\]
+The Polar form is useful for determining \textit{equivalences} between different complex numbers
+\[r(\cos \theta + i \sin \theta) = r(\cos (\theta + 2\pi) + i \sin (\theta + 2\pi) )\]
+The Eulerian form is useful for multiplication and exponentiation
+\[r_1e^{i\theta_1} \times r_2e^{i\theta_2} = r_1r_2e^{i(\theta_1 + \theta_2)}\]
+Different \textit{representations} of the same object can therefore expose different types of useful \emph{analysis}. 
+
+It is therefore important to investigate ways to \emph{transform} the same program between different representations, in a way that preserves its meaning (or ``semantics''). This can expose different types of analyses on the same program.  
+
+For example, there are ways to transform from one complex form to another
+\[x + iy \iff (\sqrt{x^2 + y^2})e^{i\tan^{-1}{y/x}}\]
+Which allows you to transform into the right form for the right manipulation at each step. 
+
+Beyond compilers, and mathematics, this general theme of \textit{representation}, \textit{analysis}, and \textit{transformation} can also be seen programs such as:
 
 \begin{minipage}[t]{0.5\textwidth}
 Query Languages (\texttt{GraphQL})\\
@@ -181,28 +240,27 @@ Wikis (\texttt{MediaWiki})
 In addition, the \emph{techniques} you'll learn and apply when building a compiler are ones that generalise \emph{beyond compilers}. We'll issue two challenges at the start of the course (that you're not expected to solve, though keen students are of course free to come up with answers), which we'll learn techniques to solve.
 
 \subsubsection{Challenge 1: Recursion to Iteration}
-\Cref{code:cps-challenge} features a program that sums the elements of a list.
-
 \begin{code}[A program that sums the elements of a list]
 \label{code:cps-challenge}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
-let rec sum xs = 
-  match xs with
+let rec sum xs = match xs with
   | [] -> 0
   | x::xs -> x + sum xs
 \end{minted}
 \end{code}
 
+\Cref{code:cps-challenge} features a program that sums the elements of a list.
+
 This is \emph{not} tail-recursive, meaning it has space complexity \emph{linear} in the length of the list. That's pretty rubbish -- \emph{if} we can transform this into a tail-recursive style, then we can do this in \emph{constant} space. We'll learn the technique for this in \Cref{chapter:cps}.
 
-\subsubsection{Challenge 2: Garden-Path Sentences}
+\subsubsection{Challenge 2: Garden-Path Sentences}\label{section:challenge-2}
 Here's another challenge. Explain why this sentence is difficult to understand on first-read:
 
 \begin{center}
     \textit{The cotton clothing is made of grows in Mississippi.}
 \end{center}
 
-To which we'll see an answer, albeit set in the world of programs, in .
+To which we'll see an answer in \Cref{chapter:parse-foundations}.
 
 \subsection{Compilers are interesting}
 The aforementioned reasons are (hopefully) non-controversial. Here are some more subjective reasons for studying compilers:
@@ -294,6 +352,10 @@ High level code is therefore \emph{great} to write and read in --- but it cannot
 \section{Compiler Structure}
 We'll now consider, at a high level, the structure of any compiler. 
 
+\newcommand{\constructor}[1]{\footnotesize\textbf{\textsf{#1}}}
+\newcommand{\terminal}[1]{{\footnotesize\texttt{#1}}}
+\newcommand{\annotation}[1]{\scriptsize{\texttt{\textcolor{grey}{#1}}}}
+
 \begin{figure}[h]
     \centering
     \import{figures}{compiler-structure}
@@ -302,6 +364,32 @@ We'll now consider, at a high level, the structure of any compiler.
 \end{figure}
 
 As shown in \Cref{fig:compiler-structure}, a compiler can be divided into three components: the front-end, the middle-end, and the back-end. We'll now explore their roles and responsibilities. 
+
+At a high level, the key role of the front-end is to take the high level syntax, such as that in \Cref{code:fib-ocaml}, and transform it into an \textit{annotated} AST, such as in \Cref{fig:example-annotated-ast}. The key role of the middle-end is to take the annotated abstract syntax tree and transform it into an intermediate representation. An intermediate representation, in some sense, looks like assembly pseudocode. Example intermediate representations can be seen in \Cref{fig:example-ir}. The key role of the back-end is to take the intermediate representation and target it to a specific instruction set architecture, producing the sort of assembly code seen in \Cref{code:fib-assembly}.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{annotated-ast}
+    \caption{An example annotated abstract syntax tree}
+    \label{fig:example-annotated-ast}
+\end{figure}
+
+\begin{figure}
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \import{figures}{intermediate-representation}
+        \caption{An example program in the \texttt{JargonVM} IR}
+        \label{fig:example-ir-jargon}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \import{figures}{3-address-code}
+        \caption{An example program in the \texttt{3 Address Code} IR}
+        \label{fig:example-ir-3ac}
+    \end{subfigure}
+    \caption{Examples of intermediate representations}
+    \label{fig:example-ir}
+\end{figure}
 
 \begin{figure}[h]
     \centering
@@ -322,10 +410,14 @@ As shown in \Cref{fig:compiler-structure}, a compiler can be divided into three 
     In terms of the \emph{syntactic} structure, we are able to \emph{tokenize} --- divide the characters into units (``words''), each with its own role or function (this is very similar to tokenization in Natural Language Processing, as in {\sffamily Part IA Machine Learning and Real World Data}). For example, looking at the first line, we can recover three tokens: \texttt{let rec}, which is a \emph{keyword}, \texttt{fibonacci}, a user-given identifier for the variable, and \texttt{n}, another user-given identifier. 
 
     In terms of the \emph{semantic} structure, we are able to recover the \emph{meaning} of the function, by constructing (in our heads) an ``abstract syntax tree'' -- in a somewhat handwavy way, we are able to draw ``sensible brackets'' around phrases to indicate their role or responsibility in the code.
+\end{minipage}
 
-    The front-end performs these roles, which we do so effortlessly, but in a methodical and mechanical way. 
-
-    The second important role of the front-end is error-checking. As one can see in \Cref{fig:frontend-label}, while all the errors that a compiler complains about \emph{look} the same, there are actually three distinct types of error that are caught in three different places. 
+\begin{minipage}[t]{0.15\textwidth}
+\textbf{\sffamily Front-End} \textit{\sffamily (cont.)}    
+\end{minipage}%
+\begin{minipage}[t]{0.85\textwidth}
+    \setlength{\parskip}{.5\baselineskip}
+    The second important role of the front-end is error-checking. As one can see in \Cref{fig:frontend-label}, while all compilation errors \emph{look} the same, there are actually three distinct types of error that are caught in three different places. 
 
     The first type of error is an error of lexing. An example of such an error would be if you forget closing quotes, for example
 \begin{minted}[bgcolor=backcolour]{ocaml}
@@ -334,15 +426,7 @@ let string = "String
     The second type of error is an error of parsing. There is nothing stopping you, as the programmer, from writing something silly like 
 \begin{minted}[bgcolor=backcolour]{ocaml}
 let fibonacci x rec
-\end{minted}
-    Which of course, is totally of the wrong shape and has no meaning. 
-\end{minipage}
-
-\begin{minipage}[t]{0.15\textwidth}
-\textbf{\sffamily Front-End} \textit{\sffamily (cont.)}    
-\end{minipage}%
-\begin{minipage}[t]{0.85\textwidth}
-    \setlength{\parskip}{.5\baselineskip}
+\end{minted}    
     The third type of error is an error of typing, for example
 \begin{minted}[bgcolor=backcolour]{ocaml}
 let f (x: int) = if x then 3 else 5
@@ -360,9 +444,9 @@ let f (x: int) = if x then 3 else 5
     
     The role of the Middle-End is twofold.
 
-    The first is to take the annotated AST and transform it into a re-targetable representation, or an intermediate representation. Examples of such representations include the \texttt{Java Bytecode}, the \texttt{Jargon VM} (which we'll be compiling down to in this course) and \texttt{3 Address Code} ({\sffamily Part II Optimising Compilers}). In a hand-wavy way, you can think of these re-targetable or intermediate representations as the intersection of the capabilities of all the different machines --- \texttt{ARM}, \texttt{x86}, and more.
+    The first is to take the annotated AST and transform it into a re-targetable or intermediate representation.
 
-    The second role of the middle-end is to apply as many ``generic'' optimisations as possible. A \emph{generic optimisation} is one that is not specific to a machine. To make this even clearer, we will give some examples. 
+    The second role of the middle-end is to apply as many ``generic'' optimisations as possible. A \emph{generic optimisation} is one that is not specific to a machine.
 
     \textbf{Example 1: Unreachable Code Elimination.} Assume you had a \texttt{C} function
 
@@ -382,7 +466,7 @@ int f(int x) {
    // some code which never uses y
 }
     \end{minted}
-    Given that \texttt{y} is never used, assuming the expression on the right hand side of the assignment does not have any side-effects, it is safe to delete.
+    Given that \texttt{y} is never used, assuming the expression is pure, it is safe to delete.
 
 \end{minipage}
 
@@ -397,13 +481,6 @@ int f(int x) {
 
     The second is to apply machine-dependent optimisations. Here are two examples of machine-dependent optimisations.
         
-\end{minipage}
-
-\begin{minipage}[t]{0.15\textwidth}
-\textbf{\sffamily Back-End} \textit{\sffamily (cont.)}    
-\end{minipage}%
-\begin{minipage}[t]{0.85\textwidth}
-    \setlength{\parskip}{.5\baselineskip}
     \textbf{Example 1: Register Allocation.} Assume that, in the intermediate representation, you have eighteen variables but the processor only has sixteen registers in its ISA (note that because we need to know how many registers we have in the ISA, this is a back-end optimisation). What is the best way to allocate the variables to the registers? Is it possible for variables to share a register? What if certain registers \emph{have} to be used for certain purposes --- for example, let's say register 1 is used for the return values of functions, and addition will always use the values in registers 2 and 3. How do you optimise register allocation in these cases? In {\sffamily Part II Optimising Compilers}, you'll learn techniques based on \emph{graph colouring}.
     
     \textbf{Example 2: Instruction Scheduling.} As you'll have learnt in {\sffamily Part IB Computer Architecture}, loads can introduce load-to-use data dependencies and thus stalls. \textit{Load hoisting} can solve the problem, by scheduling loads to run as early as possible. This illustrates a general trend --- try to execute ``slow'' instructions as eagerly as possible, before their results are needed. To do this, we need knowledge of which instructions are slow and which are fast, and this is obviously dependent on the processor.
