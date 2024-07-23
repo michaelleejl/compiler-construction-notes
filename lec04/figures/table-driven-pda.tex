@@ -1,0 +1,33 @@
+\begin{minipage}[t]{0.5\textwidth}\small
+$\begin{array}[t]{rrrl}
+  \text{no.} & \text{input} & \text{stack} & \text{via production} \\[0.2ex]
+  \hline
+1 & (x+y)\$        &             S & S\to E\$             \\[0.2ex]
+2 & (x+y)\$        &           E\$ & E\to TE'             \\[0.2ex]
+3 & (x+y)\$        &         TE'\$ & T\to FT'             \\[0.2ex]
+4 & (x+y)\$        &       FT'E'\$ & F\to (E)             \\[0.2ex]
+5 & (x+y)\$        &     (E)T'E'\$ & {\color{highlight}\text{match}}         \\[0.2ex]
+ 6 & x+y)\$        &      E)T'E'\$ & E\to TE'             \\[0.2ex]
+ 7 & x+y)\$        &    TE')T'E'\$ & T\to FT'             \\[0.2ex]
+ 8 & x+y)\$        &  FT'E')T'E'\$ & F\to \text{id}              \\[0.2ex]
+ 9 & x+y)\$        & \text{id}T'E')T'E'\$ & {\color{highlight}\text{match}}         \\[0.2ex]
+ 10 & +y)\$        &   T'E')T'E'\$ & T'\to \epsilon       \\[0.2ex]
+ 11 & +y)\$        &     E')T'E'\$ & E'\to + TE'          \\[0.2ex]
+\end{array}$
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}\small
+$\begin{array}[t]{rrrl}
+  \text{no.} & \text{input} & \text{stack} & \text{via production} \\[0.2ex]
+  \hline
+  12 & +y)\$        &   +TE')T'E'\$ & {\color{highlight}\text{match}}         \\[0.2ex]
+  13 & y)\$        &    TE')T'E'\$ & T \to FT'            \\[0.2ex]
+  14 & y)\$        &  FT'E')T'E'\$ & F \to \text{id}             \\[0.2ex]
+  15 & y)\$        & \text{id}T'E')T'E'\$ & {\color{highlight}\text{match}}         \\[0.2ex]
+  16 & )\$        &   T'E')T'E'\$ & T'\to \epsilon       \\[0.2ex]
+  17 & )\$        &     E')T'E'\$ & E'\to \epsilon       \\[0.2ex]
+  18 & )\$        &       )T'E'\$ & {\color{highlight}\text{match}}                \\[0.2ex]
+  19 & \$        &        T'E'\$ & T'\to \epsilon       \\[0.2ex]
+  20 & \$        &          E'\$ & E'\to \epsilon       \\[0.2ex]
+  21 & \$        &            \$ & {\color{highlight}\text{accept!}}       \\[0.2ex]
+\end{array}$
+\end{minipage}

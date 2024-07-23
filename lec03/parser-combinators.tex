@@ -1,11 +1,11 @@
-\chapter{Recursive Descent and Parser Combinators}
+\chapter{Recursive Descent and Parser Combinators}\label{chapter:parser-combinators}
 
 \begin{center}
     \import{figures}{context}
 \end{center}
 
 \section{Overview}
-In the previous chapter, we searched for a universal way to describe parser specifications and parsers, concluding that parser specifications are \textit{non-ambiguous, deterministic context-free grammars}, and parsers are \textit{deterministic push-down automata}. We also noted that as the result of practical considerations, the space of parser specifications and parser generators is a lot more fragmented and complicated than this universal view, promising to examine this with more specificity. 
+In the previous chapter, we searched for a universal way to describe parser specifications and parsers, concluding that parser specifications are typically \textit{non-ambiguous, deterministic context-free grammars}, and parsers are \textit{deterministic push-down automata}. We also noted that as the result of practical considerations, the space of parser specifications and parser generators is a lot more fragmented and complicated than this universal view, promising to examine this with more specificity. 
 
 In this chapter, we will look at the first such concrete example: the recursive descent parser. 
 
@@ -106,10 +106,49 @@ Therefore, we can say each function takes a sequence of \texttt{toks}, matches s
 
 Note how the language features --- higher-order functions and pattern matching --- are effectively deployed to build a parser. This is what we mean by recursive descent parsers being ``easy to construct''.
 
-\subsection{Backtracking and Efficiency}
-We should also note that this is not the only way, or even a canonical way, to write a recursive descent parser. You'll often see recursive descent parsers written with a lot of backtracking \texttt{try / catch} statements.
+Having seen a concrete example, we can now define what a recursive parser \textit{is}
 
-One advantage of this is that it can parse non-deterministic (but unambiguous) context-free grammars. However, it does so at the expense of efficiency. Many recursive descent parsers have exponential time complexity (exponential in the number of tokens).
+\begin{definition}[Recursive Descent Parser]
+    A recursive descent parser is a top-down, left-most parser that uses a set of mutually recursive functions, where each function parses a non-terminal in the grammar.
+\end{definition}
+
+\subsection{Backtracking and Predictive Parsers}
+We should also note that this is not the only way, or even a canonical way, to write a recursive descent parser. You'll often see recursive descent parsers written with a lot of backtracking \texttt{try / with} statements.
+
+For example, given the rule 
+\[
+\begin{array}{rcl}
+     E'&\to&+TE'  \\
+     &\mid&\epsilon
+\end{array}
+\]
+A naîve recursive descent parser might write 
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+...
+and e ' toks = 
+    try e ' ( t toks )
+    with Fail _ -> toks
+...
+\end{minted}
+Which explores the first branch, and, if it fails, tries the second. Such a recursive descent parser only has one job -- matching. However, our recursive descent parser is smarter, using the \textit{next} token to decide, \textit{deterministically} what to do. We choose the first rule if, and only if, the next token is \texttt{PLUS}, choosing the second otherwise. 
+\begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
+...
+and e ' = function 
+    | PLUS::toks -> e' (t toks)
+    | toks -> toks
+...
+\end{minted}
+This means our recursive descent parser has \textit{two} jobs, \textit{prediction} (predicting which branch to take) and \textit{matching}. In addition, we can say it uses \textit{the next token} in the token sequence to make predictions, and in doing so, it is able to reduce non-determinism.
+
+Hence, we call our parser a \textbf{predictive parser}.
+
+\begin{definition}[Predictive Parser]
+    A predictive parser is a parser that does not need to backtrack.
+\end{definition}
+
+A predictive parser is more efficient, taking time linear in the number of tokens. Parsers written in this backtracking style can be extremely inefficient, taking time \textit{exponential} in the number of tokens. However, one advantage is that they can parse non-deterministic (but unambiguous) context-free grammars: if you don't know which branch to choose, use backtracking to try both!
+
+At this point, we have \textbf{told} you that our parser does not need to backtrack. That is, we have \textit{asserted} that any ambiguity can be resolved using a single token of look-ahead. But we have not \textit{justified} ourselves, and you should be skeptical. Justification will come in \Cref{chapter:llk}.
 
 \section{Left Recursive Grammars}
 Inefficiency, however, is \textit{not} the biggest problem with recursive descent parsers. That dishonour belongs to the left-recursive problem. Consider $G_3$ --- why do you think it looks so weird? Why did we not use $G_2$?
@@ -138,7 +177,6 @@ By the way, we call the first type of left-recursion (where there is a rule of t
 
 Therefore, formally, a grammar is left-recursive if there exists a non-terminal $A$ and sequence $\alpha$ such that
 \[ A \Rightarrow^{+} A\alpha \]
-
 \subsection{Eliminating Left Recursion}
 Thankfully, you can \textit{always} eliminate left recursion. We can do this in a two-step process.
 
@@ -148,18 +186,17 @@ Thankfully, you can \textit{always} eliminate left recursion. We can do this in 
 \end{enumerate}
 
 We can convert indirect left recursion to direct left recursion via a process of inlining. Basically, establish an order on non-terminals (in this case, $A \prec B \prec C$). Starting with the greatest, whenever you see a non-terminal, replace it with its productions, as such:
-
-After 1 iteration, we only have direct, rather than indirect recursion.
 \[\begin{array}{lcl}
      A & \rightarrow & Cd  \\
      B & \rightarrow & Ce \\
      C & \rightarrow & Cd \mid Ce \mid f
 \end{array}\]
+Which in just a single iteration, eliminates indirect left recursion.
 
 To eliminate direct recursion, note that whenever you have a left-recursive rule of the form
 \[ A \rightarrow A\alpha \]
 You must also have a left-recursive base-case, of the form
-\[A \rightarrow \beta \]
+\[A \rightarrow \beta \]\footnote{where $\beta$ does not begin with $A$}
 For example, considering $G_2$,
 \[
 \begin{array}{rcl}
@@ -241,7 +278,7 @@ The stack is \textit{implicit} in the \textit{call stack} of the program. You ma
 \section{Parser Combinators$^*$}
 Recursive descent might seem ad-hoc and unsatisfactory. We can make this less ad-hoc by the technique of parser combinators. A parser combinator is a higher-order function that allow us to construct larger parsers from smaller parsers. A parser combinator \textit{library} exposes a suite of combinators that lets us build parsers in a less ad-hoc way. In fact, if you build your library in a smart way, it can negate a lot of the disadvantages of parser combinators! Much of this section follows \citet{krishnaswami-2019}, which you can read \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{here}.
 
-We begin by investigating the parser combinator. The key observation is to notice that many functions follow the same format, for example
+We begin by investigating the parser combinator, and then discuss how it mitigates some of the disadvantages of recursive descent. The key observation is to notice that many functions follow the same format, for example
 
 \begin{minted}[bgcolor=backcolour, texcomments]{ocaml}
 e toks = e' (t toks)
@@ -305,8 +342,9 @@ val alt : 'a t -> 'a t -> 'a t
 val fix : ('b t -> 'b t) -> 'b t
 val map : ('a -> 'b) -> 'a t -> 'b t
 \end{minted}
+\texttt{'a t} is the type of a parser that consumes a sequence of tokens and returns a value of type \texttt{'a}. 
 
-Breaking this down, \texttt{'a t} is the type of a parser that consumes a sequence of tokens and returns a value of type \texttt{'a}. 
+You can see, for example, that sequencing two parsers, one of type \texttt{'a t}, and one of type \texttt{'b t}, creates a parser that takes a sequence of tokens and returns a \textit{node}, whose left child is of type \texttt{'a} and right child is of type \texttt{'b}.
 
 \texttt{eps} is a base parser that parses the empty string. \texttt{bot} is the parser that always fails. \texttt{chr} is a function that takes in a character, like \texttt{a}, and returns a parser for the character. 
 
@@ -348,9 +386,158 @@ let star p = fix (q -> any [eps    ==> always [];
                             p ++ q ==> fun (x, xs) -> x::xs
                            ])
 \end{minted}
-
+Whenever you see \texttt{fix} (for \texttt{fix}-ed point), think recursion! So the aforementioned code is equivalent to the perhaps more natural
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let rec star p = any [eps    ==> always [];
+                      p ++ (star p) ==> fun (x, xs) -> x::xs
+                     ])
+\end{minted}
 \subsection{Infix Operators in Parser Combinators}
-Using these user abstractions, we can get a more declarative reading of our grammar, by wrapping up the nasty transformation out of a left-recursive grammar in a function 
+Equipped with the ability to build abstractions, we can get a more declarative reading of our grammar. Recall that what we would really like to do is declare a grammar that has an infix $+$ operator, something that looks like 
+\[ E \rightarrow E + T\]
+Or better still, declare that we want a \textit{left-associative} $+$ operator.
 
-\subsection{Linear-Time Parser Combinators}
-Finally, we can use the \textit{type} system to ensure that our parser combinator has \textit{no backtracking} --- that is, it is guaranteed to take time linear in the number of tokens. The details can be found in the paper, but a very understandable introduction can be found \href{https://semantic-domain.blogspot.com/2023/07/linear-time-parser-combinators.html}{here}.
+These have very clean declarative readings. However, because of the inability of a recursive descent parser to handle left-recursion, we are stuck with the awkward
+\[\begin{array}{rcl}
+     E & \to & T E'  \\
+     E' & \to & + TE' \mid \epsilon 
+\end{array}\]
+User abstraction allows us to take a parser for an infix-operator, \texttt{op} (for example, \texttt{op} recognises $+$) a parser that recognises a base expression, \texttt{base} (for example, a parser that recognises $E$), and build a parser for the right-associative operator \texttt{base op base} (a parser that recognises $E + E$). 
+
+The idea is that the resulting parser, which we will call \texttt{r}, will be able to parse (unambiguously) words with the structure
+\[\begin{array}{l}
+     E\\
+     E+E\\
+     E+(E+E)\\
+     \ldots
+\end{array}\]
+Where the brackets indicate where associativity has been used to handle ambiguity.
+
+We shall now see how to to build such an \texttt{r} using the parser combinator library.
+
+Assume we have a \texttt{base} parser that can parse expressions of the form $E$. Once we have applied this \texttt{base} parser, we want our parser to match the following structures,
+\[\begin{array}{l}
+     \epsilon\\
+     +E\\
+     +E+E\\
+     +E+(E+E)\\
+     \ldots
+\end{array}\]
+Assume we had some parser \texttt{q} that matches the above patterns. Then, we can construct our desired parser using sequencing. In other words, we have the following equation:
+\[\texttt{r} = \texttt{base ++ q}\]
+The $\epsilon$ is a little annoying, since it doesn't follow the same structure as the other patterns. We therefore seek to cut it out. We can do this by defining \texttt{q} as matching \textit{either}
+$\epsilon$ or:
+\[\begin{array}{l}
+     +E\\
+     +E+E\\
+     +E+(E+E)\\
+     \ldots
+\end{array}\]
+Assume we had some parser \texttt{q'} that could parse the above sequence. Then, we have the following equation
+\[
+\begin{array}{rcl}
+     \texttt{q}&=&\texttt{alt eps q'}  \\
+     &=& \texttt{option q'} 
+\end{array}
+\]
+Substituting into our original equation, we have
+\[\texttt{r} = \texttt{base ++ option q'} \]
+Clearly \texttt{q'} can be described as \texttt{op ++ q''}, where \texttt{op} matches $+$ and \texttt{q''} matches patterns of the form:
+\[\begin{array}{l}
+     E\\
+     E+E\\
+     E+(E+E)\\
+     \ldots
+\end{array}\]
+So we have
+\[\texttt{r} = \texttt{base ++ option (op ++ q'')}\]
+But \texttt{q''} matches exactly the same patterns as \texttt{r}! So we have  
+\[\texttt{r} = \texttt{base ++ option (op ++ r)}\]
+In other words, \texttt{r} is a fixed point for the function
+\[\texttt{fun p -> base ++ option (op ++ p)}\]
+And so we have 
+\[\texttt{r} = \texttt{fix (fun p -> base ++ option (op ++ p))}\]
+
+This is almost exactly how the \texttt{infixr} function is defined.
+
+\begin{minted}[bgcolor=backcolour]{ocaml}
+val infixr : ('a -> 'a -> 'a) t -> 'a t -> 'a t
+let infixr op base =
+    fix (fun p ->
+        base ++ option (op ++ p) ==> function
+        | (e, None) -> e
+        | (e, Some(f, e')) -> f e e')
+\end{minted}
+The only difference is the \texttt{map}, which just musters the resulting trees into the right shape. Recall that sequencing constructs a \textit{tree} via a \textit{pair}. But if the right branch is \texttt{None}, then we can perform the following transformation, to make the parse tree have a nicer shape
+\begin{center}
+    \begin{tikzpicture}
+           \node(s) at (1.5cm, 0) {\texttt{e}}
+           
+          \node[] at ($(s.west) - (0.26cm,0.05cm)$) {$\Rightarrow$}
+        
+          \begin{scope}[xshift=0cm, yshift=-0.14cm]
+            \Tree [.$\textsf{Node}$
+                     {$\texttt{e}$} 
+                     {$\texttt{\textbf{None}}$}
+                  ]
+          \end{scope}
+     \end{tikzpicture}
+\end{center}
+    
+If the right branch is \texttt{Some(+, e')}, then we want to perform the following transformation
+
+\begin{center}
+    \begin{tikzpicture}
+           \node(s) at (3cm, 0) {}
+
+           \begin{scope}[xshift=3cm, yshift=-0.14cm]
+            \Tree [.$\texttt{\textbf{+}}$
+                     {$\texttt{e}$} 
+                     {$\texttt{e'}$}
+                  ]
+          \end{scope}
+           
+          \node[] at ($(s.west) - (1.26cm,0.05cm)$) {$\Rightarrow$}
+        
+          \begin{scope}[xshift=0cm, yshift=-0.14cm]
+            \Tree [.$\textsf{Node}$
+                     {$\texttt{e}$} 
+                     {$\texttt{\textbf{Some}(+, e')}$}
+                  ]
+          \end{scope}
+     \end{tikzpicture}
+\end{center}
+
+We can do something similar to build a left-associative equivalent \texttt{infixl}, though we elide the details.
+
+The end result is that we can get the user to specify an operator and an associativity, and \textit{automatically} generate the desired parser for that operator
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let infix_op base ao = (*ao stands for associativity + operator*)
+    match ao with
+    | Left,  op  -> infixl op base
+    | Right, op -> infixr op base
+\end{minted}
+In fact, it is even possible to expose a single function, that allows the user to specify a \textit{list} of operators and their associativities, ordered by precedence, and build an unambiguous parser that meets this specification.
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let infix aos base = foldl infix_op base aos
+\end{minted}
+Which can be used as follows:
+\begin{minted}[bgcolor=backcolour]{ocaml}
+infix [(Left, chr '*' ==> always Float.mul);
+       (Left, chr '+' ==> always Float.add)]]
+      base 
+\end{minted}
+Remember (from \textsf{Part IA Foundations of Computer Science}) that a left-fold, \texttt{foldl}, takes
+\begin{enumerate}
+    \item A function (in this case \texttt{infix\_op})
+    \item A base value (in this case, \texttt{base})
+    \item A list (in this case, \texttt{aos})
+\end{enumerate}
+
+At each element of the list \texttt{ao}, \texttt{foldl} will apply \texttt{infix\_op} to \texttt{base} and \texttt{ao}, and make this the new \texttt{base}. 
+
+Hence, assuming our \texttt{base} parses patterns of the form $E$, then after the left-fold has processed \texttt{(Left, chr '*' ==> always Float.mul)}, the new base will be able to process $E * E$. After the left-fold has processed \texttt{(Left, chr '+' ==> always Float.add)}, the new base will be able to process $(E*E) + (E*E)$, for example. (Note that the order indicates precedence!)
+
+
+% \subsection{Looking Ahead: Linear-Time Parser Combinators}
+% Finally, we can use the \textit{type} system to ensure that our parser combinator has \textit{no backtracking} --- that is, it is guaranteed to take time linear in the number of tokens. The details can be found in the paper, but a very understandable introduction can be found \href{https://semantic-domain.blogspot.com/2023/07/linear-time-parser-combinators.html}{here}.

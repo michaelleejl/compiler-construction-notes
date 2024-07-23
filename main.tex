@@ -230,6 +230,20 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
   backgroundcolor=\color{backcolour}
 }
 
+\makeatletter
+\newcommand\incircbin
+{%
+  \mathpalette\@incircbin
+}
+\newcommand\@incircbin[2]
+{%
+  \mathbin%
+  {%
+    \ooalign{\hidewidth$#1#2$\hidewidth\crcr$#1\bigcirc$}%
+  }%
+}
+\newcommand{\ostar}{\incircbin{*}}
+
 % \SetupFloatingEnvironment{listing}{name=Source Code}
 
 \newcounter{codeCounter}[section]
@@ -274,7 +288,7 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
 
 \import{lec03}{context-free-grammars}
 \import{lec03}{parser-combinators}
-
+\import{lec04}{LL(k)}
 
 \import{lec08}{cps}
 

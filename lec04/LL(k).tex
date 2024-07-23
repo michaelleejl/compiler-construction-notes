@@ -1,0 +1,546 @@
+\chapter{LL($k$) Parser Generators}\label{chapter:llk}
+
+\begin{center}
+    \import{figures}{context}
+\end{center}
+
+We will continue our exploration of real world parsers by considering parser generators that create table-driven parsers. In turn, these parsers can parse the LL($k$) family of languages. 
+
+\section{Overview}
+We have not yet defined LL($k$) grammars or table-driven parsers. The former is a description of \textit{what} a parser can parse (how to specify the input of the parser generator), and the latter a description of how the constructed parser works.
+
+In this overview, we will first briefly recap \Cref{chapter:parser-combinators}. Building on this, we will define the LL($k$) grammar (\Cref{section:llk-grammar}) and then the table-driven parser (\Cref{section:table-driven-parsers}).
+
+\subsection{Eliminating Non-Determinism: Prediction Based Lookahead}\label{section:combinator-recap}
+We begin with a recap of our recursive descent parser, defined on \Cpageref{code:ocaml-recursive-descent}. Recall that our recursive descent parser is \textit{predictive}. This means that it had two possible actions: \textit{matching} terminals and \textit{predicting} expansions of non-terminals.
+
+To handle prediction, it using a \textit{single token lookahead} to pick between branches and resolve non-determinism.
+
+Can we be confident, however, that it is able to \textit{eliminate} non-determinism? That is, for any grammar, is looking at the next token always guaranteed to eliminate any need for backtracking? 
+
+Unfortunately not. Consider the following production rules 
+\[\begin{array}{rcl}
+     E&\to&x+E  \\
+     &\mid &x*E \\ 
+     &\mid &\epsilon
+\end{array}\]
+Assume you are parsing $E$, and you see that the next token is $x$. You need to see the \textit{token after} $x$ to choose the right rule. Here, you will need a \textbf{two} token look-ahead.
+
+\subsection{LL($k$) Grammars}\label{section:llk-grammar}
+It is useful to build a vocabulary that lets us name grammars by the number of look-ahead tokens they require. This motivates the LL($k$) family of grammars. 
+
+% \begin{definition}[LL$(k)$ Grammar]
+%     An LL($k$) grammar is one for which a left-to-right, left-most, predictive parser may be constructed using $k$ tokens of lookahead. 
+% \end{definition}
+
+% Let's break down this definition. 
+
+\begin{center}
+    \import{figures}{llk-definition}
+\end{center}
+
+Recall that at the heart of our parser lies a pushdown automaton that \textit{consumes} the token sequence. We can choose to consume this token sequence from left-to-right or right-to-left, and the first \textbf{L} tells us that we choose the former.
+
+We are also choosing to do a left-most derivation, and this is confirmed by the second \textbf{L}.
+
+Finally, we are using $k$ tokens of look-ahead. This means that we use the current non-terminal we are expanding, and then next $k$ tokens in the input sequence, to predict the next production.
+
+Using this classification, we can state that our recursive descent parser is an LL($1$) parser, and the grammar it parses, $G_3$, is an LL($1$) grammar.
+
+\subsection{Table-Driven Parsers}\label{section:table-driven-parsers}
+How can we tell that if a grammar is in LL($1$), rather than LL($2$)? We can construct a table that matches every $\langle$ non-terminal, terminal$\rangle$ pair to an expansion.
+\[
+\begin{array}{c|c|c|c|c|c}
+   & id  & +        & *   & (     & )        \\\hline
+E  & TE' &          &     & TE'   &          \\\hline
+E' &     & +TE'     &     &       & \epsilon \\\hline
+T  & FT' &          &     & FT'   &          \\\hline
+T' &     & \epsilon & *FT &       & \epsilon \\\hline
+F  & id  &          &     & F (E) &          \\\hline
+\end{array}
+\]
+We verify that every pair had at \textit{most} one possible production rule (every cell in the table has at most one entry). If one pair had \textit{two or more}, then our parser would have had to backtrack.
+
+Two questions spring to mind:
+\begin{enumerate}
+    \item Can we generate this table automatically from the grammar?
+    \item Can we implement a parser that predicts by \textit{looking up} entries in the table?
+\end{enumerate}
+
+The answer to both these questions is \textbf{yes}. The former will be answered in \Cref{section:building-the-table}, and the latter in \Cref{section:running-the-table-driven-parser}
+
+Parsers that parse by looking up entries in the table are known as \textit{table-driven parsers}. Given that the table can be generated automatically from the grammar, these parsers are easily constructed by \textit{parser generators}. 
+
+\section{The Structure of Table-Driven Parsers}
+In this section, our focus will to be make clear \textit{exactly} the difference between our table-driven parser and the recursive descent parser. To do this, we will refresh our memory of what our parser is trying to do, and how it works. That is, our parser finds a left-most derivation (\Cref{section:recap-left-most-deriv}), by running a push-down automaton (\Cref{section:recap-pda-operation}). 
+
+This will help us make clear that the main difference between our predictive recursive descent parser and our table driven parser is \textit{how the push-down automaton makes decisions}.
+
+\subsection{A Reference Grammar: $G_3'$}\label{section:g3prime}
+We will do this for $G_3' = \langle N'_3, T'_3, P'_3, S\rangle$, where
+\[
+\begin{array}{lcl}
+N'_3 &=& \{ E,E'T,T'F,\textcolor{highlight}{S} \} \\
+T'_3 &=& \{+,*,(,),id,\textcolor{highlight}{\$}\}\\[1ex]
+P'_3 &=& \begin{array}{lcl}
+  \textcolor{highlight}{S}  &\textcolor{highlight}{\to}& \textcolor{highlight}{E\$} \\
+  E  &\to& T \;E' \\
+  E' &\to& + \;T\; E' \;\mid\; \epsilon\\
+  T  &\to& F\; T'\\
+  T' &\to& * \;F\; T' \;\mid\; \epsilon\\
+  F  &\to& (\;E\;) \;\mid\; \text{id}\\
+\end{array}
+\end{array}
+\]
+This is simply $G_3$ with a new starting non-terminal, $S$, and an end-of-sequence terminal $\$$. 
+
+\subsection{Goal of the Parser: Finding a Left-Most Derivation}\label{section:recap-left-most-deriv}
+At its heart, our parser is attempting to find a left-most derivation for our string. We will briefly recap the notion of a left-most derivation, introduced on \Cpageref{definition:leftmostderivation}, by illustrating a left-most derivation of the string $(x + y)\$$
+
+\begin{center}
+    \import{figures}{leftmost-derivation}
+\end{center}
+
+Recall that we repeatedly expand the left-most non-terminal until there are no more non-terminals left. We encourage you to step through this derivation yourself, acting as the parser, once with the production rules, and once with the table on \Cpageref{section:table-driven-parsers}. We hope you'll realise that certain steps (for example, the fourth step) require non-deterministic choices that force you to do a bit of thinking. The table serves as a handy way of doing that thinking \textit{once} and simply referring to it as you go through the derivation, rather than ad-hoc, every time you do a derivation step.
+
+\subsection{Operation of a Parser: PDA}\label{section:recap-pda-operation}
+If you did step through the derivation yourself, you might have found yourself performing a very mechanical, repetitive procedure. Your procedure might have looked something like this:
+
+\begin{center}
+    \import{figures}{table-driven-pda}
+\end{center}
+
+Recall that, in \Cref{section:pushdownautomata}, we described the \textit{Push-Down Automaton}: a Finite Automaton equipped with a stack. We also introduced the concept of an \textit{instantaneous description}: which state the PDA is in, what input it is looking at, and what's on its stack. This is exactly what we have captured. 
+
+So far, this description could have applied \textit{either} to a predictive recursive descent parser \textit{or} a table-driven parser. The critical question is 
+
+\begin{center}
+    How do we choose which production step to use?
+\end{center}
+
+The predictive recursive descent parser uses something like the ad-hoc technique of scanning the relevant production rules and choosing an appropriate one. 
+
+The table-driven parser uses the top of the stack and the first character in the input to \textit{look-up} the table on \Cpageref{section:table-driven-parsers}. 
+
+
+\section{Constructing the Table}\label{section:building-the-table}
+In this section, we will answer the question 
+\begin{center}
+    Can we generate the LL parsing table, $M$, automatically from the grammar?
+\end{center}
+
+The answer to this question is yes. 
+
+Recall that the table $M$ records, for each $\langle$ non-terminal, terminal $\rangle$ pair, the set of all ``relevant production rule''s. To figure out a sensible way to construct the table, we need to consider when a production rule is \textit{relevant}.
+
+In this section, we will therefore first consider when a production rule is relevant (\Cref{section:first-follow-sets}). Then, \textit{assuming} the relevant production rules are easy to compute, we show how to mechanically compute the table (\Cref{section:building-the-table-using-first-follow}). Finally, we show how to compute the relevant production rules mechanically (\Cref{section:computing-first-follow}).
+
+\subsection{FIRST and FOLLOW sets}\label{section:first-follow-sets}
+If the current non-terminal is $A$, and the next terminal to match is $a$, when is the rule 
+\[ A \to \alpha \]
+relevant? That is, when should $M[A, a]$ contain $\alpha$?
+
+Let's consider two concrete examples. First, assume that the current non-terminal is $T'$ and the next terminal in the input is $*$. What is a relevant rule? Hopefully you can see that an answer is
+\[ T' \to *FT \]
+Because $*FT$ starts with $*$. 
+
+More generally, the rule $A \to \alpha$ is relevant when $\alpha$ \textit{could} produce a sequence $a\beta$ (a sequence whose \textit{first} character is $a$). 
+
+Second, let's assume that the current non-terminal is $T'$ and the next terminal in the input is $+$. A relevant rule is
+\[ T' \to \epsilon \]
+This is much less obvious. The insight comes from thinking about the context in which $T'$ can appear. Because of the rules
+\[\begin{array}{rcl}
+     E' & \to & +TE'  \\
+     T & \to & FT' 
+\end{array}\]
+We hope you can see that it is possible to create the following sequence of non-terminals:
+\[FT'E'\]
+By ignoring $F$, we might see sub-sequences of the form
+\[T'E'\]
+Since we have production rule $E' \to +TE'$, we may see sub-sequences of the form
+\[T'+TE'\]
+Hence, choosing to expand $T'$ to $\epsilon$ is a strategic move. As such, $T' \to \epsilon$ is relevant in this situation. 
+
+More generally, the rule $A \to \alpha$ is relevant when 
+\begin{enumerate}
+    \item $\alpha$ \textit{could} produce nothing (the empty sequence $\epsilon$),
+    \item $A$ could be \textit{followed} by a $B$ ($S \Rightarrow^+ \alpha AB$), and
+    \item $B$ can expand to the sequence $a\beta$.
+\end{enumerate}
+
+To describe this in more precision, we will define the \textsf{FIRST} and \textsf{FOLLOW} sets.
+
+\subsubsection{FIRST sets}
+The \textsf{FIRST} set of $\alpha$ captures the first terminals of every sequence that $\alpha$ can expand to. If $\alpha$ can expand into the empty sequence $\epsilon$, then we will record that too.
+\[\textsf{FIRST}(\alpha) = \{a \in T \mid \exists \beta \in (N\cup T)\* . \; \alpha \Rightarrow^{*} a\beta \} \cup \{\epsilon \mid a \Rightarrow^{*} \epsilon \}\]
+Concretely, here are the \textsf{FIRST} sets for each of the non-terminals in $G_3'$
+\[
+\begin{array}{lllp{4ex}lll}
+S  & \to & E\;\$                       && \textsf{FIRST}(S)  & = & \{\,(\,,\,id\,\}        \\
+E  & \to & T\; E'                      && \textsf{FIRST}(E)  & = & \{\,(\,,\,id\,\}        \\
+E' & \to & + T\; E' \mid \epsilon      && \textsf{FIRST}(E') & = & \{\,+\,,\, \epsilon\,\} \\
+T  & \to & F \;T'                      && \textsf{FIRST}(T)  & = & \{\,(\,,\, id\,\}       \\
+T' & \to & *\;F\; T' \mid \epsilon     && \textsf{FIRST}(T') & = & \{\,*\,,\, \epsilon\,\} \\
+F  & \to & (E) \mid id                 && \textsf{FIRST}(F)  & = & \{\,(\,,\, id\,\}       \\
+\end{array}
+\]
+Note that the \textsf{FIRST} set of a terminal, such as $a$, is simply $\{a\}$.
+
+\subsubsection{FOLLOW sets}
+The \textsf{FOLLOW} set of non-terminal $A$ captures the first terminals of every sequence that could follow $A$. Formally, 
+\[
+\textsf{FOLLOW}(A) = \{ a \mid \exists \alpha \beta, S \Rightarrow^+ \alpha A a \beta \}
+\]
+
+For example, these are the \textsf{FOLLOW} sets for each of the non-terminals in $G_3'$
+\[
+\begin{array}{lllp{4ex}lll}
+S  & \to & E\;\$                                                         \\
+E  & \to & T\;E'                 &  & \textsf{FOLLOW}(E)  & = & \{),\$\}   \\
+E' & \to & + T\;E' \mid \epsilon &  & \textsf{FOLLOW}(E') & = & \{),\$\}   \\
+T  & \to & F\;T'                  &  & \textsf{FOLLOW}(T)  & = & \{+,),\$\} \\
+T' & \to & * F\;T' \mid \epsilon &  & \textsf{FOLLOW}(T') & = & \{+,),\$\} \\
+F  & \to & (E) \mid id          &  & \textsf{FOLLOW}(F)  & = & \{+,*,),\$\} 
+\end{array}
+\]
+
+\subsection{Building the Table using the FIRST and FOLLOW Sets}\label{section:building-the-table-using-first-follow}
+Using the \textsf{FIRST} and \textsf{FOLLOW} sets, we can re-define the two cases for deciding when the production rule $A \rightarrow \alpha$ is relevant to the pair $\langle A, a \rangle$.
+
+\textbf{Case 1:} When $a \in \textsf{FIRST}(\alpha)$ and $a \neq \epsilon$
+
+\textbf{Case 2:} When $\epsilon \in \textsf{FIRST}(A)$ and $a \in \textsf{FOLLOW}(A)$
+
+This allows us to populate our table using the following algorithm
+
+\begin{lstlisting}[style=pseudocode]
+Initialize !$M$!:
+  for each !$A \in N$!, !$a \in T$!, !$M[A, a] = \{\}$!
+
+Populate !$M$!:
+  for each !$A \in N$!
+    for each production !$A \to \alpha$!
+       if !$a \in \text{FIRST}(\alpha)$! and !$a \neq \epsilon$!
+         then !$M[A, a] = M [A, a] \cup \{\alpha\}$!
+       else if !$\epsilon \in \text{FIRST}(\alpha)$!
+         then for each !$b \in \text{FOLLOW}(A)$!
+           !$M[A, b] = M [A, b] \cup \{\alpha \}$!
+\end{lstlisting}
+
+Hence, \textit{if} we can automatically compute the \textsf{FIRST} and \textsf{FOLLOW} sets, then we can automatically compute $M$.
+
+\subsection{Computing FIRST and FOLLOW}\label{section:computing-first-follow}
+\subsubsection{NULLABLE}
+Notice that both our definitions for \textsf{FIRST} and \textsf{FOLLOW} rely on determining if $\alpha$ can expand to the empty string
+\[\alpha \Rightarrow^* \epsilon\]
+We will therefore need to \textit{compute} this property. We do this by defining a function, \textsf{NULLABLE}, such that 
+\[\textsf{NULLABLE}(\alpha) = \texttt{true} \iff \alpha \Rightarrow^* \epsilon\]
+We can define the equations \texttt{NULLABLE} needs to respect inductively.
+\[
+\begin{array}{lcll}
+\textsf{NULLABLE}(\epsilon) &=& \text{true}\\[1ex]
+\textsf{NULLABLE}(c) &=& \text{false} & (c \in T)\\[1ex]
+\textsf{NULLABLE}(A) &=& \bigvee_{A \to \alpha} \text{NULLABLE}(\alpha) & (A \in N)\\[1ex]
+\textsf{NULLABLE}(X\beta) &=& \textsf{NULLABLE}(X) \wedge \textsf{NULLABLE}(\beta) & (X \in T \cup N)
+\end{array}
+\]
+The first two rules should be self-explanatory. An $\epsilon$ character can expand into itself, whereas a non-$\epsilon$ character will never become empty.
+
+A non-terminal $A$ can expand into the empty string if \textit{any} of its multiple possible productions can expand to $\epsilon$.
+
+A sequence of terminals and non-terminals can expand into the empty string if \textit{all} can expand to $\epsilon$.
+
+Here is a concrete example of the \textsf{NULLABLE} predicate on real grammar:
+
+\begin{minipage}{0.4\textwidth}
+$\begin{array}{rcl}
+E &\to& a F \\
+E &\to& \epsilon \\
+F &\to& E
+\end{array}$
+\end{minipage}%
+\begin{minipage}{0.6\textwidth}\footnotesize
+  $\begin{array}{lcl}
+\textsf{NULLABLE}(\epsilon) &=& \texttt{true}\\[1ex]
+\textsf{NULLABLE}(a) &=& \texttt{false}\\[1ex]
+\textsf{NULLABLE}(a F) &=& \textsf{NULLABLE} (a) \wedge \textsf{NULLABLE} (F) \\
+              &=& \texttt{false} \wedge \textsf{NULLABLE} (F)\\
+              &=& \texttt{false}\\[1ex]
+\textsf{NULLABLE}(E) &=& \textsf{NULLABLE} (a F) \vee \textsf{NULLABLE} (\epsilon)\\
+            &=& \textsf{false} \vee \textsf{true}\\
+            &=& \texttt{true}\\[1ex]
+\text{NULLABLE} (F) &=& \textsf{NULLABLE} (E)\\
+            &=& \texttt{true}
+\end{array}$ 
+\end{minipage}
+
+How do we compute \texttt{NULLABLE}? We first present the algorithm, and then explain why it is correct.
+
+\begin{lstlisting}[style=pseudocode]
+Initialize NULLABLE sets:
+  NULLABLE(!$\epsilon$!) := true
+  for each !$a \in T$!, NULLABLE(a) := false 
+  for each !$A \in N$!, NULLABLE(A) := false
+
+Populate NULLABLE sets:
+  while NULLABLE changes: 
+    for each !$A \in N$!:
+      for each production rule !$A \to X_1 X_2 \ldots X_n$!:
+        NULLABLE(A) := NULLABLE(A) !$\lor$! (!$\bigwedge_{i=1}^n$! NULLABLE(!$X_i$!))
+\end{lstlisting}
+
+The idea we will leverage is that there is a unique solution to the inductive equations given above. So, we can initialise \textsf{NULLABLE} of everything except $\epsilon$ to \texttt{false}. This may not be correct, but that's ok! We will fix errors by applying the equations to each non-terminal. If there is an error, i.e. $\textsf{NULLABLE}(X)$ should actually be \texttt{true}, then our update step will find and fix the error.
+
+In other words, on applying the equations to each non-terminal, one of two things will happen. 
+
+\begin{enumerate}
+    \item For all non-terminals $X$, \textsf{NULLABLE}$(X)$ remains unchanged. This happens if and only if all equations are satisfied.
+    \item For some terminal $Y$, applying the equations causes $\textsf{NULLABLE}(Y)$ from \texttt{false} to \texttt{true}. This means some equation must not be satisfied by our current boolean assignment.
+\end{enumerate}
+
+The second case is the tricky one. Note that we are \textit{fixing} a broken equation by flipping \textsf{NULLABLE}$(Y)$ from \texttt{false} to \texttt{true}. In fixing this equation, we may break more equations. For example, if we have a production rule of the form
+\[ Z \to Y \]
+And $\textsf{NULLABLE}(Z)$ is currently \texttt{false}, then our change breaks the equation 
+\[ \textsf{NULLABLE}(Z) = \textsf{NULLABLE}(Y) \lor \ldots \] 
+Hence, we should \textbf{propagate} changes. This change will propagate automatically should we update $Y$ before $Z$. However, there is no guarantee that we update $Y$ before $Z$. As a result, we should run through the equations one more time, for all non-terminals, to make sure we have reached a satisfactory solution. Of course, running through the equations one more time could cause \textit{yet} another change, which forces \textit{yet} another iteration.
+
+Generalising this strategy, we should run the algorithm in a while loop until there \textit{are no more changes}.
+
+Some of you might be thinking ``\texttt{while} loops are scary, both in terms of non-termination, and in terms of complexity''. We will now convince you that (a) you absolutely need a \texttt{while} loop, and (b) that it will terminate.
+
+First, you absolutely need a \texttt{while} loop. Some of you might be thinking ``oh but I can probably impose an order on terminals such that I always update $Y$ before $Z$'' (which we shall write $Y \prec Z$). This argument would be valid if there were no loops (you will never generate the constraint $Y \prec Z$ and $Z \prec Y$). Unfortunately, if we were apply these rules to $G_3'$, we would get the following constraints
+\[\begin{array}{rcl}
+     T&\prec&E  \\
+     F&\prec&T  \\
+     E&\prec&F
+\end{array}\]
+Whoops! \textit{Recursion} and \textit{mutual recursion} mean that while loops are inevitable. 
+
+Second, it will always terminate. Here is a proof sketch: At every iteration, for some non-negative number of non-terminals $X$, we will change $\textsf{NULLABLE}(X)$ from \texttt{false} to \texttt{true} (but crucially, never the other way round). If we change \textbf{zero} such non-terminals, we terminate. If we change a \textbf{positive} number of non-terminals, then because our grammar has a finite number of non-terminals, we must eventually terminate.
+
+\subsubsection{Computing FIRST}
+Using \textsf{NULLABLE}, we can compute \textsf{FIRST}. Recall our definition of \textsf{FIRST}. \textsf{FIRST}$(\alpha)$ captures the first terminals of every sequence that $\alpha$ can expand to.
+
+\begin{lstlisting}[style=pseudocode]
+Initialize FIRST sets:
+  for each !$a \in T$!, FIRST(a) := !$\{ a \}$! 
+  for each !$A \in N$!, FIRST(A) := !$\{\}$! 
+
+Populate FIRST sets:
+  while FIRST changes 
+    if !$A \to X_1 X_2 \ldots X_k$! is a production then 
+      if NULLABLE(!$X_1 X_2 \ldots X_k$!)
+        then FIRST(A) := FIRST(A)! $\cup$! !$\{ \epsilon \}$!
+     for each j in 1 !\ldots! k 
+       FIRST(A) := FIRST(A) !$\cup$! (FIRST(!$X_j$!) !$-$! !$\{ \epsilon \}$!) 
+       if not NULLABLE(!$X_j$!) then break 
+\end{lstlisting}
+
+We hope you notice that the structure of the algorithm mirrors the algorithm for computing \textsf{NULLABLE}. We are still iterating until there are no more changes \footnote{a fixed-point}. The main difference is how initialise, and how we do the update. 
+
+The update step is fairly explanatory. We check if $A$ is \textsf{NULLABLE}, and if so, then $\epsilon \in \textsf{FIRST}(A)$. 
+
+Further, if $A$ expands to $X_1X_2X_3\ldots$, then clearly $\textsf{FIRST}(X_1) \subseteq \textsf{FIRST}(A)$. \textbf{However}, if $\textsf{NULLABLE}(X_1)$, then it is also the case that $\textsf{FIRST}(X_2) \subseteq \textsf{FIRST}(A)$, and so on. This is what the \texttt{for} loop handles.
+
+Once again, to deal with recursive rules ($X_i$ may be $A$, or something that expands to something that contains $A$) we iterate until a fixed point.
+
+We can make similar arguments for termination. At each step, we either \textit{add} things into \textsf{FIRST}$(A)$ or add nothing. If we add nothing for all $A$, we are unchanged and terminate. If we add \textit{something} to some \textsf{FIRST}$(A)$, then we cannot do this forever (because we have a finite number of terminals). 
+
+There is \textit{one} significant difference with the computation for \textsf{NULLABLE}, and that is our equations are, in effect, subset constraints. Our equations take the form
+\[
+\begin{array}{rclr}
+     \{ \epsilon \}&\subseteq&\textsf{FIRST}(A) & \text{if \textsf{NULLABLE}}(A) \\
+     \textsf{FIRST}(X_1)&\subseteq&\textsf{FIRST}(A) & \text{if } A \to X_1X_2\ldots X_n \\
+     \ldots &&&
+     & 
+\end{array}
+\]
+This may \textbf{not} have a unique solution. For example, setting $\textsf{FIRST}(A)$ to $T$ (all terminals) for all non-terminals $A$ is a perverse way of satisfying the subset constraints.
+
+We hope you see that our equations have a hidden semantic meaning: you only add $a$ to $\textsf{FIRST}(A)$ when it is absolutely necessary to do so. Hence, if there are multiple solutions, we want the one that adds the fewest things to the \textsf{FIRST} sets. We want the smallest solution, or the \textit{least} fixed point.
+
+We claim our method computes the least fixed point, but the proof for this is non-trivial. We give an outline in \Cref{section:fixed-point-computations}, but \textsf{Part II Denotational Semantics} is all about the theory of fixed points, and \textsf{Part II Optimising Compilers} focuses heavily on \textit{applying} least fixed-point computations in optimisation analysis.
+
+\subsubsection{Computing FOLLOW}
+Recall that \textsf{FOLLOW} finds all terminals that may come \textit{after} a non-terminal. It shouldn't surprise you at this point that this is a fixed point computation. Once again, we will be sure to terminate. Further, like \textsf{FIRST}, there may be multiple fixed points, and we will find the smallest one.
+
+\begin{lstlisting}[style=pseudocode]
+Initialize FOLLOW sets:
+  for each !$A \in N$! , FOLLOW(A) := !$\{\}$! 
+  FOLLOW(S) := !$\{\$\}$! (S is the start symbol) 
+
+Populate FOLLOW sets:
+  while FOLLOW changes:
+    if !$A \to \alpha B \beta$! is a production (!$B \in N$!, !$\beta \neq \epsilon$!)
+      then FOLLOW(B) := FOLLOW(B) !$\cup$! (FIRST(!$\beta$!) - !$\{\epsilon\}$!) 
+    if !$A \to \alpha B \beta$! is a production and !$\epsilon \in$! FIRST(!$\beta$!)
+      then FOLLOW(B) := FOLLOW(B) !$\cup$! FOLLOW(A) 
+    if !$A \to \alpha B$! is a production (!$B \in N$!)
+      then FOLLOW(B) := FOLLOW(B) !$\cup$! FOLLOW(A) 
+\end{lstlisting}
+
+The body of the while loop is hopefully mostly self explanatory. If we have a production rule that puts $\beta$ after $B$ then whatever $\beta$ can start with is in the follow set of $B$
+\[\textsf{FIRST}(\beta) - \{\epsilon\} \subseteq \textsf{FOLLOW}(B)\]
+
+Further, \textit{if} $\beta$ is nullable (or the rule is just $A \to \alpha B$), then whatever follows $B$ can follow $A$
+\[\textsf{FOLLOW}(B) \subseteq \textsf{FOLLOW}(A)\]
+
+\subsection{Recap}
+In this section, we used the \textsf{FIRST} and \textsf{FOLLOW} sets to capture which production rules were relevant to which $\langle$ non-terminal, terminal $\rangle$ pairs. We showed that the table $M$ could be easily constructed, once we had these sets. Finally, we showed that these sets could be computed from the grammar. 
+
+Putting this altogether, we have a way of automatically generating the table $M$ from the grammar $G$.
+
+\subsection{Least Fixed-Point Computations$^*$}\label{section:fixed-point-computations}
+If we've done our jobs properly, at this point, you're thinking ``wow fixed points are absolutely \textit{everywhere}, in every chapter, at every layer of abstraction''. You'd be right!
+
+We also hope that you're thinking, ``hey, it seems that the strategy for computing fixed points is basically the same, apart from the body of the while loop''. You'd also be right!
+
+In this \textsf{\textbf{non-examinable}} section, we're going to give you a sneak preview of one of the main concepts in \textsf{Part II Denotational Semantics}: How to compute fixed points. What we \textit{won't} do is go into the formality. Of course, the formality is important, but the formality is there to make your intuition (which we'll cover in this section) precise.
+
+The idea of this section is that we want to pull out the structure common to the computation of the \textsf{NULLABLE}, \textsf{FIRST}, and \textsf{FOLLOW} sets. 
+
+The first step, therefore, is to \textit{parameterise} the computation by the bits that differ. The key bits that differ are 
+
+\begin{enumerate}
+    \item The space we are considering (Booleans for \texttt{NULLABLE}, sets of terminals for \texttt{FIRST} and \texttt{FOLLOW}). We will abstract this away as $D$
+    \item The update rules / constraints. We will abstract this as $f: D \rightarrow D$
+\end{enumerate}
+
+The while loop therefore implements this strategy: to compute the smallest fixed point of a function $f: D \rightarrow D$, start from the smallest element of $D$ (which we abstract as $\bot$), and keep applying $f$ until applying $f$ does not change anything. 
+
+That is, we construct a \textit{chain} 
+\[ f^0(\bot) \preceq f^1(\bot) \preceq f^2(\bot) \ldots f^n(\bot) \preceq f^{n+1}(\bot)\]
+And find $f^n(\bot)$ such that $f^n(\bot) = f^{n+1}(\bot) = f(f^n(\bot))$.
+
+You can think of $n$ as tracking the number of times the while loop has iterated. 
+
+We call $f^n(\bot)$ the least upper bound of the chain.
+
+This should be ``self-evident''. Of course, hidden in our description are several assumptions.
+
+\begin{enumerate}
+    \item $D$ has a notion of a smallest element. In mathematical jargon, it has a partial order $\preceq$ and an element that, by this partial order, is smallest.
+    \item $f$ is ``non-decreasing'' function of its input. That is, if $x \preceq y$, then $f(x) \preceq f(y)$. In mathematical jargon, we say $f$ is \textit{monotone}
+    \item There exists some finite natural number $n$ for which this process terminates.
+\end{enumerate}
+
+The third assumption can actually be dropped, and we can consider the least upper bounds (lubs) of infinite chains. We'll leave the formal details to \textsf{Part II Denotational Semantics}, but the key thing is to make the ``$f$ must be monotone'' constraint work at infinity. \footnote{The constraint, if you're curious, is that $f$ must be \textit{continuous}. Google search term: Scott-continuous}
+
+The reason, by the way, we are interested in infinite chains, is because we can use this same technique to talk about what recursive functions are, and build a strategy for computing them. 
+
+Let's take a really basic recursive function: a function that computes the triangle numbers. 
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let rec triangle n = if n=1 then 1 else n + triangle (n-1)
+\end{minted}
+The first step is to describe this recursive function as a fixed-point. Let's create a function \texttt{t} that has the same shape as the \texttt{triangle} function, but that does not call itself.
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let t = fun f -> (fun n -> if n=1 then 1 else n + f (n-1))
+\end{minted}
+Now we notice what happens if we pass \texttt{triangle} in as \texttt{f}
+\[\texttt{t triangle} = \texttt{fun n -> if n=1 then 1 else n + triangle (n-1)} = \texttt{triangle}\]
+So \texttt{triangle} is a \textit{fixed-point} of \texttt{t}, and in fact it is the least fixed-point.
+
+This means that we can apply our previous technique to compute \texttt{triangle}! Remember that we first need a smallest element. Let's ignore what the \textit{correct} bottom element is first, and assume that it is \texttt{fun n -> assert False} \footnote{We are breaking the barrier between the syntactic function you write and its semantic meaning, for clarity.}.
+
+Then, applying \texttt{t} to $\bot$, we get the following function. 
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let t1 = fun n -> if n=1 then 1 else n + bot(n-1)
+\end{minted}
+Which will return the right answer for \texttt{n = 1} and the wrong answer for everything else.
+
+Applying \texttt{t} one more time to get \texttt{t2}, we get the following function
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let t2 = fun n -> if n=1 then 1 else n + t1(n-1)
+\end{minted}
+This will be correct if \texttt{n = 1} or if \texttt{n = 2} (since \texttt{n-1 = 1}, so \texttt{t1(n-1)} will be correct). 
+
+If you repeat this process, you'll realise that \texttt{t3} will be correct up to \texttt{n = 3}, and so on.
+
+\texttt{triangle}, of course, can take in any natural number \texttt{n}, so technically we need to iterate this process to infinity. So we can't actually construct \texttt{triangle} in this way! However, in \textit{reality}, \texttt{triangle} only matters when it is called, and when it is called, it \textit{must} be given some finite \texttt{n} as an argument. So in \textit{reality}, we just need to compute \texttt{tn} in place of \texttt{triangle} whenever \texttt{triangle} is called with \texttt{n}, and our method above generalises to functions too!
+
+Armed with this extension to infinite chains, we have the \textit{Kleene-Tarski Theorem}
+
+\begin{theorem}[Kleene-Tarski Theorem]
+    For every domain $D$ (a set with a partial order and a least element), and every continuous function $f: D \rightarrow D$, $f$ is guaranteed to have a least fixed point. Further, this least fixed point is the least upper bound of the chain $f^n(\bot)$.
+\end{theorem}
+
+
+\section{The LL($1$) Parsing Algorithm}\label{section:running-the-table-driven-parser}
+In this section, we will answer the question
+\begin{center}
+    Given the LL parsing table $M$, can we construct a parser that performs \textit{prediction} via lookup?
+\end{center}
+
+The answer to this question is yes. Here's the algorithm:
+
+\begin{lstlisting}[style=pseudocode]
+!$a$! := NextToken()
+!$X$! := TopOfStack()
+
+while (!$X \neq \$$!)
+  if !$X = a$! !{\color{grey}(* match *)}!
+    then pop; !$a$! := NextToken()
+    else if !$M[X,a] = \{\alpha\}$! !{\color{grey}(* predict *)}!
+      then pop; push !$\alpha$!
+      
+!$X$! := TopOfStack()
+\end{lstlisting}
+
+Given $G_3'$, we can therefore generate $M$. Running the algorithm looks like
+
+\begin{center}
+    \import{figures}{table-driven-pda}
+\end{center}
+
+Which is exactly what we promised to produce at the start.
+
+\section{Linear Time Parser Combinators$^*$}
+We have seen two ways of building LL($1$) parsers.
+
+If we have already verified that the grammar is in LL($1$), then we can build an LL($1$) parser \textit{combinator} by hand. 
+
+Alternatively, we can pass a grammar to an LL($1$) parser to a parser generator, and get it to generate the LL($1$) parsing table for us. This means it can automatically check that our grammar is in LL($1$) and also use the table to create the parser.
+
+Parser generators therefore, seem superior. Not only do they build the parser for you, but they also check that it is correct!
+
+However, recall that parser combinators, too, have their benefits --- namely, they let you easily build high-level abstractions.
+
+Can we have our cake and eat it too? Can we build parser combinator libraries that \textit{guarantee} our language is in LL($1$), and therefore guarantee that the parser runs in linear time?
+
+Recall that parser combinators allow you to manipulate high-level abstractions. Is there a high-level abstraction that allows to, at compile time, reject undesirable expressions?
+
+Of course there is: the type system. The key idea, therefore, is that we can use the type system to check if our parser combinator parses a grammar that is in LL($1$). 
+
+To do this, we think about the \textit{type} of a parser as a \textit{characterisation} of the language it can parse. What sort of characterisation would help us determine that our language is in LL($1$)? We know this: it is the \textsf{FIRST}, \textsf{FOLLOW}, and \textsf{NULLABLE} sets!
+
+Therefore, the type of a parser is a 3-tuple, recording the \textsf{FIRST} and \textsf{FLAST} sets, as well as the \textsf{NULLABLE} predicate. There are a couple of important deviations. The \textsf{FIRST} set does \textbf{not} contain $\epsilon$ --- this becomes entirely the responsibility of \textsf{NULLABLE}. The \textsf{FLAST} set is basically the \textsf{FOLLOW} set for languages (the \textsf{FOLLOW} set is defined in terms of the \textit{grammar}).
+
+Hence, given a type $T$, we can access its properties as follows
+\[
+\begin{array}{ccc}
+     T.\textsc{First} & T.\textsc{Flast} & T.\textsc{Null}  \\ 
+\end{array}
+\]
+
+Using this, we can design \textit{typing rules} that only allow languages to be combined together if the resulting language is in LL($1$). This involves eliminating \textit{alternating} and \textit{sequential} non-determinism. To eliminate alternating non-determinism, consider when the following grammar is in LL($1$)
+\[\begin{array}{rcl}
+     A&\to&B  \\
+     &\mid&C  
+\end{array}\]
+This grammar is in LL($1$) precisely when its \textsf{FIRST}($B$) is disjoint from \textsf{FIRST}($C$). As a corollary, at most \textit{one} of $B$ and $C$ must be nullable. 
+
+We call this an apartness condition
+\[
+T_1 \# T_2 \triangleq (T_1.\textsc{First} \cap T_2.\textsc{First} = \emptyset) \land \neg (T_1.\textsc{Null} \land T_2.\textsc{Null})
+\]
+And \textit{insist} that, assuming \texttt{p} has type $T_1$ and \texttt{q} has type $T_2$, then \texttt{alt p q} is well-typed only when $T_1 \# T_2$.
+
+To eliminate sequential non-determinism, consider when the following grammar is in LL($1$)
+\[A\to BC\]
+It is in LL($1$) when \textsf{FLAST}($B$) is disjoint from \textsf{FIRST}($C$), and \textsf{NULLABLE}($B$) is false. This condition means we can always deterministically consider whether to continue parsing $B$ or switch to parsing $C$. We call this the \textit{separability} condition.
+\[
+T_1 \ostar T_2 \triangleq (T_1.\textsc{First} \cap T_2.\textsc{Flast} = \emptyset) \land \neg T_1.\textsc{Null}
+\]
+And insist that, assuming \texttt{p} has type $T_1$ and \texttt{q} has type $T_2$, \texttt{seq p q} is well-typed only when $T_1 \ostar T_2$.
+
+Finally, we can use the type system to reject left-recursive grammars too! We won't go into the technical details, but the idea is that we create a formalism that says ``$x$ is well-typed with type $T$ only when it is preceded by a terminal $c$'', and create a typing rule that insists that our fixed point combinator only combines non-left-recursive rules.

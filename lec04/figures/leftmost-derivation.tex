@@ -1,0 +1,39 @@
+\begin{tikzpicture}
+%   \node[draw=darkred,draw opacity=0.4,rounded corners,anchor=north east] (grammar) at (11,0){
+% $\begin{array}{lcl}
+% \colS S    & \colS \to   & \colS E\; \$     \\
+% \colE E    & \colE \to   & \colE T\; E'     \\
+% \colEpA E' & \colEpA \to & \colEpA + T\;E'  \\
+% \colEpB E' & \colEpB \to & \colEpB \epsilon \\
+% \colT T    & \colT \to   & \colT F\;T'      \\
+% \colTpA T' & \colTpA \to & \colTpA * F \;T' \\
+% \colTpB T' & \colTpB \to & \colTpB \epsilon \\
+% \colFA F    & \colFA \to   & \colFA ( E ) \\
+% \colFB F    & \colFB \to   & \colFB  id
+% \end{array}$
+
+%     };
+\node[anchor=north east] (s1) at (0,0) { $\Rightarrow_{lm} \;\;\selectedNonTerminal{E} \;\$$ };
+\node[anchor=north west] (s2) at (s1.south west) { $\Rightarrow_{lm} \;\; \selectedNonTerminal{T}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s3) at (s2.south west) { $\Rightarrow_{lm} \;\; \selectedNonTerminal{F}\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s4) at (s3.south west) { $\Rightarrow_{lm} \;\; (\selectedNonTerminal{E})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s5) at (s4.south west) { $\Rightarrow_{lm} \;\; (\selectedNonTerminal{T}\;\nonterminal{E'})\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s6) at (s5.south west) { $\Rightarrow_{lm} \;\; (\selectedNonTerminal{F}\;\nonterminal{T'}\;\nonterminal{E'})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s7) at (s6.south west) { $\Rightarrow_{lm} \;\; (x\;\selectedNonTerminal{T'}\;\nonterminal{E'})\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s8) at (s7.south west) { $\Rightarrow_{lm} \;\; (x\;\selectedNonTerminal{E'})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s9) at (4,0) { $\Rightarrow_{lm} \;\; (x+\;\selectedNonTerminal{T}\;\nonterminal{E'})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s10) at (s9.south west) { $\Rightarrow_{lm} \;\; (x+\;\selectedNonTerminal{F}\;\nonterminal{T'}\;\nonterminal{E'})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s11) at (s10.south west) { $\Rightarrow_{lm} \;\; (x+y\;\selectedNonTerminal{T'}\;\nonterminal{E'})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s12) at (s11.south west) { $\Rightarrow_{lm} \;\; (x+y\;\selectedNonTerminal{E'})\;\nonterminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s13) at (s12.south west) { $\Rightarrow_{lm} \;\; (x+y)\;\selectedNonTerminal{T'}\;\nonterminal{E'}\;\$ $};
+\node[anchor=north west] (s14) at (s13.south west) { $\Rightarrow_{lm} \;\; (x+y)\;\selectedNonTerminal{E'}\;\$ $};
+\node[anchor=north west] (s15) at (s14.south west) { $\Rightarrow_{lm} \;\; (x+y)\;\$ $};
+
+\node[anchor=east] at (s1.west) { $S$ };
+
+\draw[dotted,line width=0.25mm,grey,->] (s8.south) 
+                    to[out=-70,in=-180] ++(15ex,-3ex)
+                    to[out=10,in=-120] ++(1ex,32ex)
+                    to[out=10,in=130] (s9.north west);
+
+\end{tikzpicture}

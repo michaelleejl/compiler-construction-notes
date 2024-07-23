@@ -5,11 +5,11 @@
     \import{figures}{context}
 \end{center}
 
-The parser is responsible for taking the token stream and transforming it into a syntax tree. In doing so, it recovers the structure of the token sequence. Parsers are fairly complicated, and so the next four chapters will be dedicated to them. In this chapter, we'll begin with the theoretical foundations of parsing, by looking at context-free grammars.
+The parser is responsible for taking the token stream and transforming it into a syntax tree. In doing so, it recovers the structure of the token sequence. Parsers are fairly complicated, and so the next five chapters will be dedicated to them. In this chapter, we'll begin with the theoretical foundations of parsing, by looking at context-free grammars.
 
 When we looked at lexing, we introduced the Regular Expression as the correct mathematical tool for specifying the tokens of a language, and the Finite Automaton as the correct tool for describing how lexers work.
 
-The situation for parsers, unfortunately, is a little more complex. Different parsers are specified using different mathematical tools, and different parsers need to be described using different mathematical machinery. However, it is still possible to take a universal view. At the end of this chapter, we hope to convince you that, in practice, the \textbf{family} of different parser specifications \textit{is best described} by the \textit{unambiguous}, \textit{deterministic} Context-Free Grammar to specify parsers, and the \textbf{family} of different parsers is best conceptualised using the \textit{deterministic} Push-Down Automaton. 
+The situation for parsers, unfortunately, is a little more complex. Different parsers are specified using different mathematical tools, and different parsers need to be described using different mathematical machinery. However, it is still possible to take a universal view. At the end of this chapter, we hope to convince you that, in practice, a parser specification \textit{is typically} an \textit{unambiguous}, \textit{deterministic} Context-Free Grammar, and a parser can \textit{typically} be thought of as a \textit{deterministic} Push-Down Automaton. 
 
 In order to do this, we will first explore what a parser is (\Cref{section:parsers}) and how to specify one (\Cref{section:parser-generators}).
 
@@ -73,14 +73,14 @@ For example, when we defined a lexer generator, we said
 At the beginning of the chapter, we emphasised that there is no corresponding sentence for parsers, because different parsers are specified using different mathematical tools. However, we also argued that we could smooth over the differences to make the following case:
 
 \begin{center}
-    \textbf{The language designer uses \textit{something like an unambiguous, deterministic context-free grammar} to specify the parser}
+    \textbf{The language designer \textit{typically} uses \textit{something like an unambiguous, deterministic context-free grammar} to specify the parser}
 \end{center}
 
-This section will therefore smoothen over the differences temporarily, focusing on a universal view of a parser specification. Even then, we won't go all the way --- we will show that the \textit{unambiguous} context-free grammar is \textit{almost} what we want.
+This section will therefore smoothen over the differences temporarily, focusing on a universal view of a parser specification. Even then, we won't go all the way --- we will show that the \textit{unambiguous} context-free grammar is \textit{almost} what we want, leaving a discussion of \textit{determinism} to a later section.
 
 To do this, we will define the context-free grammar, without any qualifiers (\Cref{section:cfg-defn}). By performing a quick sanity check, we will re-assure ourselves that it is a sensible starting point (\Cref{section:cfg-and-pl}). 
 
-Building on this starting point, we will investigate the languages that may be generated using a CFG (\Cref{section:cfg-properties}), and illustrate that all words have a structure that can be recovered by a parser (\Cref{section:cfg-syntaxtrees}).
+Building on this starting point, we will investigate the languages that may be generated using a CFG (\Cref{section:cfg-properties}), and illustrate that all words have a certain syntactic structure (\Cref{section:cfg-syntaxtrees}).
 
 Finally, we will show why we need \textit{unambiguous} context-free grammars, not just context-free grammars (\Cref{section:cfg-ambiguity}).
 
@@ -118,7 +118,7 @@ Using this example, we can give intuitive meaning to the role played by $N$, $T$
 % \end{minipage}%
 % \begin{minipage}[t]{0.75\textwidth}
 \subsubsection{Non-terminals $N$}
-Non-terminals represent \textit{placeholders} for valid strings in the language. They should \textbf{not} appear in the final string. Their presence implies that the string is \textit{not yet valid}, and needs to be expanded further. Hence the name --- non-terminal. 
+Non-terminals represent \textit{placeholders} for valid strings in the language. They should \textbf{not} appear in the final string. Their presence implies that the string is \textit{not yet valid}, and needs to be expanded further. Hence the name --- non-terminal (meaning don't stop here!). 
     
 For example, when we specify \textit{L1}, and write $e_1 + e_2$, we do not mean that the $e_1 + e_2$ is a valid expression, but rather we use $e_1$ and $e_2$ as \textit{placeholders} for valid expressions.
 
@@ -133,7 +133,7 @@ Second, as you will see next year in \textsf{Part II Types}, it can be useful to
     t ::= & \, !l \mid l := e \mid \ldots
 \end{align*}
 
-This may seem like just a syntactic difference that isn't particularly meaningful. Recall that the entire point of specifying semantics in this manner, rather than in natural language, is to be \textit{really precise} about every bit of the language. Being able to explicitly separate effectful terms from pure expressions is therefore really useful in being precise, and CFGs give us the power to do this.
+This may seem like just a syntactic difference that isn't particularly meaningful. Recall that the entire point of specifying semantics in this manner, rather than in natural language, is to be \textit{really precise} about every bit of the language. Being able to explicitly separate effectful terms from pure expressions is therefore useful in being precise, and CFGs give us the power to do this.
 
 \subsubsection{Terminals $T$}
 Terminals can be thought of as characters that appear in the final string --- tokens, or words, in the vocabulary of the language. They should not be expanded further.
@@ -233,7 +233,7 @@ Before we formalise the notion of a CFG as a language producer, we should establ
 
 It would be extremely helpful if we were able to identify which bits of a string were \textit{non-terminals}, which were \textit{terminals}, and which were \textit{a mixture}. 
 
-We'll use the following notational convention: lowercase symbols like $a$ refer to terminals. Uppercase symbols like $A$ refer to non-terminals. Greek letters like $\alpha$ refer to some \textit{sequence} of terminals and non-terminals.
+We'll use the following notational convention: lowercase symbols like $a$ refer to terminals (and $u, v, w$ to sequences of terminals). Uppercase symbols like $A$ refer to non-terminals. Greek letters like $\alpha$ refer to some \textit{sequence} of terminals and non-terminals.
 \begin{align*}
     a, b, c, \ldots \in & \, T \\
     A, B, C, \ldots \in & \, N \\
@@ -294,7 +294,11 @@ Recall our goal for this section --- to formalise the notion of a context-free g
 The \textit{derivation} of a word $w$ refers to the \textit{means of production}. It is a sequence of one or more derivation steps that go from our start symbol to the word $w$. For example, recalling our context-free grammar $G_1$, defined on \Cpageref{cfg-g1}, we can produce a derivation for the word $(x + y) * (z + x)$. 
 
 We shall use $\nonterminal{E}$ to indicate a non-terminal $E$ that \textit{can} be expanded.
+
+\begin{center}
 \import{figures}{example-deriv}
+\end{center}
+
 We hope you realise that this is \textbf{not} the only derivation of $(x + y) * (z + x)$! Any time we have multiple non-terminals, we can choose to expand \textit{any} one of them. For example, we could have chosen to expand the second $\nonterminal{E}$ on line 2, resulting in an alternate (but valid!) derivation.
 
 We shall use $\selectedNonTerminal{E}$ to indicate that \textit{this} is the non-terminal we have chosen to expand.
@@ -340,16 +344,14 @@ Informally, the language generated by $G$ is all the words that can be derived i
 Formally, 
 \[L(G) = \{w \in T* \mid S \Rightarrow^{+} w \}\]
 
-There are two important points in the definition. First, a word must contain no non-terminals ($w \in T\*$). Second, we must take at least one derivation step, since $S$ is a non-terminal ($\Rightarrow^{+}$, not $\Rightarrow^{*}$). 
+There are two important points in the definition. First, a word must contain no non-terminals ($w \in T*$). Second, we must take at least one derivation step, since $S$ is a non-terminal ($\Rightarrow^{+}$). 
 
 \subsubsection{CFGs are More Powerful than Regular Expressions}
 We have established that CFGs are language producers. We have also introduced the notion of a \textit{derivation}, as a mechanism for producing words in a language. In this section, we investigate the \textit{space} of languages that can be produced using a CFG. In particular, we make the argument that CFGs are \textbf{more powerful} than regular expressions. 
 
-This argument has two parts.
+This argument has two parts. First, every regular language can be generated by an appropriate Context-Free Grammar. Second, there exist context free grammars that can generate languages that are not regular. 
 
-First, every regular language can be generated by an appropriate Context-Free Grammar. Second, there exist context free grammars that can generate languages that are not regular. 
-
-The first part of this argument is a little tricky, because we don't have the right characterisation of regular languages! We've seen regular languages characterised in terms of regular expressions, and in terms of finite automata. We have seen context-free grammars characterised by production rules. 
+The first part of this argument is a little tricky, because we don't have the right characterisation of regular languages! We've seen regular languages characterised in terms of regular expressions, and in terms of finite automata. We have seen context-free grammars characterised by production rules. If we try to start here, we'll be comparing apples and oranges.
 
 There are two possible approaches. The first is to characterise regular languages in terms of production rules, and the second is to characterise CFGs in terms of some form of automata. Both are possible, and in fact we'll do the second in a minute. 
 
@@ -359,10 +361,16 @@ Where $N$ is a set of non-terminals, $T$ is a set of terminals, $P$ is a set of 
 
 So far, this is exactly the same as a CFG. There is only one difference.
 \[P_\text{reg} \subseteq T\* \cup (T\*N)\]
-That is, every production rule must be \textit{either} of the form
-\[A \rightarrow wB\]
-or 
-\[A \rightarrow w\]
+That is, every production rule must be one of two forms\\
+\begin{minipage}[t]{.5\textwidth}
+    \vspace{-3mm}
+    \[A \rightarrow wB\]
+\end{minipage}%
+\begin{minipage}[t]{.5\textwidth}
+    \vspace{-3mm}
+    \[A \rightarrow B\]
+\end{minipage}
+
 Where $w$ is some sequence of terminals and $A, B$ are non-terminals.
 
 In contrast, a CFG's production rules are drawn from $(T \cup N)*$, meaning they may be of the form
@@ -446,10 +454,10 @@ We can convert this parse tree into the word, by reading off the leaves of the s
 
 Importantly, note that it does not matter whether we choose a left-most or right-most derivation, they will result in the same derivation tree. Hence, the parse tree \textit{reconciles} different derivation orders. 
 
-\subsubsection{Digression: Abstract Syntax Trees}
+\subsubsection{Aside: Abstract Syntax Trees}
 Recall that the ultimate goal of the front-end is to produce annotated abstract syntax trees. We hope you have noted (a) first, that by constructing a parse tree, we are \textit{almost} at our end-goal, and (b) that we are not \textit{quite} at our end goal yet.
 
-While the structure of the concrete syntax tree happens to be very useful for the middle end, much more so than the flat word $(x+y)*(z+x)$, it also contains a little \textit{too} much information than is necessary. For efficiency purposes, therefore, it is useful to strip away all unnecessary information. 
+While the structure of the concrete syntax tree happens to be very useful for the middle end, much more so than the flat word $(x+y)*(z+x)$, it also contains a little \textit{too} much information. For efficiency purposes, therefore, it is useful to strip away all unnecessary information. 
 
 An \textbf{abstract syntax tree} is created by taking a concrete syntax tree and stripping away all information that is not needed to generate an intermediate representation. 
 
@@ -463,9 +471,7 @@ An \textbf{abstract syntax tree} is created by taking a concrete syntax tree and
 \subsection{Unambiguous CFGs}\label{section:cfg-ambiguity}
 We have stated that we want an \textit{unambiguous} CFG. What is an \textit{ambiguous} CFG, do they exist, and why are they a problem?
 
-An ambiguous CFG $G$ is one where there exists some word $w \in L(G)$ for which there exists more than one parse tree. Since parse trees reconcile different derivation orders, an equivalent formulation is as follows:
-
-An ambiguous CFG $G$ is one where there exists some word $w \in L(G)$ for which $w$ has more than one left-most derivation.
+An ambiguous CFG $G$ is one where there exists some word $w \in L(G)$ for which there exists more than one parse tree. Since parse trees reconcile different derivation orders, an equivalent formulation is that an ambiguous CFG $G$ is one where there exists some word $w \in L(G)$ for which $w$ has more than one left-most \footnote{or right-most} derivation.
 
 \begin{definition}[Ambiguous CFG]
     A CFG is ambiguous when there exists a word $w$ for which there are two different parse trees
@@ -475,9 +481,7 @@ Ambiguous CFGs do exist. For example, consider the word $x + y * z$. This has tw
 
 \import{figures}{ambiguous-parse}
 
-Ambiguity is a huge practical problem --- a sensible interpreter will treat these two parse-trees differently! For example, letting $x = 1$, $y = 2$, and $z = 3$, the first parse-tree will evaluate to $9$ and the second to $7$. 
-
-If we allow ambiguous CFGs, then we will allow some compilers to compile $1 + 2 * 3$ to $9$, and others to $7$. Clearly, we do \textbf{not} want this, so we will enforce that the specification must be an \textit{unambiguous CFG}.
+Ambiguity is a huge practical problem --- a sensible interpreter will treat these two parse-trees differently! For example, letting $x = 1$, $y = 2$, and $z = 3$, the first parse-tree will evaluate to $9$ and the second to $7$. If we allow ambiguous CFGs, then we will allow some compilers to compile $1 + 2 * 3$ to $9$, and others to $7$. Clearly, we do \textbf{not} want this, so we will enforce that the specification must be an \textit{unambiguous CFG}.
 
 \subsubsection{Eliminating Ambiguity}\label{section:ambiguity-elim}
 It is often possible to eliminate ambiguity. For example, consider
@@ -525,7 +529,10 @@ Unfortunately, the answer to both of these questions is no, and for several reas
 \]
 \end{enumerate}
 
-\section{Pushdown Automata}
+\subsection{Recap}
+In this section, we have introduced the context-free grammar. We have shown how CFGs generate words via derivations. These words have a structure, the derivation tree, that reconciles different derivations. The collection of words forms a language, which is more expressive than the set of regular languages. Finally, we have considered the notion of an \textit{unambiguous} context-free grammar, and illustrated its importance to parsing.
+
+\section{Pushdown Automata}\label{section:pushdownautomata}
 At the beginning of this chapter, we promised to introduce two concepts --- the unambiguous, deterministic Context-Free Grammar as \textit{more or less} the right tool to give to language designers, and the deterministic Push-Down Automaton as \textit{more or less} the right tool for describing parsers.
 
 We have so far described the unambiguous Context-Free Grammar, which generate unambiguous trees, and (as a consequence) unambiguous languages. 
@@ -548,7 +555,7 @@ Formally, a PDA is a 7-tuple
     \import{figures}{pda}
 \end{center}
 
-You should already be familiar with $Q$, $\Sigma$, and $\q_0$ --- these are exactly the same as that of a finite automaton.
+You should already be familiar with $Q$, $\Sigma$, and $q_0$ --- these are exactly the same as that of a finite automaton.
 
 $\Gamma$ and $Z$ are new. $\Gamma$ describes the space of stack symbols, and $Z$ the initial stack symbol (think of it as the stack's initial state).
 
@@ -588,12 +595,8 @@ The power of an instantaneous description is that it lets us talk about the tran
 \[\langle q', \beta \rangle \in \delta(q, a, X)\]
 As a transition between instantaneous descriptions
 \[\langle q, aw, X\alpha \rangle \rightarrow \langle q', w, \beta\alpha \rangle\]
-
-An epsilon transition, which is represented by
-\[\langle q', \beta \rangle \in \delta(q, \epsilon, X)\]
-is encoded as
+An epsilon transition, which is represented by $\langle q', \beta \rangle \in \delta(q, \epsilon, X)$ is encoded as
 \[\langle q, w, X\alpha \rangle \rightarrow \langle q', w, \beta\alpha \rangle\]
-
 Our usual convention carries over to $\rightarrow$. That is, $\rightarrow^{*}$ represents zero or more transitions (the reflexive-transitive closure of $\rightarrow$), and $\rightarrow^{+}$ represents one or more transitions (the transitive closure of $\rightarrow$).
 
 \subsection{The Language Accepted by a Pushdown Automaton}
@@ -645,7 +648,7 @@ First, what do we mean by equivalence? Here are two theorems about PDAs.
     For every CFG $G$, there exists a PDA $M$ such that $L(G) = L(M)$
 \end{theorem}
 
-This is what we mean by equivalence.
+These two theorems are what we mean by equivalence.
 
 \subsubsection{Proof of Equivalence$^{*}$}
 The proofs for these two theorems are \textbf{\textsf{non-examinable}}. You are encouraged to look at \citet{sipser-2006} (Chapter 2, Page 115) for details.
@@ -708,16 +711,32 @@ Where $w^R$ is $w$ reversed.
 
 This involves pushing $w$ onto a stack to recognise it, and then popping it off (to recognise $w^R$). But when to stop pushing symbols onto the stack, and to start popping, cannot be known in advance. A deterministic PDA has to commit to a decision without being allowed to backtrack, so it cannot accept this language. 
 
-Non-determinism is bad, because it implies that we need back-tracking (in this case, we need to exhaustively explore all possible positions for the mid-point of the palindrome), which makes the parser very inefficient!
+\subsubsection{Two Sources of Non-Determinism$^*$}
+At this point, it may be useful to clarify the two sources of non-determinism, which \citet{krishnaswami-2019} term \textit{disjunctive} non-determinism, and \textit{sequential} non-determinism. 
 
-Hence, we may want our parser generator to be a \textit{deterministic PDA}, and therefore we require that the language designer specifies a \textit{deterministic CFG}.
+\textit{Disjunctive} non-determinism is caused by \textit{alternation}: by having more than one possible production rule to choose from. For example, 
+\[\begin{array}{rcl}
+     E&\to&\text{id}+&\text{id}  \\
+      &\mid&&\text{id}*&\text{id} 
+\end{array}\]
+If you know the next token is $x$, this does not tell you if you should choose the first or second branch (though if you know that the first two tokens are $x+$, then you \textit{do} know. This will become important later. We can \textit{look ahead} to reduce non-determinism).
+
+\textit{Sequential} non-determinism is caused by \textit{concatenation}. The non-determinism in the palindrome example above is an example of sequencing non-determinism. As another example, if we have 
+\[ x + y + z \]
+Then we can parse this as $(x + y) + z$ or $x + (y + z)$. This reveals an important point!
+
+\begin{center}
+    Non-determinism is the root of ambiguity.
+\end{center}
+
+In any case, even \textbf{without} ambiguity, non-determinism is bad, because it implies that we need back-tracking (in the palindrome example, we need to exhaustively explore all possible positions for the mid-point of the palindrome), which makes the parser very inefficient!
+
+Hence, we may want our parser to be a \textit{deterministic PDA}, and therefore we require that the language designer specifies a \textit{deterministic CFG}.
 
 \subsubsection{Relationship Between Non-Determinism and Ambiguity}
 We therefore have two constraints on our CFG. We want it to be \textit{unambiguous}, and we want it to be \textit{deterministic}. Are they, in some sense, the same?
 
 Unfortunately not. There are unambiguous grammars that are non-deterministic. In fact, the grammar of palindromes is unambiguous! We leave the proof of this as an exercise.
-
-However, all deterministic CFGs are unambiguous. We also leave this as an exercise.
 
 We can now answer \textbf{\textsf{Challenge 2}} (\Cpageref{section:challenge-2}). The reason why the sentence 
 \begin{center}
@@ -730,6 +749,8 @@ Is difficult to understand on first-read (difficult to \textit{parse}) is that w
 Can be arranged into two parse trees, one where cotton is a noun (which has the same semantics ``the cotton that is used to make clothing''), and one where cotton is an adjective (which has the same semantics as ``the clothing that is made out of cotton''). We need to make a non-deterministic choice as to which of the two parse trees we wish to construct. If we choose the wrong parse tree, then we will need to \textit{backtrack}, or re-read the start of the sentence with fresh eyes. 
 
 This example thus illustrates that unambiguousness does not imply determinism.
+
+However, all deterministic CFGs are unambiguous. We also leave this as an exercise --- but remember that the source of ambiguity \textit{is} non-determinism, so this should not be surprising.
 
 \section{Top-Down and Bottom Up Parsing}
 We have so far taken a universal view of what parser specifications are, and what parsers are. \textbf{Any universal view of parsing is an over-simplification}. As we outlined at the start of this chapter, in practice, different types of parsers are specified, and built, using different mathematical tools.
@@ -779,6 +800,6 @@ For now, we will simply give a brief overview. The four different approaches are
 \end{tabular}
 \end{center}
 
-What do we mean by ``backwards''? Tecall that the key goal of parsing is to construct a parse tree. There are two ways of doing this. You can either start from the root (the starting non-terminal), and expand the tree downwards towards the leaves --- this is the forwards / top-down approach. Alternatively, you can start from the leaves (the terminals) and construct upwards towards the root, unifying sub-trees --- this is the backwards / bottom-up approach.
+What do we mean by ``backwards''? Recall that the key goal of parsing is to construct a parse tree. There are two ways of doing this. You can either start from the root (the starting non-terminal), and expand the tree downwards towards the leaves --- this is the forwards / top-down approach. Alternatively, you can start from the leaves (the terminals) and construct upwards towards the root, unifying sub-trees --- this is the backwards / bottom-up approach.
 
 As we will see, bottom-up techniques are slightly more difficult, and struggle with error checking, but can parse a larger subset of deterministic CFGs than top-down techniques.
