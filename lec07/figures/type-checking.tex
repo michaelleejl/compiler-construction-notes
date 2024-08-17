@@ -1,0 +1,43 @@
+\begin{tikzpicture}
+\node (infer) {
+\lstinline[basicstyle=\sizelessOCamlBasicStyle\normalsize]!val infer: (var * type_expr) list -> expr -> expr * type_expr!
+};
+
+\node[anchor=south] (typing) at ($(infer.north) + (0,6ex)$) {
+\Large\color{darkest} $\Gamma \vdash e : \tau$
+};
+
+\node[anchor=north] (resolve) at ($(infer.south) + (4ex,-8ex)$) {\footnotesize
+\begin{tabular}{rrcll}
+\redbf{resolve}: &  {\ocamlInline!EQ!} &$\leadsto$&  {\ocamlInline!EQI!} & (integers)\\
+&                   &$\leadsto$&  {\ocamlInline!EQB!} & (booleans)\\[1ex]
+&  {\ocamlInline!LetFun!} &$\leadsto$&  {\ocamlInline!LetRecFun!} & (if recursive)\\
+&                       &$\leadsto$&  {\ocamlInline!LetFun!} & (if non-recursive)\\
+\end{tabular}
+};
+
+
+\begin{scope}[darkred,opacity=0.7]
+\node[anchor=north,xshift=3.5ex,rotate=-90] (gamma) at (typing.south west) { \} };
+\node[anchor=north,xshift=2.8ex,rotate=-90] (e) at (typing.south) { \} };
+\node[anchor=north,rotate=-90] (tau) at (typing.south east) { \} };
+
+
+\node[xscale=8.5,anchor=south,xshift=4.72ex,rotate=90] (gamma-impl) at (infer.north west) { \} };
+\node[xscale=2,anchor=south,xshift=6.8ex,rotate=90] (e-impl) at (infer.north) { \} };
+\node[xscale=4,anchor=south,xshift=0.4ex,rotate=90] (tau-impl) at (infer.north east) { \} };
+
+\node[xscale=2,anchor=north,xshift=6.8ex,rotate=-90] (e-impl-below) at (infer.south) { \} };
+\node[xscale=2,anchor=north,xshift=11.45ex,rotate=-90] (e-impl-output-below) at (infer.south) { \} };
+
+\draw ($(gamma.east) + (0,5pt)$) -- ($(gamma-impl.east) + (0,-5pt)$);
+\draw ($(e.east) + (0,5pt)$) -- ($(e-impl.east) + (0,-5pt)$);
+\draw ($(tau.east) + (0,5pt)$) -- ($(tau-impl.east) + (0,-5pt)$);
+
+\draw (resolve.north west) -- (resolve.north east);
+
+\draw ($(e-impl-below.east) + (0,5pt)$) -- ($(resolve.north) + (-9ex,0pt)$);
+\draw ($(e-impl-output-below.east) + (0,5pt)$) -- ($(resolve.north) + (0,0pt)$);
+\end{scope}
+
+\end{tikzpicture}

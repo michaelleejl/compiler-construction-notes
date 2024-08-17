@@ -4,9 +4,9 @@
     \import{figures}{context}
 \end{center}
 
+\section{Overview}
 We will continue our exploration of real world parsers by considering parser generators that create table-driven parsers. In turn, these parsers can parse the LL($k$) family of languages. 
 
-\section{Overview}
 We have not yet defined LL($k$) grammars or table-driven parsers. The former is a description of \textit{what} a parser can parse (how to specify the input of the parser generator), and the latter a description of how the constructed parser works.
 
 In this overview, we will first briefly recap \Cref{chapter:parser-combinators}. Building on this, we will define the LL($k$) grammar (\Cref{section:llk-grammar}) and then the table-driven parser (\Cref{section:table-driven-parsers}).
@@ -48,7 +48,7 @@ Finally, we are using $k$ tokens of look-ahead. This means that we use the curre
 Using this classification, we can state that our recursive descent parser is an LL($1$) parser, and the grammar it parses, $G_3$, is an LL($1$) grammar.
 
 \subsection{Table-Driven Parsers}\label{section:table-driven-parsers}
-How can we tell that if a grammar is in LL($1$), rather than LL($2$)? We can construct a table that matches every $\langle$ non-terminal, terminal$\rangle$ pair to an expansion.
+How can we tell that if a grammar is in LL($1$), rather than LL($2$)? We can construct a table that matches every $\langle$non-terminal, terminal$\rangle$ pair to an expansion.
 \[
 \begin{array}{c|c|c|c|c|c}
    & id  & +        & *   & (     & )        \\\hline
@@ -146,29 +146,40 @@ Because $*FT$ starts with $*$.
 
 More generally, the rule $A \to \alpha$ is relevant when $\alpha$ \textit{could} produce a sequence $a\beta$ (a sequence whose \textit{first} character is $a$). 
 
-Second, let's assume that the current non-terminal is $T'$ and the next terminal in the input is $+$. A relevant rule is
+Second, assume that the current non-terminal is $T'$ and the next terminal in the input is $+$. There are \textbf{no} production rules of the form $T' \rightarrow +\alpha$. This, however, does \textbf{not} mean we are stuck. We have the rule
 \[ T' \to \epsilon \]
-This is much less obvious. The insight comes from thinking about the context in which $T'$ can appear. Because of the rules
+What happens if we expand $T'$ to $\epsilon$? Then we can effectively skip $T'$, or throw it away! We then reach for the next symbol, either terminal or non-terminal, to match. What symbol could that be? Let's consult our production rules.
 \[\begin{array}{rcl}
+     S & \to & E\$ \\
+     E & \to & TE' \\
      E' & \to & +TE'  \\
      T & \to & FT' 
 \end{array}\]
-We hope you can see that it is possible to create the following sequence of non-terminals:
-\[FT'E'\]
-By ignoring $F$, we might see sub-sequences of the form
-\[T'E'\]
-Since we have production rule $E' \to +TE'$, we may see sub-sequences of the form
-\[T'+TE'\]
-Hence, choosing to expand $T'$ to $\epsilon$ is a strategic move. As such, $T' \to \epsilon$ is relevant in this situation. 
+Using these production rules, it is possible to create the sequence $T+FT'+TE'\$$, by repeatedly expanding $S$
+\[\begin{array}{rcl}
+     \selectedNonTerminal{S} &\Rightarrow&\selectedNonTerminal{E}\$\\
+                             &\Rightarrow&\nonterminal{T}+\selectedNonTerminal{E'}\$\\
+                             &\Rightarrow&\nonterminal{T}+\selectedNonTerminal{T}\nonterminal{E'}\$\\
+                             &\Rightarrow&\nonterminal{T}+\nonterminal{FT'}\selectedNonTerminal{E'}\$\\
+                             &\Rightarrow&\nonterminal{T}+\nonterminal{FT'}+\nonterminal{TE'}\$
+\end{array}\]
+Importantly, we have the subsequence $T' +$. Hence, if we throw $T'$ away, then the next symbol we might try to match is $+$! Therefore, $T' \to \epsilon$ is relevant in this situation. 
 
 More generally, the rule $A \to \alpha$ is relevant when 
 \begin{enumerate}
-    \item $\alpha$ \textit{could} produce nothing (the empty sequence $\epsilon$),
-    \item $A$ could be \textit{followed} by a $B$ ($S \Rightarrow^+ \alpha AB$), and
+    \item $\alpha$ \textit{could} produce nothing ($\alpha \Rightarrow^* \epsilon$),
+    \item $A$ could be \textit{followed} by a $B$ ($S \Rightarrow^+ \alpha AB \gamma$), and
     \item $B$ can expand to the sequence $a\beta$.
 \end{enumerate}
 
-To describe this in more precision, we will define the \textsf{FIRST} and \textsf{FOLLOW} sets.
+In this case, the rule $T \to \epsilon$ is relevant because
+\begin{enumerate}
+    \item $\epsilon$ produces nothing ($\epsilon \Rightarrow^* \epsilon$),
+    \item $T$ could be \textit{followed} by a $E'$ ($S \Rightarrow^+ T+TE'\$)$, and 
+    \item $E'$ can expand to the sequence $+TE'$
+\end{enumerate}
+
+To describe these two cases in more precision, we will define the \textsf{FIRST} and \textsf{FOLLOW} sets.
 
 \subsubsection{FIRST sets}
 The \textsf{FIRST} set of $\alpha$ captures the first terminals of every sequence that $\alpha$ can expand to. If $\alpha$ can expand into the empty sequence $\epsilon$, then we will record that too.
@@ -381,12 +392,11 @@ Populate FOLLOW sets:
 
 The body of the while loop is hopefully mostly self explanatory. If we have a production rule that puts $\beta$ after $B$ then whatever $\beta$ can start with is in the follow set of $B$
 \[\textsf{FIRST}(\beta) - \{\epsilon\} \subseteq \textsf{FOLLOW}(B)\]
-
 Further, \textit{if} $\beta$ is nullable (or the rule is just $A \to \alpha B$), then whatever follows $B$ can follow $A$
 \[\textsf{FOLLOW}(B) \subseteq \textsf{FOLLOW}(A)\]
 
 \subsection{Recap}
-In this section, we used the \textsf{FIRST} and \textsf{FOLLOW} sets to capture which production rules were relevant to which $\langle$ non-terminal, terminal $\rangle$ pairs. We showed that the table $M$ could be easily constructed, once we had these sets. Finally, we showed that these sets could be computed from the grammar. 
+In this section, we used the \textsf{FIRST} and \textsf{FOLLOW} sets to capture which production rules were relevant to which $\langle$non-terminal, terminal$\rangle$ pairs. We showed that the table $M$ could be easily constructed, once we had these sets. Finally, we showed that these sets could be computed from the grammar. 
 
 Putting this altogether, we have a way of automatically generating the table $M$ from the grammar $G$.
 
@@ -494,7 +504,9 @@ Given $G_3'$, we can therefore generate $M$. Running the algorithm looks like
 
 Which is exactly what we promised to produce at the start.
 
-\section{Linear Time Parser Combinators$^*$}
+\section{Linear Time Parser Combinators$^*$}\label{section:linear-parser-combinators}
+\textit{This optional section is based on \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{A Typed, Algebraic Approach to Parsing} by} \citet{krishnaswami-2019}, \textit{and a continuation of} \Cref{section:parser-combinator}.
+
 We have seen two ways of building LL($1$) parsers.
 
 If we have already verified that the grammar is in LL($1$), then we can build an LL($1$) parser \textit{combinator} by hand. 

@@ -1,0 +1,10 @@
+\begin{tikzpicture}
+
+\node[rectangular state,anchor=north west] (el) {$A \to \alpha \bullet B \beta, a$};
+\node[rectangular state,anchor=north west] (er) at ($(el.north east) + (2cm,0)$) {$B \to \bullet \gamma, b$};
+p
+\node[anchor=south west,inner sep=0pt] at ($(el.north west) + (0,0.5cm)$) { For each $b \in \textsc{first}(\beta a)$: };
+
+\draw[->] (el) -- node[above] { $\epsilon$ } (er);
+
+\end{tikzpicture}

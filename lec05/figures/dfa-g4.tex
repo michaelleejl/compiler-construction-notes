@@ -1,0 +1,109 @@
+\scalebox{0.8}{
+\begin{tikzpicture}
+\newcommand{\labelOn}[2]{\node[fill=background] at (#2.north)
+                           { \scriptsize #1 }}
+\begin{scope}
+  \node[rectangular state] (I0) {
+    $\begin{array}{l}~\\[-1.5ex]
+      R \to \bullet L \\
+      L \to \bullet *R \\
+      L \to \bullet i \\
+      S \to \bullet L := R \\
+      S \to \bullet R \\
+      S' \to \bullet S
+    \end{array}$
+    };
+
+  \node[rectangular state] (I3) at ($(I0) + (2.65cm,4.5cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      S' \to S \bullet
+    \end{array}$
+    };
+
+  \node[rectangular state,opacity=1.0] (I4) at ($(I3) + (1.45cm,-1.75cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      R \to L \bullet \\
+      S \to L \bullet := R
+    \end{array}$
+    };
+
+  \node[rectangular state] (I5) at ($(I0) + (4.95cm,-1.05cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      S \to R \bullet
+    \end{array}$
+    };
+
+  \node[rectangular state] (I6) at ($(I4) + (3.65cm,-0.5cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      R \to \bullet L \\
+      L \to \bullet *R \\
+      L \to \bullet  i \\
+      S \to L := \bullet R
+    \end{array}$
+    };
+
+  \node[rectangular state] (I8) at ($(I6) + (2.5cm,4cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+       S \to L := R \bullet
+    \end{array}$
+    };
+
+  \node[rectangular state] (I7) at ($(I8) + (3.5cm,0cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      R \to L \bullet
+    \end{array}$
+    };
+
+
+  \node[rectangular state] (I1) at ($(I6) + (3.5cm,-1.75cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      R \to \bullet L \\
+      L \to \bullet *R \\
+      L \to * \bullet R \\
+      L \to \bullet i
+    \end{array}$
+    };
+
+  \node[rectangular state] (I9) at ($(I1) + (3.5cm,1.5cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      L \to *R \bullet
+    \end{array}$
+    };
+
+  \node[rectangular state] (I2) at ($(I1) + (3.55cm,-3.5cm)$) {
+    $\begin{array}{l}~\\[-1.5ex]
+      L \to i \bullet
+    \end{array}$
+    };
+\end{scope}
+
+  \labelOn{$I_0$}{I0};
+  \labelOn{$I_3$}{I3};
+\begin{scope}[opacity=1.0]  \labelOn{$I_4$}{I4};\end{scope}
+  \labelOn{$I_5$}{I5};
+  \labelOn{$I_6$}{I6};
+  \labelOn{$I_8$}{I8};
+  \labelOn{$I_7$}{I7};
+  \labelOn{$I_1$}{I1};
+  \labelOn{$I_9$}{I9};
+  \labelOn{$I_2$}{I2};
+
+\draw[->] (I0) -- node[above left] { $S$ } (I3.south west);
+\draw[->] (I0) -- node[above left] { $L$ } (I4);
+\draw[->] (I0) to node[above] { $R$ } (I5.west);
+\draw[->] (I4.south) to[out=-90,in=-180] node[below] { $:=$ } ($(I6.south west) + (0,0.5cm)$);
+\draw[->] ($(I6.north) + (-0.5cm,0)$) to[out=90,in=225] node[above] { $R$ } (I8.south west);
+\draw[->] (I6) -- node[above] { $*$ } (I1);
+\draw[->] (I6) -- node[above] { $L$ } (I7.south west);
+\draw[->] (I0) to[out=0,in=-180] node[above] { $*$ } (I1.west);
+\draw[->] ($(I0.east) + (0,-1cm)$) to[out=-20,in=-180] node[above] { $i$ } (I2.west);
+\draw[->] (I6.south) to[out=-80,in=180] node[above] { $i$ } ($(I2.west) + (0,0.15cm)$);
+\draw[->] (I1) -- node[above] { $i$ } (I2.north west);
+\draw[->] (I1) to[out=45,in=-135] node[below] { $R$ } (I9.south west);
+\draw[->] (I1) -- node[left] { $L$ } ($(I7.south west) + (0.5cm,0)$);
+
+\draw[->,thick,loop right=90,distance=0.6cm] 
+  ($(I1.east) + (0,-0.3cm)$) to[out=0,in=0] node[right] { $*$ } ($(I1.east) + (0,0.3cm)$);
+
+\end{tikzpicture}
+}

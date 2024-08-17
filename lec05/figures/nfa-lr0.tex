@@ -1,0 +1,17 @@
+\begin{tikzpicture}
+\node[draw] (nw) { $E \to E \bullet + T $};
+\node[draw] (w) at ($(nw.south) + (0,-1)$) { $F \to \bullet (E)$};
+\node[draw] (sw) at ($(w.south) + (0,-1)$) { $F \to (\bullet E)$};
+
+\node[draw] (ne) at ($(nw.east) + (3,0)$) { $E \to E + \bullet T $};
+\node[draw] (e) at ($(ne.south) + (0,-1)$) { $T \to \bullet F$};
+\node[draw] (se) at ($(e.south) + (0,-1)$) { $F \to \bullet id$};
+
+\draw[thick,->] (nw) -- node[above] { $+$ } (ne);
+\draw[thick,->] (ne) -- node[right] { $\epsilon$ } (e);
+
+\draw[thick,->] (e) -- node[above] { $\epsilon$ } (w);
+\draw[thick,->] (w) -- node[right] { $($ } (sw);
+\draw[thick,->] (e) -- node[right] { $\epsilon$ } (se);
+
+\end{tikzpicture}

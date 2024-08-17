@@ -1,0 +1,17 @@
+\begin{tikzpicture}
+
+\node (llk) {\Large\bfseries LR(k)};
+
+\node[anchor=north east] (l1) at ($(llk.south west) + (-0.5,-1)$)
+ { (\redbf{L})eft-to-right parse };
+
+\node[anchor=south west] (l2) at ($(llk.north east) + (0.5,1)$)
+ { (\redbf{R})ightmost derivation };
+
+\node[anchor=north west] (k) at ($(llk.south east) + (0.5,-1)$)
+ { \redbf{k}-symbol lookahead };
+
+\draw[darkred,->] (l1.north east) to[out=45,in=-90] ($(llk.south west) + (1.5ex,0.5ex)$);
+\draw[darkred,->] (l2.south west) to[out=-135,in=90] ($(llk.north) + (-1.5ex,-0.5ex)$);
+\draw[darkred,->] (k.north west) to[out=135,in=-90] ($(llk.south east) + (-2.5ex,0.5ex)$);
+\end{tikzpicture}

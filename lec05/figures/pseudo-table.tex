@@ -1,0 +1,20 @@
+\centering
+\small
+$\begin{array}{c|llllll}
+\hline\hline
+\multirow{2}*{\textsc{State}} & \multicolumn{6}{c}{\textsc{Lookahead}} \\\cline{2-7}
+                             & \text{id} & + & * & ( & ) & \$\\
+\hline
+0  & s \; \text{id} &    &    & s \;( &    &  \\
+1  &    & s\;+ &    &    &    & acc           \\
+2  &    & r \;E\to T & s \; * &    & r \;E\to T & r \;E\to T  \\
+3  &    & r \; T \to F & r \; T \to F &    & r \; T \to F & r \; T \to F \\
+4  & s \; \text{id} &    &    & s \;( &    &  \\
+5  &    & r \; F \to \text{id} & r \; F \to \text{id} &    & r \; F \to \text{id} & r \; F \to \text{id} \\
+6  & s \; \text{id} &    &    & s \;( &    &  \\
+7  & s \; \text{id} &    &    & s \;( &    &  \\
+8  &    & s\;+ &    &    & s \; )&  \\
+9  &    & r \; E \to E+T & s\;* &    & r \; E \to E+T & r \; E \to E+T \\
+10 &    & r \; T \to T * F & r \; T \to T * F &    & r \; T \to T * F & r \; T \to T * F  \\
+11 &    & r \; F \to (E) & r \; F \to (E) &    & r \; F \to (E) & r \; F \to (E)
+\end{array}$

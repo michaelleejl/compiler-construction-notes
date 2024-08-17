@@ -1,0 +1,17 @@
+\begin{tikzpicture}
+  \node(s){$(x+y)$};
+
+  \node[] at ($(s.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] at ($(s.east) + (0.63cm,0cm)$) {$(x$};
+
+  \node[] (first) at ($(s.east) + (1.2cm,0cm)$) {$+)$};
+  
+  \begin{scope}[xshift=3.55cm, yshift=2cm]
+    \Tree [.$\nonterminal{T}$
+             [.$\nonterminal{F}$
+             {$x$}
+             ] 
+          ]
+  \end{scope}
+\end{tikzpicture}

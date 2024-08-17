@@ -1,0 +1,1177 @@
+\chapter{LR($k$) Parser Generators}
+
+\begin{center}
+    \import{figures}{context}
+\end{center}
+
+\section{Overview}\label{section:lr-overview}
+We will now continue our study of parsers by considering table-driven parsers that can parse the LR($k$) family of languages. 
+
+The motivation for considering LR parsers is that they do \textit{not} struggle with left recursion, and can therefore parse a strictly larger set of \textit{grammars} than LL parsers. This is a subtle point. 
+
+Every \textit{language} produced by a left-recursive grammar can be produced by a non-left-recursive grammar. Therefore, LR parsers can parse exactly the same \textit{languages} as LL parsers. However, LR parser generators can accept left-recursive \textit{grammars}, whereas LL parsers cannot. 
+
+The key advantage of an LR parser generator, therefore, is not a computational one: if you massage your grammar enough, you can get your LL parser generator to do anything an LR parser generator can do. Rather, see it as an HCI property: it means you, as the language designer, don't have to worry about twisting your grammar to get rid of left-recursion.
+
+In this section, we will first introduce a left-recursive grammar as a running example for the sort of grammar we would like to accept (\Cref{section:lr-running-example}). Following this, we will define an LR parser (\Cref{section:lr-definition}), and use a sample input from our grammar to establish our goals: what we want an LR($k$) parser to do (\Cref{section:bottom-up-parse}), and how we would generally like it to work (\Cref{section:lr-stack-machine}).
+
+Specifically, we will seek to convince you that:
+\begin{enumerate}
+    \item We want an LR($k$) parser to construct a derivation tree via a bottom-up derivation, and
+    \item We want it to work like a stack machine.
+\end{enumerate}
+
+\subsection{Running Example}\label{section:lr-running-example}
+We will first introduce our running example for this chapter, a left recursive grammar that we call $G'_2$.
+
+Recall that, long ago, we started with the motivation to create a CFG for generating arithmetic expressions, $G_1$. To eliminate ambiguity, we created $G_2$ to encode the ``$*$ before $+$'' precedence rule. To make the grammar amenable to an LL parser, we eliminated left recursion to create $G_3$. Finally, to make our algorithm just a little bit nicer, we added a designated start non-terminal ($S$) and end terminal ($\$$), creating $G_3'$.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{running-example}
+    \caption{$G2'$, the running example for this chapter}
+    \label{fig:g2-prime-example}
+\end{figure}
+
+The point of this chapter is to emphasise the differences between LR and LL parsing, and therefore we will unwind this process to \textbf{not} eliminate left-recursion. We will simply add $S$ to $G_2$, creating $G_2'$. 
+
+We could have added the end terminal $\$$ as well, but typically, the LR parser adds it for us.
+
+Indeed, the first step of an LR parser is to take $G'_2$ and to add the single production
+\[S' \to S\$\]
+And then, if asked to parse the word $w$, it will actually attempt to parse the word $w\$$. 
+
+This tends to be overlooked by most descriptions of LR parsers, but will be important when \textit{you} are asked to build LR parsers by hand.
+
+\subsection{LR($k$) Parsers}\label{section:lr-definition}
+\begin{center}
+    \import{figures}{lrk-definition}
+\end{center}
+
+An LR($k$) parser is one that consumes tokens from left-to-right, and in doing so finds a right-most derivation. It uses a $k$-symbol lookahead to resolve non-determinism. An LR($k$) language is one that can be parsed by an LR($k$) parser. An LR($k$) grammar is one that generates an LR($k$) language.
+
+\subsection{LR Parsers Perform Bottom-Up Parsing}\label{section:bottom-up-parse}
+Recall that the end-goal of the parser is to re-construct the derivation tree \footnote{There is only one such derivation string, since the grammar is unambiguous}, given the string. We have so far considered top-down parsers which construct the derivation tree by starting at the root, and gradually expanding it towards the leaves.
+
+\begin{center}
+    \import{figures}{top-down}
+\end{center}
+
+In contrast, bottom-up parsers, like the one we are going to study, start from the leaves and work their way towards the roots, as such:
+
+\begin{center}
+    \import{figures}{bottom-up}
+\end{center}
+
+We make the case that this derivation corresponds to a \textit{left-to-right} parse of a \textit{right-most} derivation, and thus is exactly what an LR($k$) parser does.
+
+\subsubsection{Right-most Derivation}
+A right-most derivation (\Cpageref{definition:leftmostderivation}) refers to when we always choose to expand the right-most non-terminal. For example, a right-most derivation of $(x+y)$ looks like
+
+\begin{center}
+    \import{figures}{rightmost-derivation}
+\end{center}
+
+Algebraically, assuming we have the production rule $A \to \beta$, a right-most derivation step has the form
+\[\alpha A w \Rightarrow_{\text{rm}} \alpha\beta w\]
+Recall that we use $\alpha, \beta$ to represent a sequence of terminals or non-terminals, $A$ to represent a non-terminal, and $w$ to represent a sequence of terminals (\Cref{tab:par-collated-notation}, \Cpageref{tab:par-collated-notation})
+
+This is in contrast to a left-most derivation step, which has the form 
+\[w A \alpha \Rightarrow_{\text{lm}} w \beta \alpha \]
+
+\subsubsection{Left-to-right Parse}
+If you stare at the mechanism of our bottom-up parser, and the right-most derivation, we hope you see that because the bottom-up parse consumes tokens from left-to-right, it  constructs the derivation in reverse! 
+
+\begin{center}
+    \import{figures}{bottom-up-flip}
+\end{center}
+
+To draw attention to the backwards flow of a left-to-right parse, such a parse is also known as a \textit{replay} parse, so called because it \textit{replays} the derivation in reverse order.
+
+\subsection{LR Parsers Look Like Stack Machines}\label{section:lr-stack-machine}
+We have seen what an LR($k$) parser \textit{does} (``finds a rightmost derivation''), but how does it work? In this section, we seek to convince you that you can view the operation of an LR($k$) parser through the lens of a stack machine --- albeit a slightly different one than the one in an LL($k$) parser!
+
+\begin{center}
+    \import{figures}{lr-stack-machine}
+\end{center}
+
+We want to draw your attention to two things:
+\begin{enumerate}
+    \item The stack is used differently than in an LL parser,
+    \item This ``idealised'' stack machine has a ways to go before it can be operationalised as an actual parser.
+\end{enumerate}
+
+First, the stack is used differently than in an LL parser.
+
+In an LL($k$) parser, when we considered a rule like $S \rightarrow E$, it meant that we were currently in a state where $S$ was at the top of the stack. We popped $S$ off, and pushed $E$ on. Therefore, in an LL($k$) parser, we used the stack to keep track of \textit{what to look for next}. 
+
+In an LR($k$) parser, when we consider a rule like $S \rightarrow E$, it means that we are currently in a state where $E$ is on the top of the stack, and we pop it off, and replace it with $S$. Therefore, in an LR($k$) parser, we use the stack to keep track of \textit{what we have already seen}.
+
+In an LL($k$) parser, the stack represents the \textit{future}, whereas in an LR($k$) parser, the stack represents the \textit{past}.
+
+Second, it is non-trivial to operationalise this idealised stack machine. That is, we haven't given you sufficient information to go off and implement something that works like this stack machine. Here are a couple of problems that you would have difficulty resolving:
+
+\begin{enumerate}
+    \item Can I come up with some actions, similar to the LL($k$) parser's \textit{match} and \textit{predict}, such that \textbf{everything} the parser needs to do can be implemented using these actions?
+    \item How do I choose which action to use at each point?
+    \item This parser is able to manipulate the \textit{entire} stack, but I am used to parsers that can only manipulate the \textit{top of the stack}. How do I build a parser that only uses the top of the stack?
+\end{enumerate}
+
+Resolving these questions is the goal of this chapter. We will first build a simple parser generator that will produce non-deterministic LR parsers (\Cref{section:lr-basics}). Following this, we will show you two ways to eliminate non-determinism. The first way (\Cref{section:slr1}) is simpler, but less powerful. The second way (\Cref{section:lr1}) is more complex, but more powerful.
+
+
+\section{Non-Deterministic LR Parsing}\label{section:lr-basics}
+We have established, at a high level, what an LR parser is. It is a \textit{deterministic} stack machine that builds derivation trees from the bottom-up. We have not yet defined it in a way that makes it easy to build. The goal of this section is precisely to fill in the gaps in this definition, and then use it to develop algorithms that generate parsers. We will take things slowly: we will not build \textit{deterministic} parsers just yet. Once we have built a non-deterministic parser, we will, in the next section, turn our attention to eliminating non-determinism. 
+
+In the first part of this section, we will come up with a \textit{precise} description of an LR parser. We will describe the LR parser as existing in some configuration (\Cref{section:lr-parser-configurations}), and parsing as a series of transitions from a starting to an accepting configuration (\Cref{section:lr-goals}). Further, we will describe the two types of transition actions --- reduce and shift --- an LR parser can perform to move from one configuration to another (\Cref{section:lr-shift-reduce}).
+
+With this precise description, an algorithm for generating parsers is simply an algorithm that decides, in a given configuration, which of the two transitions to take at any point. We will describe this in \Cref{section:lr-lr0-items}. Finally, we will describe a simple optimisation that makes things much more efficient (\Cref{section:lr-stack-state}).
+
+\subsection{LR Parser Configurations}\label{section:lr-parser-configurations}
+We want a precise, actionable description of an LR parser. The first step towards this is to think about the LR parser as existing in a \textit{configuration} at any point in time.
+
+An \textbf{LR parser configuration} has the form \footnote{The ending terminal $\$$ has been added for us}
+\begin{center}
+    \import{figures}{parser-configuration}
+\end{center}
+For concreteness, here are some examples of LR parser configurations
+\[\begin{array}{lcr}
+     \$(F   &,& +y)\$  \\
+     \$(E+F &,&   )\$
+\end{array}\]
+But, perhaps surprisingly, so is this!
+\[\begin{array}{lr}
+     \$(F++*EF** & +y)\$  \\
+\end{array}\]
+The first two configurations are ``sensible'' --- you would expect to see an LR parser in that configuration. The last is ``nonsensical''. Any LR parser in that configuration is broken. We want a way to say some configurations make sense, and others don't. We define a notion of \textbf{validity}.
+
+An LR parser configuration $\$\alpha, w\$$ is \textit{valid} if it is possible to derive $\alpha w$ via some right-most derivation starting at the start-symbol $S$. Formally,
+\[S \Rightarrow^*_{\text{rm}} \alpha w\]
+
+\subsection{Parsing as a Series of Transitions}\label{section:lr-goals}
+Using this definition of the LR Parser, we can then define precisely what parsing is. An LR Parser parses a word $w$ if, should you start at the initial configuration
+\[\$, w\$\]
+You can end up in the accepting configuration
+\[\$S, \$\]
+Via a series of transitions between valid configurations. How does an LR parser transition between valid configurations?
+
+\subsection{Transition Actions: Reduce and Shift}\label{section:lr-shift-reduce}
+Parsing a word $w$ involves transitioning from an initial configuration to an accepting configuration in some number of steps. There are two transition actions that the LR parser can use to move between valid configurations: \textit{reduce} and \textit{shift}. We will explain these in turn.
+
+\subsubsection{Reduce}
+Let's say our aim is to get to the accepting configuration, 
+\[\$S, \$\]
+And we are currently in the configuration
+\[\$E, \$\]
+We want to be able to say: ``We have the production rule $S \to E$, so we can transform $\$E, \$$ to $\$S, \$$''. 
+
+Similarly, let's say our aim is to get into the configuration
+\[\$(E, \$\]
+But we are currently in the configuration
+\[\$(E+T, \$\]
+We want to be able to say ``We have the production rule $E \to E+T$, so we can transform $\$(E+T, \$$ to $\$(E, \$$''. 
+
+These transitions are known as \textit{reduce} transitions.
+
+More generally, we can match the top of the stack $E+T$ with a right-hand-side of a production rule $E \to E+T$, and transform it into the left-hand-side of the production rule $E$. Written in mathematical language, we have
+\[ A \rightarrow \beta B z\]
+This would permit a right-most derivation step of the form
+\[\alpha A w \Rightarrow_{\text{rm}} \alpha \beta B z w\]
+And thus the following reduction between valid configurations:
+\[\$ \alpha \beta B z, w \$ \longrightarrow \$ \alpha A, w \$ \]
+This rule is known as a \textit{reduction} using the production rule $A \rightarrow \beta B z$.
+
+\subsubsection{Shift}
+It might already be obvious, but reduce is not sufficient. The problem is that reduce only acts on the left hand side of the configuration. 
+
+For example, assume we are in the configuration
+\[\$(E, )\$\]
+And want to reduce to the configuration
+\[\$E, \$\]
+Using the production rule $E \to (E)$. We can't do this, because we need the entirety of $(E)$ to be on the stack. Thus, we need a way to go from $\$(E, )\$$ to$(E), \$$
+
+This is known as a \textit{shift}, since we are shifting terminals from the right hand side to the left hand side of the configuration. More generally, assume we have a production of the form 
+\[ A \rightarrow \beta B z\]
+Permitting a reduction of the form
+\[\$ \alpha \beta B z, w \$ \longrightarrow \$ \alpha A, w \$ \]
+But we might be in the configuration
+\[\$ \alpha \beta B, zw \$ \]
+We need a rule that allows the transition
+\[ \$\alpha \beta B, zw \$ \longrightarrow \$\alpha \beta B z, w\$\]
+
+Formally, a shift action allows the transition
+\[ \$\alpha, aw \$ \longrightarrow \$\alpha a, w \$\]
+
+\subsubsection{Shift and Reduce Enable Replay Parsing}
+Clearly, shift and reduce are \textit{needed}, but are they enough? Are they \textit{sufficient}? Yes, they are. This is formalised by the following theorem:
+
+\begin{theorem}[Shift and Reduce are Sufficient]
+    For every $w$ such that there exists a right-most derivation $S \Rightarrow^{*}_\text{rm} w$, there exists some combination of shift and reduce such that $\$, w\$ \rightarrow^{*} \$S, \$$
+\end{theorem}
+
+Together, shift and reduce enable \textit{replay} parsing -- in other words, the construction of the right-most derivation, in reverse. A successful parse of the word $w$ is one that starts in the configuration $\$, w\$$ and ends in $\$S, \$$.
+
+For example, here is how shift and reduce can be used to rediscover the right-most derivation, of $(x+y)$ via a replay parse.
+
+\begin{center}
+    \import{figures}{replay-parsing}
+\end{center}
+
+
+\subsection{Choosing Between Shift and Reduce}\label{section:lr-lr0-items}
+A parser accepts a word $w$ by starting at the initial configuration and ending in the accepting configuration. Therefore, to specify a parser, all you need to do is answer two questions: in any given configuration, should we shift, or should we reduce? Further, if we are to reduce, how do we make a \textit{deterministic} choice of which rule to use?
+
+If we have a way to answer these two questions, we have an algorithm for building a parser. 
+
+In order to answer these two questions, let us consider a concrete example. Let's assume our current configuration is
+\[\$E+, y\$\]
+Take a minute to think --- would you shift, or would you reduce?
+
+Hopefully, your answer was ``we should shift!''. Further, hopefully, your thought process looked something like this:
+
+In order to perform a reduction, I need a production rule that looks like one of the following:
+\[\begin{array}{lcl}
+     A & \to & +  \\
+     A & \to & E+
+\end{array}\]
+But there are no such rules. In fact, the \textit{only} rule with a $+$ in it is
+\[E \to E + T\]
+And we \textit{only} have $E+$ on the stack. So we should seek to shift some stuff onto the stack, reduce it to $T$, and then reduce $E+T$ into $E$.
+
+We'll introduce some standard notation that makes this thought process concrete. We will use $\bullet$ to mark the divide between the bits of $E + T$ that are already on the stack, and those that are still in the input. In this case, we would write
+\[E \rightarrow E+ \bullet T\]
+This is the LR($0$) item. It can be read in three parts.
+\begin{center}
+    \import{figures}{lr0-item}
+\end{center}
+
+It should be clear that we have matched some things, on the stack, we have some things to do (which will correspond to some stuff in the input). This notion of \textbf{current goal}, however, might take some explaining. Our current goal is to match $E$. In service of this, we have matched $E+$, and want to match $T$. This means we can, and indeed, should create the following sub-goal:
+
+\textbf{Sub-goal:} Match $T$. This means that we should also consider the LR($0$) item
+\[T \to \bullet F\]
+Where we have updated our sub-goal to be ``match $T$''. While we have made some progress with respect to our initial goal of matching $E$ (we have matched $E+$), we have made no progress with respect to our new sub-goal, of matching $T$. That's why the $\bullet$ is in the left most position of $\bullet F$.
+
+Having developed the intuition for the LR($0$) items, we can discuss the set of LR($0$) items, given a grammar. It records, for all goals, all possible progress made towards that goal.
+
+\begin{center}
+    \import{figures}{lr0-items}
+\end{center}
+
+Formally, given a grammar $G$, the set of LR($0$) items is the set
+\[ \{ A \to \beta \bullet \gamma \mid A \to \beta \gamma \in P, \; \beta, \gamma \in (N \cup T)*\} \]
+
+\subsubsection{Valid LR($0$) Items}
+We said ``the \textit{only} rule with a $+$ in it is $E \to E + T$''. Using this, we concluded that $E \to E + \bullet T$ $\$E+, y\$$ and $T \to \bullet F$ are compatible with the configuration $E \to E + \bullet T$. Let's formalise this notion of compatibility!
+
+Given a stack $\phi \beta$, where $\phi, \beta \in (N \cup T)*$, the item $A \to \beta \bullet \gamma$ is \textit{valid} for $\phi \beta$ if there exists some $w \in T*$ such that there is a derivation
+\[\begin{array}{rrl}
+     S &\Rightarrow^*_\text{rm}&\phi A w  \\
+     & \Rightarrow_\text{rm} & \phi \beta \gamma w
+\end{array}\]
+In this case, the item $E \to E + \bullet T$ is valid for the stack $E+$ ($\phi = \epsilon$, $\beta = E$) because there exists a $w$, namely $\epsilon$, such that
+\[\begin{array}{rrl}
+     S &\Rightarrow_\text{rm}&E \\
+     & \Rightarrow_\text{rm} & E+T
+\end{array}\]
+However, so is the item $T \to \bullet F$, since if we let $\phi$ be $E+$, and $\beta$ be $\epsilon$, then there exists a $w$, namely $\epsilon$, such that 
+\[\begin{array}{rrl}
+     S &\Rightarrow_\text{rm}&E \\
+     & \Rightarrow_\text{rm} & E+T \\
+     & \Rightarrow_\text{rm} & E+F
+\end{array}\]
+The subtlety here is that an LR($0$) item is \textit{valid} if it is consistent with the past $\phi\beta$, but we are allowed to choose what our current goal is, and thus which bits of the past are matched with respect to our current goal ($\beta$), and which have been matched with respect to some previous goal ($\epsilon$).
+
+In contrast, the item $T \to T * \bullet F$ is \textbf{not} valid for the current configuration (can you see why? Can you \textit{prove} why?)
+
+\subsubsection{Multiple LR($0$) Items May be Valid for a Given Configuration}
+We have seen that, many different LR($0$) items may be valid for a given configuration.
+
+Hence, you should always think of an item through the lens of \textit{possibility}, rather than \textit{certainty}. An item of the form
+\[ A \to \beta \bullet \gamma \]
+Means that we \textit{could} be trying to match $A$, have parsed an input $w$ derivable from $\beta$, and we \textit{could} see $\gamma$ next. Similarly, an item of the form
+\[ A \to \beta \bullet \]
+Means that we have parsed an input $w$ derivable from $\beta$, and we \textit{could} reduce $w$ to $A$, \textit{if} that is our goal.
+
+\subsubsection{Using Valid LR($0$) Items to Choose Between Shift and Reduce}
+We can use the valid LR($0$) items to choose between shift and reduce. An LR($0$) item can be in one of three shapes, each of which tells us what to do next
+
+\begin{enumerate}
+    \item $A \rightarrow \alpha \bullet c \beta$ (Shift)
+    \item $A \rightarrow \alpha \bullet B \beta$ (Change the current goal to match $B$)
+    \item $A \rightarrow \alpha \bullet$ (Reduce)
+\end{enumerate}
+
+This means that, if a configuration only has \textbf{one} valid LR($0$) item, then we know exactly what to do. However, we also know that the same configuration might have multiple valid items. This is still, in general, ok, as long as \textbf{all} the items are in agreement. For example, if all our items look like
+\[
+\begin{array}{rcl}
+     A_1&\to&\alpha_1 \bullet c \beta_1  \\
+     A_2&\to&\alpha_2 \bullet c \beta_2  \\
+     \ldots&&
+\end{array}
+\]
+Then all our LR(0) items will tell us to shift $c$. Hence, the key idea of LR parsing is to keep track of the \textit{set of valid items}, and use it to determine whether or not to shift, or reduce. We say that we use the LR($0$) items as a \textit{guide}.
+
+If it is always clear what should be done, then the grammar is an LR($0$) grammar. However, this is unlikely. In this case, $G_2'$ is \textit{not} an LR($0$) grammar. We will cop-out of the problem by allowing our parser, for the time being, to make a non-deterministic choice if it could both shift and reduce.
+
+We now turn our attention to keeping track of the valid LR($0$) items, given a stack.
+
+\subsubsection{Using a DFA to Keep Track of Valid LR($0$) Items}
+At this point, we know that \textit{if} we have the set of valid LR($0$) items, \textit{then} we can choose between shift and reduce. We thus need some way of automatically keeping track of which LR($0$) items are valid, given a stack, that is updated as the stack changes. Here are several facts. 
+
+For an empty stack, $S \to \bullet E$ is a valid item.
+
+Assume that $A \to \beta \bullet c\gamma$ is a valid item for a stack $\phi$. Then, $A \to \beta c\bullet\gamma$ will be a valid item for the stack $\phi c$.
+
+Assume that $A \to \alpha \bullet B \gamma$ is a valid item for a stack $\phi$. Then, $A \to \alpha B \bullet\gamma$ is a valid item for the stack $\phi B$
+
+Assume that $A \to \beta \bullet B \gamma$ is a valid item for the current stack. Then, $B \rightarrow \bullet \alpha_i$ is also a valid item, since we can decide to match $B$ as a sub-goal.
+
+Equipped with these rules, we can start at the bottom of the stack, and walk towards the top, updating our set of valid items for each terminal or non-terminal we encounter. 
+
+\begin{center}
+    \import{figures}{valid-item-stack}
+\end{center}
+
+In fact, this is exactly the operation of an NFA where states are LR($0$) items. We will add three transitions to our transition relation $\delta_G$, each corresponding to one of the rules above.
+
+\begin{center}
+    \import{figures}{transitions-lr0}
+\end{center}
+
+The start state, $q_0$, is thus $S \to \bullet E$. Here are a couple of transitions for $G_2'$:
+
+\begin{center}
+    \import{figures}{nfa-lr0}
+\end{center}
+
+The correctness of this construction is given by the LR Parsing Theorem, which we state but do not prove
+
+\begin{theorem}[LR Parsing Theorem]
+    For all $\phi\beta$, $A \to \beta\bullet\gamma \in \delta_G(\phi\beta)$ if and only if $A \to \beta\bullet\gamma$ is valid for $\phi\beta$ 
+\end{theorem}
+
+As an aside, note that this means that $\phi\beta$, the language that describes possible stack combinations, is \textbf{regular}! Don't be confused --- we can use a regular language to describe the stack, but we cannot use a regular language to describe the language that the stack is used to parse. 
+
+We can, of course, convert the NFA into a DFA via the power-set construction. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{dfa-lr0}
+    \caption{The DFA for the $G_2'$ parser}
+    \label{fig:dfa-lr0}
+\end{figure}
+
+Notice that, when consuming the stack $E+$, we are going exactly from $I_0$ to $I_1$ to $I_6$.
+
+We now have an \textit{algorithm} for performing LR-parsing. At every step, run the DFA on the stack to get the set of valid items. The set of valid items will tell us to shift/reduce (changing goals is handled by epsilon transitions). Non-deterministically pick one of them, update the stack, and re-run the DFA. Do this until the input string is fully consumed. 
+
+\begin{code}[A non-deterministic LR parsing algorithm]
+\begin{lstlisting}[style=pseudocode]
+!$c$! = NextToken()
+while True:
+  !$\phi \beta$! := TheStack()
+  if !$A \to \alpha \bullet c\gamma \in \delta(q_0, \phi\beta)$!
+    then UpdateStack(!$\textsc{shift} \; c$!); !$c$! := NextToken()
+  if !$A \to \alpha \bullet \in \delta(q_0, \phi\beta)$!
+    then UpdateStack(!$\textsc{reduce} \; A \to \beta$! )
+  if !$S \to \alpha \bullet \in \delta(q_0, \phi\beta)$!
+    then Accept() // if no more input, NextToken() == None
+  if none of the above
+    then Error()
+\end{lstlisting} 
+\vspace{3mm}
+\end{code}
+Note that this is \textit{non-deterministic}. For every stack, multiple items may be valid, and different items could cause different conditions to be true. In addition, multiple items can match multiple conditions (namely, $A \to \alpha \bullet$ and $S \to \alpha \bullet$ can be true for the same item).
+
+\subsection{Optimisation: Using a stack of states}\label{section:lr-stack-state}
+We now have an algorithm for determining if we should shift or reduce (and which rule to use). We thus have a way to build parsers. Our parsers, however, aren't very efficient. In order to determine what to do, we have to generate a set of valid items. This involves repeatedly scanning through the stack, updating the set of valid items as we consume each token. This is ugly and inefficient. In this section, we cover two easy optimisations:
+
+\begin{center}
+    \import{figures}{valid-item-stack}
+\end{center}
+
+First, we have already alluded to this, but each set corresponds to a state in the DFA (\Cref{fig:dfa-lr0}) --- the first to $I_0$, the second to $I_1$, and the third to $I_6$. It is far more space and time efficient to construct the DFA, and then point at states in the DFA. Our algorithm thus looks like
+
+\begin{center}
+    \import{figures}{valid-state-stack}
+\end{center}
+
+Second, we are currently scanning through the stack to determine the set of valid items, perform a shift/reduce, go back to $I_0$, and then scan through the entire stack again to determine the new set of valid items. This is also wasteful. What we really should be doing is maintaining a \textit{stack} of states, and evolving them alongside the stack $\phi\beta$. 
+
+We need to consider how to evolve the stack of states on a \textit{shift} and on a \textit{reduce}. As always, we start from concrete examples, and then figure out how this technique generalises.
+
+\subsubsection{Shift}
+Let us assume our stack is currently $E+$, and thus our stack of states is $[0;1;6]$ (from this point on I will use the numbers to refer to the states, so $0$ means $I_0$). 
+\begin{center}
+    \import{figures}{shift-state}
+\end{center}
+Let's say we \textit{shift} on $y$. This creates the new stack $E+y$. What is the set of valid items for $E+y$?
+
+We hope you can see that the answer is 
+\[\delta(0, E+y) = \delta(1, +y) = \delta(6, y) = 5\]
+So we should update the stack by pushing $5$ onto it.
+
+In the general case, on a shift of character $c$, assuming we are in state $q$, we want to \textit{push} onto the stack of states, the state $\delta(q, c)$.
+
+\subsubsection{Reduce}
+Let us assume that our stack is currently $E+y$, and our stack of states is $[0;1;6;5]$. Let's say we reduce via the rule $F \to \text{id} \bullet$. This creates a new stack, $E+F$. What is the set of valid states for $E+F$?
+\begin{center}
+    \import{figures}{reduce-state}
+\end{center}
+We hope you see that the answer is \[\delta(0, E+F) = \delta(1, +F) = \delta(6, F) = 3\] So we should update the stack by \textit{popping} off $5$ and \textit{pushing} on $3$. This creates the stack $[0;1;6;3]$.
+
+This makes intuitive sense. If our stack is currently of the form $\phi\beta$, and we want to reduce via the production rule $A \to \beta$, we will erase $\beta$ and replace it with $A$ to get the stack $\phi A$. To find the valid set of items for this, we should find the valid set of items for $\phi$, which we can get by popping $|\beta|$ items off the stack (where $|\beta|$ is the length of the string $\beta$). Once we have found the state corresponding to the valid set of items for $\phi$, call it $q$, we should push on the state $\delta(q, A)$.
+
+\begin{center}
+    \import{figures}{reduce-state-general}
+\end{center}
+
+
+
+
+\section{SLR(1)}\label{section:slr1}
+At this point, we have an algorithm that is able to generate \textit{non-deterministic} LR parsers. In this section, we will learn a simple technique for using the lookahead to resolve non-determinism, and thereby generate \textit{deterministic} LR parsers. 
+
+Let's first remind ourselves of the type of non-determinism we are trying to eliminate. In the previous section, we built a non-deterministic LR($0$) parser that maintains a stack of states. Using this stack of states, it can find the valid items for its stack, and use these LR($0$) items to \textit{guide} its choice of whether to perform a shift, or a reduce. It has to be non-deterministic because in, for example, state 1, we have two valid items
+\[
+\begin{array}{rcl}
+     S&\to&E\bullet  \\
+     E&\to&E\bullet+T 
+\end{array}
+\]
+Where the first item tells us to reduce via $S \to E$ and the second tells us to shift $+$ onto the stack.
+
+We have seen how \textit{lookahead} can be used to reduce, and in some cases, eliminate, non-determinism. Can we do this here, too? Let's say the next token on the stack is $c$. How can we use this lookahead to select between rules?
+
+The lookahead will help us strengthen the current decision policy, which is of the form
+\begin{enumerate}
+    \item If you see an item of the form $A \to \alpha \bullet c \beta$, then shift $c$
+    \item If you see an item of the form $A \to \alpha \bullet$, then reduce via $A \to \alpha$
+\end{enumerate}
+To the stronger
+\begin{enumerate}
+    \item If you see an item of the form $A \to \alpha \bullet c \beta$, \textbf{and the next token is $c$}, then shift $c$
+    \item If you see an item of the form $A \to \alpha \bullet$, \textbf{and you see $c$ on the input, and $c \in$ FOLLOW($A$)} then reduce via $A \to \alpha$
+\end{enumerate}
+Which hopefully makes sense! For example, as we will see, the FOLLOW set of $S$ is $\{\$\}$, so if we see $+$ as the lookahead token, then we are able to say that there is no non-determinism, we should always shift the next token, $+$, onto the stack. 
+
+Using this approach, let's see how the word $(x+y)$ is parsed.
+
+\begin{center}
+    \import{figures}{slr1-replay-parsing}
+\end{center}
+
+\subsection{Automating Parsing using ACTION and GOTO}
+We have described the \textit{policy} used by SLR(1) parsers to resolve non-determinism (using the current state state and the lookahead token). We have yet to describe how to \textit{implement} the policy as an \textit{algorithm}.
+
+The high-level idea is almost exactly the same as LL($k$) table-driven parsers. In an LL($k$) parser, the policy is determined by the current \textit{non-terminal} and the \textit{look-ahead}. We store the policy in a table, indexed by the non-terminal and the look-ahead. In an LR($k$) parser, the policy is determined by the current \textit{state} and the \textit{look-ahead}. 
+
+\begin{center}
+    \import{figures}{pseudo-table}
+\end{center}
+
+Each cell of the table tells you what to do next. For example, if you are in state 1 and the next terminal on the input is $+$, the cell reads ``$s\;+$'', meaning you should shift $+$ onto the stack. If you are in state 2 and you see $+$, then the cell reads ``$r \; E \to T$'', which means reduce using the rule $E \to T$. 
+
+If there is \textbf{nothing} in the cell, for example, if you are in state 0 and you see $+$ as the next token, then the word is not in the grammar, and you throw an exception. Remember that the parser has error detection and reporting capabilities --- and this is one of them. In fact, it is common to \textit{fill the empty cells} with errors to report!
+
+If there are two or more items in the cell, then we will have a \textbf{conflict}. Deterministic SLR(1) parsers will throw an exception here, though, if we are using a parser generator, we won't get that far! The parser generator, after constructing the table for us, can warn us that our grammar is not in SLR(1).
+
+Importantly, the table above tends \textbf{not} to be the table as actually constructed. We will gradually transform the table above into the tables we commonly see in practice.
+
+First, let's note that the command $s \; +$ is a little redundant --- we shift on the next token, which is $+$. So it is sufficient to record $s$. However, we know we are in some state (say $0$). It \textit{would} be useful to know which state we transition to when we see a $+$. We pre-compute this and store it in the table. So $s \; +$ becomes $s5$. This produces the following table
+
+\begin{center}
+    \import{figures}{pseudo-table-1}
+\end{center}
+
+Next, for each reduction rule, rather than storing a production rule $r E \to T$, let's store the number of states to pop off, and the non-terminal that we push on, $r \langle 1, E \rangle$ (pop off 1 state, and push on $\delta(q, E)$). 
+
+\begin{center}
+    \import{figures}{pseudo-table-3}
+\end{center}
+
+We've pre-computed the transitions for each state and terminal, and integrated them into the table. Let's also do this for each state and non-terminal (which will be useful after a reduce action). For example, if we are in state $0$, and see non-terminal $E$, this takes us to state $1$. This creates a new table, indexed by the state and every non-terminal, which we call GOTO. We'll call the old table ACTION, since it tell us which ACTION to take next.
+
+\begin{center}
+    \import{figures}{pseudo-table-2}
+\end{center}
+
+\subsubsection{Standard Notation}
+\begin{center}
+    \import{figures}{action-and-goto}
+\end{center}
+As an aside, this is not the table you will see in textbooks. There, implicitly, the production rules have been numbered, and $r2$ means ``reduce using reduction rule 2''. This is misleading notation, and one we would rather avoid.
+
+\subsubsection{Constructing ACTION}
+Constructing ACTION is simple, once we have the follow sets and the DFA transition function $\delta$
+
+\begin{code}[Constructing ACTION for SLR(1)]
+\begin{lstlisting}[style=pseudocode]
+for each DFA state !$I_i$! and each terminal !$a$!
+
+  if !$A \to \alpha \bullet a \beta \in I_i$! and !$\delta(I_i, a) = I_j$! 
+    then ACTION[!$i, a$!] = !$s j$!
+    
+  if !$A \to \alpha \bullet \in I_i$! and !$A \neq S$! 
+    then for each !$a \in \textsc{FOLLOW}(A)$!
+      ACTION[!$i, a$!] = !$r \langle |\alpha|, A \rangle$!
+      
+  if !$S \to \alpha \bullet \in I_i$! 
+    then ACTION[!$i, \$$!] = !$acc$!
+\end{lstlisting}
+\vspace{1mm}
+\end{code}
+
+\subsubsection{Constructing GOTO}
+Constructing GOTO is even simpler
+
+\begin{code}[Constructing GOTO for SLR(1)]
+\begin{lstlisting}[style=pseudocode]
+for each DFA state !$I_i$! and each non-terminal !$A$!
+  if !$\delta(I_i, A) = I_j$! 
+    then GOTO[!$i, A$!] = !$j$!
+\end{lstlisting}
+\vspace{1mm}
+\end{code}
+
+\subsection{SLR(1) Parsing Algorithm}
+Using ACTION and GOTO, we can create a simple algorithm for SLR(1) parsing.
+
+\begin{code}[The SLR(1) Parsing Algorithm]
+\begin{lstlisting}[style=pseudocode]
+tok := NextToken()
+while True:
+  state := TopStackState()
+  if ACTION[state,tok] = !$s q$!
+    then push !$q$!
+    tok := NextToken()
+  else if action[state,tok] = !$r \langle |\beta|, A \rangle$!
+    then pop !$|\beta|$! states
+    push GOTO[TopStackState(), !$A$!]
+  else if action[state,tok] = accept
+    then accept and exit
+    
+  else error
+\end{lstlisting}
+\vspace{1mm}
+\end{code}
+
+Here's an example of the SLR(1) parsing algorithm in action, parsing the string $(x+y)$. Note how the ``reason'' column has been replaced by an algorithmic lookup 
+\begin{center}
+    \import{figures}{slr1-parse}
+\end{center}
+
+\subsection{The Limits of SLR(1) Parsing}
+SLR(1) Parsing is sufficient for resolving all conflicts for $G_2'$. But there are grammars that it cannot parse. For example, consider the following grammar, $G_4 = \langle N_4, T_4, P_4, S' \rangle$, for assignment expressions:
+\begin{minipage}[t]{0.5\textwidth}
+\begin{center}
+$N_4 = \{ S', S, L, R \}$
+\end{center}
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\begin{center}
+$T_4 = \{ *,:=,id\}$
+\end{center}
+\end{minipage}
+
+\[
+\begin{array}{ll}
+  P_4: & S' \to S\; \$ \\
+&   S \to L := R \mid R \\
+&   L \to * R \mid \text{id} \\
+&   R \to L\\
+\end{array}
+\]
+Applying the techniques we have introduced, we get the following DFA
+\begin{figure}[H]
+    \centering
+    \import{figures}{dfa-g4}
+    \caption{The SLR(1) DFA for the $G_2'$ Parser}
+    \label{fig:dfa-g4}
+\end{figure}
+
+Pay special attention to state $I_4$, because it features a \textit{shift-reduce conflict}. The problem is that the token $:=$ is in the FOLLOW set of $L$, so our table will instruct us to both shift, and reduce. 
+
+Thus, $G_4$ is not in SLR(1). More generally, SLR(1) parsers may encounter \textit{shift-reduce} or \textit{reduce-reduce} conflicts, where ACTION is not defined. 
+
+There are two solutions: the first is to fix the grammar. The second, which we will now see, is to be more intelligent in how we use the lookahead. 
+
+\section{LR(1)}\label{section:lr1}
+In the previous section, we saw how we could use the lookahead in a way that can eliminate non-determinism in some cases, but not in others. In this section, we will introduce a new way of using the lookahead that can eliminate non-determinism in more cases: LR(1) parsing.
+
+We start by motivating the intuition behind LR(1) parsing. 
+
+Let's say it's a weekend, and you have a bunch of errands to run: visit the doctor, refill your prescriptions at Boots, drop your medication off in your room and change into your gym clothes, go to the gym, meet friends for dinner. Let's say you walk out of your room, and you can't remember what it is you wanted to do next. What do you ask yourself?
+
+\begin{enumerate}
+    \item What are the things I typically do when I leave my room?
+    \item What did I enter the room \textit{for}?
+\end{enumerate}
+
+The answer to the first question perhaps has a range of answers: meet friends, go to Sainsbury's, etcetera. The second question (``change into gym clothes'') carries more context: it does not \textit{just} rely on the fact that you left your room, but \textit{also} the purpose for going into your room in the first instance. This added context is more informative at narrowing down the range of possibilities --- you probably wanted to go to the gym. 
+
+Now let's look at SLR(1)'s answer to ``given look-ahead token $a$, when should I reduce via rule $A \to \alpha$?''. Its answer is
+\begin{center}
+    ``Whenever $a \in \text{FOLLOW}(A)$''
+\end{center}
+In this case, using the entire FOLLOW set of $A$ is trying to make a decision based \textit{only} on the fact that you have matched $A$. It is sort of like trying to figure out what you left your room for by considering all the things you typically leave your room to do. 
+
+LR(1)'s answer is different. Its answer is
+\begin{center}
+    ``Depends on whether seeing $a$ is consistent with the reason why you were trying to match $A$''
+\end{center}
+Which makes a decision based both on the fact that you have matched $A$, but the purpose for matcing $A$ in the first instance. This added context is more informative at narrowing down the range of possibilities. 
+
+Let's see how LR($1$) keeps track of ``the reason why you were trying to match $A$''. It does this through the LR($1$) item, which extends the LR($0$) item with a lookahead token. 
+
+\begin{center}
+    \import{figures}{lr1-item}
+\end{center}
+
+Think of the lookahead token as a sticky note, a note to yourself that remembers a \textit{possible} reason for matching the non-terminal $A$. For example, if you see the LR($1$) item 
+\[L \to \bullet \text{id}, :=\]
+The $:=$ is a reminder that you wanted to look for $:=$ after you're done matching $L$. 
+
+Since, for SLR($1$), our DFA was built out of LR($0$) items, and now we are using LR($1$) items, we need to update our transition relation for our NFA. 
+
+Our initial item is
+\[S' \to \bullet S, \$\]
+Since we want to look for $\$$ after matching $S$. 
+
+We need two relations that handle the case where our sub-goal does not change, but we make progress towards it. If our sub-goal does not change, then what we want to do after achieving it won't change, so it's just a matter of keeping track of what we wanted to look for. (This is like staying in your room and changing your gym clothes, what you wanted to do \textit{after} exiting your room does not change)
+\begin{center}
+    \import{figures}{nfa-transition-lr1-1}
+\end{center}
+
+We need a relation that handles the case where we update our current goal. Your lookahead always keep track of what you wanted to achieve your current goal \textit{for}. Hence, when you update your current goal, you also need to update your lookahead. For example, let's say your current goal is ``go to the gym'', which you wanted to achieve so that you could ``burn enough calories to enjoy dinner''. When you enter your room, your immediate, current goal changes to ``change into gym clothes'', and the reason you wanted to achieve that changes to ``to go to the gym''. You're operating a mental stack, and you keep pushing things on as your sub-goals change. This is captured by the following transition:
+\begin{center}
+  \import{figures}{nfa-transition-lr1-2}
+\end{center}
+
+When we update our current goal from ``match $A$'' to ``match $B$'', we also need to change our lookahead, our reminder of why we wanted to achieve our current goal, from $a$ to $b$.
+
+Note, also, that $\beta a$ may have multiple elements in its FIRST set. This emphasises that our technique can \textit{reduce}, but not completely \textit{eliminate}, uncertainty. For example, after changing to your gym clothes, you might know that you wanted to do some sports, but you might not remember if you were going to play tennis, or badminton, or go on a run, etcetera. 
+
+\subsubsection{LR(1) DFA}
+With this in mind, let's construct the DFA for $G_4$ using LR($1$) Items.
+
+Look closely at $S_4$, the corresponding state to $I_4$ (\Cref{fig:dfa-g4}). The only two items are
+\begin{center}
+    \begin{tikzpicture}
+        \node[rectangular state,inner sep=1pt,anchor=north west,opacity=1.0] (s4) at ($(s1.south west) + (0cm,-0.5cm)$) {
+$\begin{array}{l}
+ R \to L \bullet ,\$ \\
+ S \to L \bullet :=R,\$ \\
+\end{array}$};
+    \end{tikzpicture}
+\end{center}
+This means that the only case where we should reduce is if the look-ahead is $\$$. If the look-ahead is $:=$, we should shift. There is no more shift-reduce conflict.
+
+\begin{figure}
+    \centering
+    \import{figures}{dfa-g4-lr1}
+    \caption{The LR(1) DFA for $G_4$}
+    \label{fig:dfa-g4-lr1}
+\end{figure}
+
+Hence, LR(1) is a more powerful parsing technique than SLR(1).
+
+\subsubsection{LR(1) ACTION and GOTO}
+
+\subsubsection{Constructing ACTION}
+Constructing ACTION is slightly different for LR(1)
+
+\begin{code}[Constructing ACTION for LR(1)]
+\begin{lstlisting}[style=pseudocode]
+for each DFA state !$I_i$! and each terminal !$a$!
+
+  if !$A \to \alpha \bullet a \beta, b \in I_i$! and !$\delta(I_i, a) = I_j$! 
+    then ACTION[!$i, a$!] = !$s j$!
+    
+  if !$A \to \alpha \bullet, b \in I_i$! and !$A \neq S$! 
+    then ACTION[!$i, b$!] = !$r \langle |\alpha|, A \rangle$!
+      
+  if !$S \to \alpha \bullet, \$ \in I_i$! 
+    then ACTION[!$i, \$$!] = !$acc$!
+\end{lstlisting}
+\vspace{1mm}
+\end{code}
+
+The difference is in the reduce case. Let's compare them side-by-side
+
+\begin{minipage}[t]{0.49\textwidth}
+\textbf{SLR(1)}
+\begin{lstlisting}[style=pseudocode]
+if !$A \to \alpha \bullet \in I_i$! and !$A \neq S$! 
+  then for each !$a \in \textsc{FOLLOW}(A)$!
+      ACTION[!$i, a$!] = !$r \langle |\alpha|, A \rangle$!
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}[t]{0.02\textwidth}
+\textcolor{white}{1}
+\end{minipage}%
+\begin{minipage}[t]{0.49\textwidth}
+\textbf{LR(1)}
+ \begin{lstlisting}[style=pseudocode]
+if !$A \to \alpha \bullet, b \in I_i$! and !$A \neq S$! 
+  
+  then ACTION[!$i, b$!] = !$r \langle |\alpha|, A \rangle$!
+\end{lstlisting}
+\end{minipage}
+
+The SLR(1) algorithm uses the FOLLOW sets of $A$, whereas the LR(1) algorithm uses the lookahead $b$, constructed via the FIRST sets of whatever the suffix of the previous sub-goal was.
+
+\subsubsection{Constructing GOTO}
+Constructing GOTO is the same as SLR(1)
+
+\begin{code}[Constructing GOTO for LR(1)]
+\begin{lstlisting}[style=pseudocode]
+for each DFA state !$I_i$! and each non-terminal !$A$!
+  if !$\delta(I_i, A) = I_j$! 
+    then GOTO[!$i, A$!] = !$j$!
+\end{lstlisting}
+\vspace{1mm}
+\end{code}
+
+\section{Recap}
+We've done a lot in this chapter. Let's re-cap what we've done. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{recap}
+    \caption{Recap of LR Parsing}
+    \label{fig:lr-parsing-recap}
+\end{figure}
+
+LR parsers are \textit{deterministic} stack machines that construct derivation trees from the bottom up (perform a bottom-up or replay parse). They work like stack machines: transitioning between valid configurations. A parse of a word involves starting in some starting configuration, and shifting or reducing until one gets to an accepting configuration. 
+
+The key to building an LR parser, therefore, is determining when to shift and when to reduce. We saw three methods:
+
+\begin{enumerate}
+    \item LR(0) Parsing, which uses the valid LR(0) items of a configuration to determine when to shift and when to reduce. This is quite weak, so we used non-determinism to wiggle out of difficult situations
+    \item SLR(1) Parsing, which uses the valid LR(0) items, a one token lookahead, and the FOLLOW sets, to determine when to shift and when to reduce. This is more powerful than deterministic LR(0) Parsing, but can still run into trouble. 
+    \item LR(1) Parsing, which uses the valid LR(1) items, constructed using the FIRST sets, plus a one token lookahead, to determine when to shift and when to reduce.
+\end{enumerate}
+
+This is summarised in \Cref{fig:lr-parsing-recap}.
+
+\section{LALR$^*$}
+In this optional section, we conclude the discussion on LR parsers by noting that an LR(1) DFA may have a very large number of states. LALR parsers, that are used by \texttt{yacc}, optimise the DFA by collapsing states. For example, consider two states
+
+\begin{center}
+    \begin{tikzpicture}
+        \node[rectangular state,inner sep=1pt,opacity=1.0] (s4) {
+$\begin{array}{l}
+ A \to a \bullet \alpha,c \\
+ B \to b \bullet \beta, c \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,opacity=1.0] (s5) at ($(s4.east) + (2cm, 0cm)$) {
+$\begin{array}{l}
+ A \to a \bullet \alpha,d \\
+ B \to b \bullet \beta, d \\
+\end{array}$};
+    \end{tikzpicture}
+\end{center}
+
+These states have the same ``core items'', differing only in terms of the lookahead. Hence, they can be merged into the single state
+
+\begin{center}
+    \begin{tikzpicture}
+        \node[rectangular state,inner sep=1pt,opacity=1.0] (s4) {
+$\begin{array}{l}
+ A \to a \bullet \alpha,c \\
+ A \to a \bullet \alpha,d \\
+ B \to b \bullet \beta, c \\
+ B \to b \bullet \beta, d \\
+\end{array}$};
+    \end{tikzpicture}
+\end{center}
+
+This merging will never introduce shift-reduce conflicts. For merging to introduce a shift-reduce conflict, the merged state must contain two items
+
+\begin{center}
+    \begin{tikzpicture}
+        \node[rectangular state,inner sep=1pt,opacity=1.0] (s4) {
+$\begin{array}{l}
+ \ldots \\
+ A \to \alpha \bullet b \beta,c \\
+ \ldots \\
+ B \to \gamma \bullet,b \\
+ \ldots
+\end{array}$};
+    \end{tikzpicture}
+\end{center}
+
+Either these come from the same state, or from different states. If they came from the same state, then that state already had a shift reduce conflict. If they came from different states, then consider the state (call it $q$) with the item $B \to \gamma \bullet, b$. Since we merged the two states, $q$ \textit{must} have the same ``core item'' $A \to \alpha \bullet b \beta, \?$, only with a different lookahead token, here marked $\?$. So $q$ must have a shift-reduce conflict.
+
+Hence, LALR will never introduce new shift-reduce conflicts. It might, however, introduce new reduce-reduce conflicts. Consider merging these two states
+\begin{center}
+    \begin{tikzpicture}
+        \node[rectangular state,inner sep=1pt,opacity=1.0] (s4) {
+$\begin{array}{l}
+ A \to \alpha \bullet,a \\
+ B \to \beta \bullet,b \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,opacity=1.0] (s5) at ($(s4.east) + (2cm, 0cm)$) {
+$\begin{array}{l}
+ A \to \alpha \bullet,b \\
+ B \to \beta \bullet,a \\
+\end{array}$};
+    \end{tikzpicture}
+\end{center}
+Neither of these has any conflicts. Merge them, however, and you get
+\begin{center}
+    \begin{tikzpicture}
+        \node[rectangular state,inner sep=1pt,opacity=1.0] (s4) {
+$\begin{array}{l}
+ A \to \alpha \bullet,a \\
+ A \to \alpha \bullet,b\\
+ B \to \beta \bullet,b \\
+ B \to \beta \bullet,a\\
+\end{array}$};
+    \end{tikzpicture}
+\end{center}
+Which has two reduce-reduce conflicts (which rule do you pick if you see an $a$)?
+
+If we see this, then the grammar is not in LALR(1). This means that an LR(1) parser generator is more powerful than an LALR(1) parser generator --- it can accept more grammars, but it is also less efficient, because it produces a DFA with more states. This is one of the trade-offs that we talked about at the start, that makes the space of parsers a rich tapestry rather than a homogeneous landscape!
+
+How do we build an LALR parser? There are two basic techniques. The \textit{naive} technique is to build the LR(1) parser and then merge states. The smarter, \textit{step-by-step} technique involves checking, every time you produce an LR(1) state, if there are any states it can be merged with. 
+
+What this means, by the way, is that building an LALR parser is more expensive than building an LR parser, but running an LALR parser is faster than running an LR parser.
+
+Finally, we can see that LALR parsers tend to struggle with error detection and reporting. Recall that we can, in effect, fill the empty cells in the ACTION table with detailed error reporting. Merging states merges \textit{rows}, and thus cells with different error reporting. This makes error reporting hard with LALR, and is another example of the trade-offs we have to consider when building parsers!
+
+\section{Partial Evaluation: From Combinators to Generators$^*$}\label{section:partial-evaluation}
+\textit{This optional section is based on \href{https://dl.acm.org/doi/pdf/10.1145/215465.215579}{The Essence of LR Parsing} by} \citet{sperber-1995}, \textit{and \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{A Typed, Algebraic Approach to Parsing} by} \citet{krishnaswami-2019}. \textit{It is a continuation of} \Cref{section:parser-combinator} and \Cref{section:linear-parser-combinators}.
+
+We have seen both parser combinators (\Cref{section:parser-combinator}) and parser generators. Parser combinators allow you to use high-level abstractions, and are therefore easy to construct. Parser generators check for grammatical properties -- is your grammar in LL(1), LR(1), etcetera. We have seen how to ``have your cake and eat it too'': we can use \textit{the type system} to guarantee that our combinator will run in linear time. (\Cref{section:linear-parser-combinators}). 
+
+But there is, perhaps, more of one's cake to have, and to eat. We've already seen that, by using high level abstraction, we can build a higher-order function \texttt{infix} from grammar (specified by a list of operators and associativity rules, ordered by precedence) to parser combinator. This higher order function acts quite like a parser generator. For example, here is how we can use \texttt{infix} to \textit{generate} a parser for parsing arithmetic expressions:
+
+\begin{minted}[bgcolor=backcolour]{ocaml}
+(*num a parser combinator that matches numbers, defined elsewhere*)
+let arith = fix (fun arith ->
+  infix [(Right, chr '^' ==> always Float.pow);
+         (Left, chr '*' ==> always Float.mul);
+         (Left, chr '+' ==> always Float.add)]
+         (any [num; paren arith])
+)
+\end{minted}
+
+The key is that \texttt{infix} takes the grammar as an argument, and returns a parser combinator, thereby acting as a parser generator. 
+
+More to the point, here is a higher order function, in \texttt{OCaml}, that takes a grammar and returns a parser combinator.
+
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let parser_generator grammar =
+  let dfa    = generate_dfa    grammar in
+  let action = generate_action dfa in
+  let goto   = generate_goto   grammar dfa in
+
+  let parser items input = (
+
+    let act_on command = (
+      match command with
+      | ResultOfReduce(nonterminal, dot, input) -> 
+        if dot == 0 then
+          if accepting nonterminal then 
+            match input with
+            | $::[] -> ResultAccept()
+            | _     -> ResultReject("$" expected)
+          else act_on (parser (goto items nonterminal) input)
+        else ResultOfReduce(nonterminal, dot - 1, input)
+     ) in 
+    
+    match (action, items, input) with
+      | Shift(q)               -> act_on (parser q ts) 
+      | Reduce(n, nonterminal) -> 
+        match n with 
+        | 0 -> act_on (parser (goto items nonterminal) input)
+        | n -> ResultOfReduce(nonterminal, n-1, input)
+    ) in 
+    parser
+\end{minted}
+This looks perfectly fine, and in some sense, it is \textit{semantically} a parser generator. \textit{Practically}, however, it is not. The reason for this is that it relies on \textit{abstraction}, and fundamentally, abstraction is \textbf{slow}. Let's take a look, for instance, at the \texttt{generate\_action} function
+
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let get_action items delta lookahead item = match item with
+  | Item(a, alpha, lookahead::beta, c) -> [Shift delta(items, lookahead)]
+  | Item(a, alpha, [], lookahead)      -> [Reduce(length alpha, a)]
+  
+let generate_action (t, n, p, s) (start, states, delta) =
+  let action items lookahead = (
+    let actions = map (get_action items delta lookahead) items in
+    match actions with
+      | [act] -> act
+      | _     -> raise Error()
+  ) in
+  action
+\end{minted}
+Basically, this code takes the grammar \texttt{t, n, p, s} and the dfa \texttt{start, states, delta}, and creates an action function. The action function will take in the current set of items and the current lookahead, and will look through each of the items to filter out the possible actions. When we have only one action, then we will just return it. 
+
+Note that this code works for \textit{any} grammar, since we have written it in a general, abstract way. Note that the cost of that is that our action function re-computes the ACTION table every time it is called. In contrast, our ACTION table is \textbf{not} abstract (it looks a lot like low level code), but it is much more efficient. 
+
+In fact, this is why the linear time parser combinator we produced previously is 4.5 to 125 times slower than the parser generator, \texttt{ocamlyacc}. 
+
+A question is therefore --- can we have our cake and eat it too? Can we write code that we prefer to write: the abstract, general code of \texttt{generate\_action} above, but, once the grammar is specified, is turned into code that the computer prefers to run: the concrete, specific ACTION table. That is, can we define some function \texttt{f} such that the result of
+\begin{minted}[bgcolor = backcolour]{ocaml}
+f (parser_generator grammar)
+\end{minted}
+Is a fast, low-level function that looks up ACTION and GOTO tables.
+
+The answer is \textit{yes, by partial evaluation}. \texttt{f} is known as a partial evaluator.
+
+\subsection{Partial Evaluation}
+Partial evaluation is a way of transforming inefficient, but abstract code, to efficient, specialised code. It is a type of \textit{optimisation} that evaluates code as much as possible, in order to eliminate the inefficiency that results from abstraction. 
+
+For example, consider the following \texttt{pow} function, that takes in two numbers \texttt{exponent} and \texttt{x}, and raises \texttt{x} to the power of \texttt{exponent}. 
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let rec pow exponent x = 
+  if exponent = 0 then 1
+  else x * pow (exponent - 1) x
+\end{minted}
+Now using this function, we can define a \texttt{square} function
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x = pow 2 x
+\end{minted}
+This \texttt{square} function is much less efficient than the one that you would write \textit{if} you knew that all you needed to do was square \texttt{x}
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x = x * x
+\end{minted}
+This emphasises the trade-off between abstraction and efficiency. \texttt{pow} creates a layer of abstraction, abstracting over the \texttt{exponent} as well as the base, \texttt{x}. This makes it more expressive and more general. However, a specialised function, written with the assumption \texttt{exponent = 2}, is able to bypass the machinery set up to cope with generality, and therefore is more efficient. 
+
+Let's now see how \texttt{partial-evaluate pow 2} works. A partial evaluator takes \texttt{pow 2}, which, after inlining the function and performing the substitution, looks like
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x =   
+  if 2 = 0 then 1
+  else x * pow (2 - 1) x
+\end{minted}
+Since the value \texttt{2} is known, we can evaluate the \texttt{2=0} expression
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x =   
+  if false then 1
+  else x * pow (2 - 1) x
+\end{minted}
+Which allows us to evaluate the \texttt{if} expression.
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x = x * pow (2 - 1) x
+\end{minted}
+The expression \texttt{2-1} may be evaluated too.
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x = x * pow 1 x
+\end{minted}
+We can then inline and evaluate \texttt{pow 1 x}
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x = x * x * pow 0 x
+\end{minted}
+We can then inline and evaluate \texttt{pow 0 x}
+\begin{minted}[bgcolor = backcolour]{ocaml}
+let square x = x * x * 1
+\end{minted}
+We can't evaluate any further, because \texttt{x} is not known. The end result is \textit{not quite}, but \textit{almost} as efficient, as the \texttt{square} function that we wrote by hand. 
+
+This example shows how a partial evaluator can take a function, \texttt{pow}, and some inputs which are known (these inputs are called \textit{static}), \texttt{exponent}, and \textit{evaluate} \texttt{pow} applied to the \textit{partial} argument \texttt{exponent}. This produces some code that can take in the unknown inputs (these inputs are called \textit{dynamic}), and has the \textit{same semantics} as \texttt{pow 2 x}, but is more efficient. 
+
+More generally, assume we have some code $q$ that is waiting on some static inputs $s$ and some dynamic inputs $d$. That is, $q \; s \; d$ is a \textit{closed} program which evaluates to a value. A partial evaluator $P$, when applied to $q$ and $s$, produces a \textit{new} piece of code $q_s$, such that $q_s \; d = q \; s \; d$
+\[P(q, s) \;  d = q_s \; d = q \; s \; d\]
+You can see partial evaluation as the \textit{opposite} direction to abstraction. Abstraction makes code \textit{more general} by replacing \textit{static} values, like \texttt{2}, with \textit{dynamic} arguments, like \texttt{exponent}. At run time, when the dynamic argument (\texttt{exponent}) is bound to a static value (\texttt{2}), the abstract function \textit{evaluates} to the specialised code. 
+
+Partial evaluation makes code \textit{less} general by replacing \textit{dynamic} arguments, like \texttt{exponent}, with static values, like \texttt{2}, and evaluates the abstract code as much as possible to recover the most specific form of the code.
+
+Real world partial evaluators exist for \href{https://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/lang/scheme/impl/similix/0.html}{\texttt{Scheme}} and \href{http://phoenix.inria.fr/software/past-projects/tempo.html}{\texttt{C}}, among others.
+
+Partial evaluation relies on identifying which \textit{expressions} are \textcolor{selected}{\textbf{static}}, or known, and which arguments are \textcolor{highlight}{\textbf{dynamic}}, or unknown. The process of identifying if an expression is static or dynamic is known as binding-time analysis. 
+\begin{center}
+\begin{tikzpicture}
+    \node (code) {
+    \begin{lstlisting}[style=ocaml-reg]
+let rec pow exponent x = 
+  if exponent = 0  then 1
+  else x * pow (exponent -  1) x
+    \end{lstlisting}
+    };
+
+    \node[rectangle, rounded corners = 0.4ex, fill=selected, minimum height = 3.2ex] (e1) at ($(-0.02, 0.60)$) {\textcolor{white}{\texttt{exponent}}};
+    \node[rectangle, rounded corners = 0.4ex, fill=highlight, minimum height = 3.2ex] (e2) at ($(1.44, 0.60)$) {\textcolor{white}{\texttt{x}}};
+    
+    \node[rectangle, rounded corners = 0.4ex, fill=selected, minimum height = 3.2ex] (e3) at ($(-1.77, -0.17)$) {\textcolor{white}{\texttt{exponent}}};
+    \node[rectangle, rounded corners = 0.4ex, fill=selected, minimum height = 3.2ex] (e4) at ($(0.24, -0.17)$) {\textcolor{white}{\texttt{0}}};
+    \node[rectangle, rounded corners = 0.4ex, fill=selected, minimum height = 3.2ex] (e5) at ($(2.24, -0.17)$) {\textcolor{white}{\texttt{1}}};
+
+    \node[rectangle, rounded corners = 0.4ex, fill=highlight, minimum height = 3.2ex] (e6) at ($(-2.1, -0.94)$) {\textcolor{white}{\texttt{x}}};
+    \node[rectangle, rounded corners = 0.4ex, fill=selected, minimum height = 3.2ex] (e7) at ($(0.99, -0.94)$) {\textcolor{white}{\texttt{exponent}}};
+    \node[rectangle, rounded corners = 0.4ex, fill=selected, minimum height = 3.2ex] (e8) at ($(2.96, -0.94)$) {\textcolor{white}{\texttt{1}}};
+    \node[rectangle, rounded corners = 0.4ex, fill=highlight, minimum height = 3.2ex] (e9) at ($(3.9, -0.94)$) {\textcolor{white}{\texttt{x}}};
+
+
+\end{tikzpicture}
+\end{center}
+
+We can then conclude that the expression \texttt{exponent = 0} is static. The reasoning looks like
+\begin{center}
+    \AxiomC{$\Gamma \vdash \texttt{exponent}: \textsf{Static} $}
+    \AxiomC{$\Gamma \vdash \texttt{0}: \textsf{Static} $}
+    \BinaryInfC{$\Gamma \vdash \texttt{exponent = 0}: \textsf{Static}$}
+    \DisplayProof
+\end{center}
+We hope you see that this looks a lot like type-checking, but where you only have two types, \textsf{Static} and \textsf{Dynamic}. As you will learn in \textsf{Part II Optimising Compilers}, this is known as \textit{inference-based analysis}.
+
+\subsubsection{On-line vs Off-line Partial Evaluation}
+There are two types of partial evaluation: on-line and off-line partial evaluation (more details \href{https://www.cambridge.org/core/journals/journal-of-functional-programming/article/online-and-offline-partial-evaluation-semantic-specifications-and-correctness-proofs/297804C171F96758B178B748358B9672}{here}). 
+
+The key difference is that off-line partial evaluation will perform binding-time analysis in one phase, and then partial evaluation in another. Occasionally, partial evaluation will unearth \textit{more} evaluation opportunities, but an off-line partial evaluator cannot, by default, take advantage of these. 
+
+An on-line partial evaluator iteratively performs binding-time analysis and partial evaluation. To this end, it can discover, and act on, evaluation opportunities that result from partial evaluation.
+
+An on-line partial evaluator can thus perform more evaluation, but is less efficient.
+
+\subsubsection{Binding Time Improvements}
+For a partial evaluator to be \textit{as} effective as possible, it should perform as much evaluation as possible. For example, in this expression
+\[1 + (x + 2)\]
+A naïve partial evaluator will not perform any evaluation, because $x+2$ will be classified as dynamic, so the whole expression is dynamic. 
+
+Binding time improvements can bring static expressions together, to unearth more evaluation opportunities.
+\[(1+2) + x\]
+
+\subsection{The Trick: Recovering the ACTION and GOTO tables}
+One binding time improvement in particular, known as \textbf{the Trick}, allows the partial evaluator to re-create the ACTION and GOTO tables. 
+
+Let's take a look at the \texttt{action} function.
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let action items lookahead = (
+    let actions = map (get_action items delta lookahead) items in
+    match actions with
+      | [act] -> act
+      | _     -> raise Error()
+  ) in
+\end{minted}
+
+Once you know the grammar, \texttt{delta} becomes static, but the other arguments remain dynamic. This limits evaluation opportunities, since \texttt{items} and \texttt{lookahead} are still dynamic. 
+
+The Trick (\Cpageref{content:the-trick}) exposes opportunities for evaluation by transforming \texttt{items} and \texttt{lookahead} to \textit{static} values. How is this possible? Note that there is a finite space of \texttt{items} we can see (the 12 DFA states), and a finite number of \texttt{lookahead}s that we can see ($\{\text{id}, +, *, (, ) \$ \}$). Partial evaluators therefore deploy \textbf{The Trick}, pattern-matching on each of these possibilities.
+
+Let's take a look at the \texttt{action} function after The Trick has been performed.
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let action items lookahead = (
+    let actions = (match items, lookahead with
+    | State(0), Id(x) -> map (get_action State(0) delta Id(x)) items
+    | State(0), Plus  -> map (get_action State(0) delta Plus) items
+    | ...
+    | State(2), Plus ->  map (get_action State(2) delta Plus) items) 
+    | ...) 
+    in
+    match actions with
+      | [act] -> act
+      | _     -> raise Error()
+  ) in
+\end{minted}
+Here, I've used \texttt{State(0)} to represent the list of items in state 0 of the DFA. \texttt{Id(x)} matches id, \texttt{Plus} matches $+$, and so on.
+
+Note that \textit{all} the arguments to \textt{get\_action} are now static. This means that the partial evaluator can perform evaluation. This is the result:
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}  
+let action items lookahead = (
+    let actions = (match items, lookahead with
+    | State(0), Id(x) -> [Shift(State(4))]
+    | State(0), Plus  -> []
+    | ...
+    | State(2), Plus ->  [Reduce(1, E)]
+    | ...) 
+    in
+    match actions with
+      | [act] -> act
+      | _     -> raise Error()
+  ) in
+\end{minted}
+Note that \texttt{actions} is precisely the ACTION table we constructed! 
+
+We can apply a similar trick to \texttt{goto} to re-construct the GOTO table.
+
+This is the key takeaway: with the use of a \textit{partial evaluator}, we can write high-level code in the style of parser combinators, and transform it into the efficient, low-level code produced by a parser generator.
+
+\subsection{Domain-Specific Improvements and Staging}
+If you read \href{https://dl.acm.org/doi/pdf/10.1145/215465.215579}{The Essence of LR Parsing}, you'll notice that The Trick is not the only binding time improvement used. Many others, however, depend significantly on either \textit{LR parser properties} or \textit{artefacts produced by partial evaluation}.
+
+\subsubsection{Improvements based on LR Parser properties}
+Consider the following code 
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+match (action, items, input) with
+  | Shift(q)               -> act_on (parser q ts) 
+  | Reduce(n, nonterminal) -> 
+    match n with 
+    | 0 -> act_on (parser (goto items nonterminal) input)
+    | n -> ResultOfReduce(nonterminal, n-1, input)
+\end{minted}
+One trick is to note that if \texttt{items} does not contain any item of the form 
+\[A \to \bullet \alpha \]
+Then we know $\texttt{n} \geq 1$. This allows for further specialisation. 
+
+\subsubsection{Improvements based on Partial Evaluation artefacts}
+The authors examined the code produced by the partial evaluator, and noted further opportunities for specialisation. 
+
+First, note that the argument to \texttt{act\_on} is, in the general case, \textsf{Dynamic}. This is because \texttt{act\_on} is passed the result of \texttt{parser items input}, which is of course dynamic on the \texttt{input}. 
+
+\textbf{However}, the authors noted seeing artefacts like
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let result = ResultReduce(State(2), A, input) in
+act_on result
+\end{minted}
+
+Where \texttt{State(2)} and \texttt{A} are static! Therefore, the authors programmed the partial evaluator to add another binding time improvement that unwraps the constructor and passes the static arguments into \texttt{result}, for specialisation.
+
+In addition, sometimes this specialisation could not be applied because the constructor was hidden under a function application
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let result = (fun x -> ResultReduce(State(2), A, x)) input in
+act_on result
+\end{minted}
+The partial evaluator cannot automatically detect that evaluating this function application is fine, since the input is dynamic. However, since all the function does is plonk it into a constructor, we know that evaluating this function application is actually alright, in spite of the dynamic input. So this represents another improvement you can program your partial evaluator to detect.
+
+\subsubsection{Multi-Stage Programming}
+\textit{This section is based on \href{https://link.springer.com/chapter/10.1007/978-3-540-25935-0_3}{A Gentle Introduction to Multi-Stage Programming}, by} \citet{taha-2004}.
+
+The feeling we hope you are getting is that Partial Evaluation seems to have a small number of universal transformations that are worth exploring (\textbf{The Trick}) and a large number of very domain specific transformations, which don't seem to be very re-usable. It also hinders automation --- it is hard for a partial evaluator to be very useful, since so much of what it should or should not do depends on very domain specific properties.
+
+Perhaps this was a contributing factor to the decline of Partial Evaluation as a research field. It has since been re-born, however, in the form of \textit{Multi-Stage Programming}. The idea is that you give the programmer language tools that allow them to control \textit{precisely} what is evaluated, and when. This allows for much more fine grained control, and thus better results than partial evaluators that claim to be able to perform the best sort of partial evaluation automatically. 
+
+A real world example of this is \href{https://okmij.org/ftp/ML/MetaOCaml.html}{\texttt{MetaOCaml}}, a multi-stage programming extension of \texttt{OCaml}. \texttt{MetaOCaml} extends \texttt{OCaml} with three constructs:
+
+\textbf{Brackets:} \texttt{.<$e$>.} This \textit{suspends} evaluation. For example, running \texttt{.<1+2>.} returns \texttt{.<1+2>.}, not \texttt{3}. A partial evaluator returns code, whose evaluation is suspended until run-time.
+
+\textbf{Escape:} \texttt{.{$\sim$}}$e$. This allows for evaluation under the brackets, and is useful for performing evaluation within a suspended computation. For example, let's say we have a function \texttt{fun x -> .<x * x>.}. Assume we apply this function to \texttt{.<1+2>.}. We will get \texttt{fun x -> .<.<1+2>. * .<1+2>.>.}, which will not type check, because we are multiplying two pieces of code together! Rather, we want to \textit{escape} the brackets. So we write
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let times2 x = .<.~x * .~x>.;;
+\end{minted}
+Now we get the expected
+\[\texttt{times2 .<1+2>.} \leadsto \texttt{.<(1+2)*(1+2)>.}\]
+
+\textbf{Run:} \texttt{.!}$e$. This allows for the evaluation of code. So 
+\[\texttt{.! .<(1+2)*(1+2)>.} \leadsto \texttt{9}\]
+
+Using these tools, we can, in effect, construct our own partial evaluators. For example, we can annotate the \texttt{power} function as such
+
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let rec power (n, x) =
+  match n with
+  0 -> .<1>. | n -> .<.~x * .~(power (n-1, x))>.;;
+\end{minted}
+
+And then define as such
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let square x = .! .<fun x -> .~(power (2,.<x>.))>.;;
+\end{minted}
+
+Now let's see what happens when we reduce \texttt{.<fun x -> .{$\sim$}(power (2,.<x>.))>.}.
+
+We want to reduce
+\[
+\begin{array}{rl}
+     &\texttt{.<fun x -> .{$\sim$}(power (2,.<x>.))>.}\\
+     \leadsto&\texttt{.<fun x -> .{$\sim$}(.<x>.) * .{$\sim$}(power (1,.<x>.))>.}  \\
+     \leadsto&\texttt{.<fun x -> x * .{$\sim$}(power (1,.<x>.))>.}\\
+     \leadsto&\texttt{.<fun x -> x * x * .{$\sim$}(power (0,.<x>.))>.}\\
+     \leadsto&\texttt{.<fun x -> x * x * .{$\sim$}(.<1>.)>.}\\
+     \leadsto&\texttt{.<fun x -> x * x * 1>.}
+\end{array}
+\]
+Which is exactly what our partial evaluator would have done.

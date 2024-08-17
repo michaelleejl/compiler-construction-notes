@@ -1,0 +1,17 @@
+\begin{tikzpicture}
+\node[rectangular state] (cl) {$A \to \alpha \bullet c \beta, a$};
+\node[rectangular state,anchor=north west] (cr) at ($(cl.north east) + (2cm,0)$) {$A \to \alpha c \bullet \beta, a$};
+
+\node[rectangular state,anchor=north west] (bl) at ($(cl.south west) + (0,-1cm)$) {$A \to \alpha \bullet B \beta, a$};
+\node[rectangular state,anchor=north west] (br) at ($(bl.north east) + (2cm,0)$) {$A \to \alpha B \bullet \beta, a$};
+
+% \node[rectangular state,anchor=north west] (el) at ($(bl.south west) + (0,-2cm)$)  {$A \to \alpha \bullet B \beta, a$};
+% \node[rectangular state,anchor=north west] (er) at ($(el.north east) + (2cm,0)$) {$B \to \bullet \gamma, b$};
+% p
+% \node[anchor=south west,inner sep=0pt] at ($(el.north west) + (0,0.5cm)$) { For each $b \in \textsc{first}(\beta a)$: };
+
+\draw[->] (cl) -- node[above] { $c$ } (cr);
+\draw[->] (bl) -- node[above] { $B$ } (br);
+% \draw[->] (el) -- node[above] { $\epsilon$ } (er);
+
+\end{tikzpicture}

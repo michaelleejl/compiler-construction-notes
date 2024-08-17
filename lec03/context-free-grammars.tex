@@ -1,17 +1,17 @@
 \chapter{Theoretical Foundations of Parsing}\label{chapter:parse-foundations}
 
-\section{Overview}
 \begin{center}
     \import{figures}{context}
 \end{center}
 
+\section{Overview}
 The parser is responsible for taking the token stream and transforming it into a syntax tree. In doing so, it recovers the structure of the token sequence. Parsers are fairly complicated, and so the next five chapters will be dedicated to them. In this chapter, we'll begin with the theoretical foundations of parsing, by looking at context-free grammars.
 
 When we looked at lexing, we introduced the Regular Expression as the correct mathematical tool for specifying the tokens of a language, and the Finite Automaton as the correct tool for describing how lexers work.
 
-The situation for parsers, unfortunately, is a little more complex. Different parsers are specified using different mathematical tools, and different parsers need to be described using different mathematical machinery. However, it is still possible to take a universal view. At the end of this chapter, we hope to convince you that, in practice, a parser specification \textit{is typically} an \textit{unambiguous}, \textit{deterministic} Context-Free Grammar, and a parser can \textit{typically} be thought of as a \textit{deterministic} Push-Down Automaton. 
+The situation for parsers is a little more complex. Different parsers need to be specified and described using different tools. However, it is still possible to take a universal view. At the end of this chapter, we hope to convince you that, in practice, a parser specification \textit{is typically} an \textit{unambiguous}, \textit{deterministic} Context-Free Grammar, and a parser can \textit{typically} be thought of as a \textit{deterministic} Push-Down Automaton. 
 
-In order to do this, we will first explore what a parser is (\Cref{section:parsers}) and how to specify one (\Cref{section:parser-generators}).
+First, we will explore what a parser is (\Cref{section:parsers}) and how to specify one (\Cref{section:parser-generators}).
 
 \subsection{Parsers}\label{section:parsers}
 \begin{figure}[h]
@@ -39,16 +39,21 @@ A parser checks that programs have the right sort of structure, and makes that s
 \end{align*}
 Note that such a specification would immediately eliminate the aforementioned invalid program from consideration --- there is no rule that matches \texttt{then b else c}.
 
-When a specification is written this way, it is known as \textit{Backus-Naur Form} or BNF. It is the standard way to specify the syntactic structure of valid programs, not just for toy languages. For example, here is a small fragment of the \texttt{C} specification, which is written in the same way
+When a specification is written this way, it is known as \textit{Backus-Naur Form} or BNF. It is the standard way to specify the syntactic structure of valid programs, not just for toy languages. For example, \Cref{figures:c-syntax} shows a small fragment of the \texttt{C} specification,
 
-\begin{center}
+\begin{figure}[H]
+    \centering
     \import{figures}{c-syntax}
-\end{center}
+    \caption{A fragment of the \texttt{C} specification}
+    \label{figures:c-syntax}
+\end{figure}
 
 Recall, additionally, that in \textsf{Part IB Semantics of Programming Languages}, we defined a notion of a \textit{value}, or an \textit{irreducible} term. Examples of irreducible terms in \textit{L1} are $n$, $b$, and $l$. By irreducible, we mean that they are atomic in some sense --- they cannot stand for / represent anything but themselves. Hence, you'd never write a specification that looks like
 \[ n ::= \ldots \]
-Just like how you can create a lexer by simply specifying it, you can create a parser by declaring its specification. Here is a fragment of a parser specification for \textit{L1}
+Just like how you can create a lexer by simply specifying it, you can create a parser by declaring its specification. \Cref{listing:parser-spec-l1} is a fragment of a parser specification for \textit{L1}
 
+\begin{code}[A small fragment of a parser specification for \textit{L1}]
+\label{listing:parser-spec-l1}
 \begin{minted}[bgcolor=backcolour]{ocaml}
 expr:
   | expr ADD expr                { Past.Op(get_loc(), $1, Past.ADD, $3) }
@@ -56,7 +61,7 @@ expr:
   | WHILE expr DO expr           { Past.While(get_loc(), $2, $4) }
   | ...
 \end{minted}
-
+\end{code}
 Ignoring, for the moment, the scary looking stuff in braces (\texttt{Past.X} is just a \textit{node} in the generated syntax tree, and \texttt{\$i} refers to the $\text{i}^\text{th}$ token in the sequence), this is effectively how you would write the definition of \textit{L1} down on paper. 
 
 Put this definition in a \texttt{parser.mly} file, and run \texttt{ocamlyacc parser.mly}, and you get a parser. \texttt{ocamlyacc} is a parser \textit{generator}. It is one possible technique for automatically constructing a parser from its specification.
@@ -132,7 +137,6 @@ Second, as you will see next year in \textsf{Part II Types}, it can be useful to
     & \textbf{\textsf{skip}} \mid e_1 ; e_2 \mid \textbf{\textsf{while}} \, e_1 \, \textbf{\textsf{do}} \, e_2 \mid \{ t \} \\
     t ::= & \, !l \mid l := e \mid \ldots
 \end{align*}
-
 This may seem like just a syntactic difference that isn't particularly meaningful. Recall that the entire point of specifying semantics in this manner, rather than in natural language, is to be \textit{really precise} about every bit of the language. Being able to explicitly separate effectful terms from pure expressions is therefore useful in being precise, and CFGs give us the power to do this.
 
 \subsubsection{Terminals $T$}
@@ -155,7 +159,7 @@ as $e$ \textit{could stand for} $e_1 + e_2$. This is a natural, algebraic way of
 
 Second, formal descriptions are important! Let's consider the formal definition of the production
 \[P \subseteq N \times (N \cup T)*\]
-This tells us that a production rule \textit{must} only expand non-terminals. Importantly, this (sensibly) rules out productions that try to expand non-terminals.
+This tells us that a production rule \textit{must} only expand non-terminals. Importantly, this (sensibly) rules out productions that try to expand terminals.
 
 Perhaps more subtly, it means that you cannot write a rule that looks like 
 \[*e ::= \ldots\]
@@ -170,10 +174,9 @@ Recall that when we defined $L1$, it was clear what a program was (any expressio
     & \textbf{\textsf{skip}} \mid e_1 ; e_2 \mid \textbf{\textsf{while}} \, e_1 \, \textbf{\textsf{do}} \, e_2 \mid \{ t \} \\
     t ::= & \, !l \mid l := e \mid \ldots
 \end{align*}
-
 You might be asking what a \textit{program} is in this language. Is it $e$ or $t$? The answer is that it's your choice, but you \textit{do have to choose}. If your answer is $e$, then your \textit{start symbol} is $e$ (and symmetric for $t$).
 
-\subsection{CFGs and Programming Languages}\label{section:cfg-and-pl}
+\subsection{CFGs and Programming Languages$^*$}\label{section:cfg-and-pl}
 Before we proceed any further in understanding the CFG, we will perform a quick sanity check to convince ourselves that it is a somewhat sensible starting point. 
 
 As our specification should be formal (it should have mathematically proven and well-understood properties), we will restrict ourselves to the class of formal languages. 
@@ -239,7 +242,6 @@ We'll use the following notational convention: lowercase symbols like $a$ refer 
     A, B, C, \ldots \in & \, N \\
     \alpha, \beta, \gamma, \ldots \in & \, (N \cup T)*
 \end{align*}
-
 We'll also be defining the notion of a \textit{derivation step}.  Assume we had the production rule 
 \[A \rightarrow \gamma\]
 Using our notational convention, we know that this means that the \textit{non-terminal} $A$ can expand to a sequence of terminal and non-terminals $\gamma$. Assume we had some string
@@ -268,6 +270,7 @@ These definitions are collated in \Cref{tab:par-collated-notation}.
         \textbf{Notation} & \textbf{Meaning} \\ \hline
         $a, b, c, \ldots$ & Terminal \\
         $A, B, C, \ldots$ & Non-terminal \\
+        $u, v, w, \ldots$ & Sequence of terminals \\
         $\alpha, \beta, \gamma, \ldots$ & Sequence of terminals and non-terminals \\
         $\Rightarrow$ & Derivation step\\
         $\Rightarrow^{*}$ & Zero or more derivation steps\\
@@ -294,7 +297,6 @@ Recall our goal for this section --- to formalise the notion of a context-free g
 The \textit{derivation} of a word $w$ refers to the \textit{means of production}. It is a sequence of one or more derivation steps that go from our start symbol to the word $w$. For example, recalling our context-free grammar $G_1$, defined on \Cpageref{cfg-g1}, we can produce a derivation for the word $(x + y) * (z + x)$. 
 
 We shall use $\nonterminal{E}$ to indicate a non-terminal $E$ that \textit{can} be expanded.
-
 \begin{center}
 \import{figures}{example-deriv}
 \end{center}
@@ -349,7 +351,7 @@ There are two important points in the definition. First, a word must contain no 
 \subsubsection{CFGs are More Powerful than Regular Expressions}
 We have established that CFGs are language producers. We have also introduced the notion of a \textit{derivation}, as a mechanism for producing words in a language. In this section, we investigate the \textit{space} of languages that can be produced using a CFG. In particular, we make the argument that CFGs are \textbf{more powerful} than regular expressions. 
 
-This argument has two parts. First, every regular language can be generated by an appropriate Context-Free Grammar. Second, there exist context free grammars that can generate languages that are not regular. 
+This argument has two parts. First, every regular language can be generated by an appropriate Context-Free Grammar. Second, there exists context free grammars that can generate languages that are not regular. 
 
 The first part of this argument is a little tricky, because we don't have the right characterisation of regular languages! We've seen regular languages characterised in terms of regular expressions, and in terms of finite automata. We have seen context-free grammars characterised by production rules. If we try to start here, we'll be comparing apples and oranges.
 
@@ -498,11 +500,14 @@ F &\to& (E) \mid id & \text{(factors)}\\
 \]
 Is a grammar such that $L(G_1) = L(G_2)$: remember languages are defined in terms of \textit{words}, not trees. We leave the proof of this as an exercise.
 
-Effectively, we have encoded the operator precedence rule ($*$ before $+$). The following then becomes the unique derivation for $x + y * z$:
+Effectively, we have encoded the operator precedence rule ($*$ before $+$). \Cref{figure:unambiguous-parse} following then becomes the unique derivation for $x + y * z$:
 
-\begin{center}
+\begin{figure}[H]
+    \centering
     \import{figures}{unambiguous-parse}
-\end{center}
+    \caption{The unambiguous derivation tree for $x+y*z$ using grammar $G_2$}
+    \label{figure:unambiguous-parse}
+\end{figure}
 
 Generally, ambiguity is eliminated through a combination of \textit{precedence} and \textit{associativity} rules. 
 
@@ -543,7 +548,7 @@ Informally, a Pushdown Automaton (PDA) is a Finite Automaton augmented with a st
 \begin{center}
     \import{figures}{dfa-ab}
 \end{center}
-By extending this finite automaton with a stack, we are able to create a pushdown automaton that accepts the language $L(\text{a}^n\text{b}^n)$ (which, if you recall, is not regular)
+By extending this finite automaton with a stack (we will explain what the expression $S \to SS$ means in just a moment), we are able to create a pushdown automaton that accepts the language $L(\text{a}^n\text{b}^n)$ (which, if you recall, is not regular)
 \begin{center}
     \import{figures}{pda-ab}
 \end{center}
@@ -559,7 +564,7 @@ You should already be familiar with $Q$, $\Sigma$, and $q_0$ --- these are exact
 
 $\Gamma$ and $Z$ are new. $\Gamma$ describes the space of stack symbols, and $Z$ the initial stack symbol (think of it as the stack's initial state).
 
-The transition relation, $\delta$, is similar to that of an NFA. An NFA's transition relation looked like
+The transition relation, $\delta$, is similar to that of an NFA. For an NFA, we had
 \[\delta(q, a) \subseteq Q\]
 Hence, we could say that $q' \in \delta(q, a)$ means that when the machine is in state $q$, and sees character $a$ in the input, it can transition to state $q'$.
 
@@ -571,14 +576,17 @@ As an example, in the PDA for $\text{a}^n\text{b}^n$, we have the transition
 \[\delta(\text{q}_1, \text{a}, \text{S}) = \{(\text{q}_1, \text{SS})\}\]
 Which means that when we are in state q$_1$, we see the character `a' in the input, and we see the stack symbol `S' at the top of the stack, we transition back into state q$_1$ and push `S' onto the stack (the transition specifies `SS' since the first \textit{replaces} the `S' we have popped off the stack, and the second pushes a new `S' onto the stack).
 
-You should also note that, by definition, PDAs are non-deterministic. For finite automata, this does not matter too much, since non-deterministic finite automata and deterministic finite automata are in some sense equivalent. Hopefully, this is also the case for PDAs, since non-deterministic PDAs are not very feasible to construct, and thus not very useful. \footnote{Given that we specified that we would consider \textit{deterministic} PDAs, you should be getting a sinking feeling that we will not be so lucky.}
+You should also note that, by definition, PDAs are non-deterministic. For finite automata, this does not matter too much, since non-deterministic finite automata and deterministic finite automata are in some sense equivalent. Hopefully, this is also the case for PDAs, since non-deterministic PDAs are not very feasible to construct, and thus not very useful. \footnote{Given that we will consider \textit{deterministic} PDAs, you might suspect that we will not be so lucky.}
 
 \subsection{Instantaneous Description}
 We have defined --- both informally and formally --- the pushdown automaton. Our notation leaves a little to be desired, though. We'd like to consider the pushdown automaton as a \textit{dynamic} machine, but our description so far is \textit{static}. We want some way to describe a \textit{snapshot} of a pushdown automaton in motion. 
 
-\begin{center}
+\begin{figure}[H]
+    \centering
     \import{figures}{instantaneous-description}
-\end{center}
+    \caption{An instantaneous description of a pushdown automaton}
+    \label{figure:instantaneous-description}
+\end{figure}
 
 To fully describe this snapshot, we need to identify three things
 \begin{enumerate}
@@ -587,7 +595,7 @@ To fully describe this snapshot, we need to identify three things
     \item The state of the stack
 \end{enumerate}
 
-We'll collate these three pieces of information into a tuple, that we will call an \textit{instantaneous description}.
+We'll collate these three pieces of information into a tuple, that we will call an \textit{instantaneous description} (\Cref{figure:instantaneous-description}).
 
 Formally, for all $q \in Q$, $w \in \Sigma\*$, $\alpha \in \Gamma\*$, $\langle q, w, \alpha \rangle$ is an instantaneous description.
 
@@ -716,8 +724,8 @@ At this point, it may be useful to clarify the two sources of non-determinism, w
 
 \textit{Disjunctive} non-determinism is caused by \textit{alternation}: by having more than one possible production rule to choose from. For example, 
 \[\begin{array}{rcl}
-     E&\to&\text{id}+&\text{id}  \\
-      &\mid&&\text{id}*&\text{id} 
+     E&\to&\text{id}+\text{id}  \\
+      &\mid&\text{id}*\text{id}
 \end{array}\]
 If you know the next token is $x$, this does not tell you if you should choose the first or second branch (though if you know that the first two tokens are $x+$, then you \textit{do} know. This will become important later. We can \textit{look ahead} to reduce non-determinism).
 

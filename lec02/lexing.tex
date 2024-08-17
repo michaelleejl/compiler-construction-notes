@@ -1,10 +1,10 @@
 \chapter{Lexing}
 
-\section{Overview}
 \begin{center}
 \import{figures}{context}
 \end{center}
 
+\section{Overview}
 The first part of the compiler we'll look at is the lexer. We'll start by describing what a lexer is in terms of its specification (what it does). Following this, we'll outline the techniques used to build a lexer.
 
 Somewhat confusingly, we will \textbf{not} teach you how to build a lexer. Rather, we will teach you how to build programs that build lexers from their specifications. These programs are known as \textbf{lexer generators}.
@@ -44,7 +44,7 @@ Say this specification is saved in a \texttt{lexer.mll} file. If you run \texttt
 
 \texttt{ocamllex} is a lexer \emph{generator}. It's a piece of machinery that takes any specification of a lexer and produces a lexer. Once again, this chapter will teach you how to build a lexer generator, which you can then use to build your own lexers, rather than how to build \textit{a} lexer for \textit{a} specification.
 
-\subsection{Roadmap: Building lexer generators}
+\subsection{Roadmap: Building Lexer Generators}
 Recall what a lexer should do: take a sequence of characters and transform it into a sequence of tokens. This means that we can build the lexer in two parts:
 
 \textbf{Step 1} (\textit{Classifier}). Build a \textit{classifier} that takes a sequence of characters and \emph{classify} it as one of the possible tokens (just \emph{one} token, not a sequence). For example, the classifier will classify \texttt{if} as \textsc{if}, but will fail to classify \texttt{if then} as a token (since this cannot be mapped onto a \emph{single} token). We will build a classifier in two steps.
@@ -72,7 +72,7 @@ Our goal is to take a set of \textit{regular expressions} $e$ and generate a \te
 \makeatother
 
 \subsection{Preliminary Definitions}
-Before we go into the theory proper, we should first collate a set of definitions that will be useful. 
+Before we go into the theory proper, we should first collate a set of definitions. 
 
 \begin{minipage}[t]{0.2\textwidth}
     \textbf{\textsf{Concatenation}}
@@ -85,7 +85,7 @@ Consider sets $X = \{a, b\}$, $Y = \{1, 2\}$. The concatenation $X \cdot Y = \{a
     \textbf{\textsf{Exponentiation}}
 \end{minipage}%
 \begin{minipage}[t]{0.8\textwidth}
-A special case of concatenation occurs when $X$ is concatenated onto itself some number of times $n$ (as shorthand, $X^n$). For example, if $X = \{a, b\}$, $X^2 = \{aa, ab, ba, bb\}$. Formally, 
+A special case of concatenation occurs when $X$ is concatenated onto itself $n$ times ($X^n$). For example, if $X = \{a, b\}$, $X^2 = \{aa, ab, ba, bb\}$. Formally, 
 \begin{align*}
     X^{0} &= \{ \epsilon \} \\
     X^{n+1} &= X \cdot X^n
@@ -297,7 +297,9 @@ Concretely, \Cref{fig:powerset-construction} illustrates the result of applying 
 
 \begin{figure}[H]
     \centering
+    \scalebox{0.7}{
     \import{figures}{powerset-construction}
+    }
     \caption{The result of applying the power-set construction to the example in \Cref{fig:nfa-example}}
     \label{fig:powerset-construction}
 \end{figure}
@@ -311,6 +313,7 @@ and constructs a DFA
 M' = D(M) = \langle Q',\Sigma',\delta',q'_0,F'\rangle
 \]
 The construction also satisfies a correctness theorem (once again, we elide the details). Informally, $M'$ accepts a word $w$ if and only if $M$ does. Formally, for any word $w \in \Sigma\*$, $w \in L(M)$ if and only if $w \in L(M')$. The components of $M'$ are calculated as follows:
+
 \[
 \begin{array}{rcl}
 Q' &=& \{S \mid S \subseteq Q\}\\[1ex]
@@ -330,6 +333,7 @@ Which you should read as the smallest set of nodes that contains $S$ and is clos
 \subsubsection{Computing the $\epsilon$-closure}
 Having defined the $\epsilon$-closure, we now describe, in pseudocode, an algorithm to compute it.
 
+\begin{code}[An algorithm to compute the $\epsilon$-closure]
 \begin{lstlisting}[style=pseudocode]
 push elements of S onto stack
 result := S
@@ -341,15 +345,20 @@ while stack not empty
 !\quad \quad \quad! push !$u$! on stack
 return result
 \end{lstlisting}
+\vspace{2mm}
+\end{code}
 
 \subsection{Recap: The Regular Language Problem}
 We have now defined two functions: \texttt{$N$: Regex $\rightarrow$ NFA} and \texttt{$D$: NFA $\rightarrow$ DFA}, each satisfying respective correctness theorems. By composing them together, we have a way to convert any regular expression $e$ to a DFA $M$, such that $M$ accepts a word if and only if it is in the language of $e$. We have thus solved the regular language problem.
 
 \section{Tagged DFAs as Classifiers}
 At this stage, we have solved the regular language problem. Let's consider what this gives us. Our starting point is a lexer specification, an ordered map from regular expressions to tokens.
-\begin{center}
+\begin{figure}[H]
+    \centering
     \import{figures}{lex-outline}
-\end{center}
+    \caption{A lexer specification}
+    \label{fig:lex-outline}
+\end{figure}
 
 Using our solution to the regular language problem, we can convert each of these regular expressions into NFAs. If all we care about is \emph{whether} a word is a token (i.e. we want to build a recogniser), then we can simply combine all these NFAs together using $\lor$, and then convert it to a DFA. 
 
@@ -404,15 +413,26 @@ How do we identify token boundaries? Recall that we want \emph{longest match sem
 \import{figures}{longest-match}
 \end{center}
 
-We can find these boundaries by running the classifier until failure. At this point, we know that there can be no further matches. We can then look at the \emph{last match} (the last accepting state), emit the token at that boundary, and re-start classification from that boundary. This is \emph{the lexing algorithm} 
+We can find these boundaries by running the classifier until failure. At this point, we know that there can be no further matches. We can then look at the last match, emit the token at that boundary, and re-start classification from that boundary. This is \emph{the lexing algorithm} 
+
+\begin{code}[The lexing algorithm]
+\begin{lstlisting}[style=pseudocode]
+while position < len(input):
+  q := initial state, accept_state := None, accept_position := -1
+  while not failure_state(q):
+    if accepting_state(q):
+      accept_state := q   
+      accept_position := position
+    q := transition(q, input[position])
+  if accept_state is None then raise Error()  
+  emit tag(accept_state)
+  position := accept_position
+\end{lstlisting}
+\vspace{2mm}
+\end{code}
+
 
 \textbf{Error-Checking.} What happens if there are \textbf{no} matches between start and end? Recall that the lexer additionally handles error checking --- this is an error of lexing (for example, an unclosed string), and should be reported to the user.
-
-\begin{center}
-    \begin{minipage}{0.5\textwidth}
-        \import{figures}{lex-algorithm}
-    \end{minipage}
-\end{center}
 
 We now have a \emph{lexer}, that will produce a stream of tokens. The final step is to collate these tokens into a list, noting that if the token is \textit{skip}, then it may be ignored. 
 
@@ -489,7 +509,9 @@ In addition, even if we consider a non-pathological case, where the lexer takes 
 This may be surprising, since the work done by the lexer is by far the simplest part of the compiler. The reason for this is that $n$ is the number of \emph{characters}, which is often much larger than the number of \emph{tokens}.
 
 \section{Lexing with Derivatives$^{*}$}
-You might not be particularly pleased with our method for constructing lexers, and you'd be right not to be. The method we've illustrated is rather indirect: each step is more or less simple, but there are a lot of them. In this, \textsf{\textbf{non-examinable}} section, we consider a much more direct and elegant approach. Much of this section will follow \citet{owens-2009}, an excellent tutorial on the subject that you can find \href{https://www.cambridge.org/core/journals/journal-of-functional-programming/article/regularexpression-derivatives-reexamined/E5734B86DEB96C61C69E5CF3C4FB0AFA}{here}.
+\textit{This section is based on \href{https://www.cambridge.org/core/journals/journal-of-functional-programming/article/regularexpression-derivatives-reexamined/E5734B86DEB96C61C69E5CF3C4FB0AFA}{Regular-expression derivatives re-examined} by} \citet{owens-2009}.
+
+You might not be particularly pleased with our method for constructing lexers, and you'd be right not to be. The method we've illustrated is rather indirect: each step is more or less simple, but there are a lot of them. In this, \textsf{\textbf{non-examinable}} section, we consider a much more direct and elegant approach.
 
 \subsubsection{Derivative of a regular language}
 \vspace{3mm}

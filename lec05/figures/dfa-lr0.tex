@@ -1,0 +1,202 @@
+\scalebox{0.8}{
+\begin{tikzpicture}[inner sep=1.5pt]
+\node[rectangular state] (i0) {
+$\begin{array}{l}~\\[-1.5ex]
+  S \to \bullet E \\[-0.3ex]
+  %% hereafter eps-closure
+  E \to \bullet E + T \\[-0.3ex]
+  E \to \bullet T \\[-0.3ex]
+  T \to \bullet T * F \\[-0.3ex]
+  T \to \bullet F \\[-0.3ex]
+  F \to \bullet ( E ) \\[-0.3ex]
+  F \to \bullet id
+\end{array}$
+};
+
+\node[rectangular state,anchor=north west] (i1) at ($(i0.north east) + (12ex,0)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  S \to E \bullet \\[-0.3ex]
+  E \to E \bullet + T
+\end{array}$
+};
+
+\node[rectangular state,anchor=north west] (i6) at ($(i1.north east) + (12ex,0)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  E \to E + \bullet T \\[-0.3ex]
+  %% hereafter eps-closure
+  T \to \bullet T * F \\[-0.3ex]
+  T \to \bullet F \\[-0.3ex]
+  F \to \bullet ( E ) \\[-0.3ex]
+  F \to \bullet id
+\end{array}$
+};
+
+\node[rectangular state,anchor=north west] (i9) at ($(i6.north east) + (12ex,0)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  E \to E + T \bullet \\[-0.3ex]
+  T \to T \bullet * F
+\end{array}$
+};
+
+
+
+\node[rectangular state,anchor=north] (i2) at ($(i1.south) + (0,-4ex)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  E \to T \bullet \\[-0.3ex]
+  T \to T \bullet * F
+\end{array}$
+};
+
+\node[rectangular state,anchor=north] (i5) at ($(i2.south) + (0,-5ex)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  F \to id \bullet
+\end{array}$
+};
+
+\node[rectangular state,anchor=north] (i4) at ($(i5.south) + (0,-4ex)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  F \to ( \bullet E ) \\[-0.3ex]
+ % hereafter eps-closure
+  E \to \bullet E + T \\[-0.3ex]
+  E \to \bullet T \\[-0.3ex]
+  T \to \bullet T * F \\[-0.3ex]
+  T \to \bullet F \\[-0.3ex]
+  F \to \bullet ( E ) \\[-0.3ex]
+  F \to \bullet id
+\end{array}$
+};
+
+\node[rectangular state,anchor=north] (i3) at ($(i4.south) + (0,-4ex)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  T \to F \bullet
+\end{array}$
+};
+
+
+\node[rectangular state,anchor=north] (i7) at ($(i6.south) + (0,-3ex)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  T \to T * \bullet F \\[-0.3ex]
+  %% hereafter eps-closure
+  F \to \bullet ( E ) \\[-0.3ex]
+  F \to \bullet id
+\end{array}$
+};
+
+\node[rectangular state,anchor=north west] (i8) at ($(i4.north east) + (12ex,0)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  F \to ( E \bullet ) \\[-0.3ex]
+  E \to E \bullet + T
+\end{array}$
+};
+
+\node[rectangular state,anchor=north west] (i11) at ($(i8.north east) + (12ex,0)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  F \to ( E ) \bullet
+\end{array}$
+};
+
+\node[rectangular state,anchor=south west ] (i10) at ($(i7.south east) + (12ex,0)$) {
+$\begin{array}{l}~\\[-1.5ex]
+  T \to T * F \bullet
+\end{array}$
+};
+
+\newcommand{\labelOn}[2]{\node[fill=background] at (#2.north)
+                           { \scriptsize\color{darkred} #1 }}
+
+\labelOn{$I_{0}$}{i0};
+\labelOn{$I_{1}$}{i1};
+\labelOn{$I_{10}$}{i10};
+\labelOn{$I_{11}$}{i11};
+\labelOn{$I_{2}$}{i2};
+\labelOn{$I_{3}$}{i3};
+\labelOn{$I_{4}$}{i4};
+\labelOn{$I_{5}$}{i5};
+\labelOn{$I_{6}$}{i6};
+\labelOn{$I_{7}$}{i7};
+\labelOn{$I_{8}$}{i8};
+\labelOn{$I_{9}$}{i9};
+
+%% \draw[->] (i1) -- node {$\$$} (accept); %% TODO
+\draw[->] ($(i0.north east) + (0,-1ex)$) -- node[below] {$E$} ($(i1.north west) + (0,-1ex)$);
+\draw[->] ($(i1.north east) + (0,-1ex)$) -- node[below] {$+$} ($(i6.north west) + (0,-1ex)$);
+\draw[->] ($(i6.north east) + (0,-1ex)$) -- node[below] {$T$} ($(i9.north west) + (0,-1ex)$);
+\draw[->] ($(i7.south east) + (0,1ex)$) -- node[below] {$F$} ($(i10.south west) + (0,1ex)$);
+\draw[->,rounded corners] (i0.south) -- (i0.south|-i3.west) -- node[above] {$F$} (i3.west);
+\draw[->] ($(i8.north east) + (0,-1ex)$) -- node[below] {$)$} ($(i11.north west) + (0,-1ex)$);
+\coordinate (i7fromi9) at ($(i7.north east) + (0,-1ex)$);
+\draw[->,rounded corners] (i9.south) -- node[right] {$*$} (i9.south|-i7fromi9) -- (i7fromi9);
+\draw[->] ($(i4.north east) + (0,-1ex)$) -- node[above] {$E$} ($(i8.north west) + (0,-1ex)$);
+
+
+\coordinate (i4fromi0) at ($(i4.north west) + (0,-1ex)$);
+\coordinate (i0toi4) at ($(i0.south) + (1ex,0)$);
+\draw[->,rounded corners] (i0toi4) -- (i0toi4|-i4fromi0) -- node[above] {$($} (i4fromi0);
+
+\coordinate (i5fromi0) at ($(i5.north west) + (0,-1ex)$);
+\coordinate (i0toi5) at ($(i0toi4) + (1ex,0)$);
+\draw[->,rounded corners] (i0toi5) -- (i0toi5|-i5fromi0) -- node[above] {id} (i5fromi0);
+
+\coordinate (i4toi2) at ($(i4.south west) + (0,1ex)$);
+\coordinate (i4toi2stop) at ($(i4toi2) + (-4ex,0)$);
+\coordinate (i2fromi4) at ($(i2.south west) + (0,1ex)$);
+\draw[->,rounded corners] (i4toi2)
+                       -- node[above] {$T$} (i4toi2stop)
+                       -- (i4toi2stop|-i2fromi4)
+                       -- (i2fromi4);
+
+\draw[->,loop right=90,distance=5ex] ($(i4.east) + (0,-3ex)$) to[out=-20,in=20] node[right] {$($} ($(i4.east) + (0,3ex)$);
+
+%% \draw[->] (i8) -- node {$+$} (i6);
+\coordinate (i8toi6) at ($(i8.south west) + (0,1ex)$);
+\coordinate (i8toi6stop) at ($(i8toi6) + (-3ex,0)$);
+\coordinate (i6fromi8) at ($(i6.south west) + (0,1ex)$);
+\draw[->,rounded corners] (i8toi6)
+                       -- node[above] {$+$} (i8toi6stop)
+                       -- (i8toi6stop|-i6fromi8)
+                       -- (i6fromi8);
+
+
+\coordinate (i6toi3) at ($(i6.east) + (0,-1ex)$);
+\coordinate (i6toi3stop) at ($(i6toi3) + (5ex,0)$);
+\coordinate (i3fromi6) at (i3.east);
+\draw[->,rounded corners] (i6toi3)
+                       -- (i6toi3stop)
+                       -- (i6toi3stop|-i3fromi6)
+                       -- node[above] {$F$} (i3fromi6);
+
+\coordinate (i6toi4) at ($(i6.east) + (0,-2ex)$);
+\coordinate (i6toi4stop) at ($(i6toi4) + (3.5ex,0)$);
+\coordinate (i4fromi6) at ($(i4.south east) + (0,1ex)$);
+\draw[->,rounded corners] (i6toi4)
+                       -- (i6toi4stop)
+                       -- (i6toi4stop|-i4fromi6)
+                       -- node[above] {$($} (i4fromi6);
+
+\coordinate (i6toi5) at ($(i6.east) + (0,-2ex)$);
+\coordinate (i6toi5stop) at ($(i6toi5) + (2ex,0)$);
+\coordinate (i5fromi6) at ($(i5.south east) + (0,1ex)$);
+\draw[->,rounded corners] (i6toi5)
+                       -- (i6toi5stop)
+                       -- (i6toi5stop|-i5fromi6)
+                       -- node[below] {id} (i5fromi6);
+
+\draw[->] ($(i4.north) + (-2ex,0)$) -- node[left] {id} ($(i5.south) + (-2ex,0)$);
+
+\coordinate (i7toi5) at ($(i7.south west) + (0,1.5ex)$);
+\draw[->] (i7toi5) -- node[above] {id} (i5.east|-i7toi5);
+
+\coordinate (i2toi7) at ($(i2.south east) + (0,1ex)$);
+\draw[->] (i2toi7) -- node[above] {$*$} (i7.west|-i2toi7);
+
+%% \draw[->] (i2) -- node {$*$} (i7);
+
+
+\coordinate (i0toi2) at ($(i0.south east) + (0,2.5ex)$);
+\draw[->] (i0toi2) -- node[above] {$T$} (i0toi2-|i2.west);
+
+\coordinate (i4toi3) at ($(i4.south) + (2.5ex,0)$);
+\draw[->] (i4toi3) -- node[right] {$F$}  (i4toi3|-i3.north);
+
+\end{tikzpicture}
+}

@@ -1,0 +1,21 @@
+\chapter{Garbage Collection}
+
+\section{Overview}
+We have, at this stage, completed our tour of the front and middle-ends of a compiler. With the basics completed, we'll now consider an assortment of topics. 
+
+We hope you have got the sense that the nature of compilers is deeply intertwined with the nature of the languages they compile. One way of seeing this ``assortment of topics'' is --- what features do we want our language to have, and how do we need to adapt our compiler to more efficiently and effectively support these features? 
+
+Our first such topic is garbage collection. The feature we want to support here is \textit{automatic memory management}.
+
+\subsection{Manual Memory Management}
+In \textsf{Part IB C and C++}, you got to work with manual memory management, using \texttt{alloc}, and \texttt{free}. We hope you got to grips with managing memory manually, and know how to build programs that allocate and free memory precisely when they should. 
+
+More importantly, however, we hope that you absolutely hated the experience and never want to have to manage memory yourself. We hope you realise that while manual management of memory gives you a lot of control, it is also extremely error-prone. There are three types of bugs: missing free, double-free, and use after free.
+
+
+
+Note that \textit{freeing} memory is a lot harder than \textit{allocating} memory.
+
+This motivates
+
+\subsection{}

@@ -1,0 +1,47 @@
+\begin{tikzpicture}
+\node (replay-l) {\small
+$\begin{array}{lr|l}
+\text{stack} & \text{input} & \text{action}[X,a]        ~\\[1ex]\hline&&\\[-1.5ex]
+\$           & (x+y)\$      & {\color{darkred}\text{shift } (             }\\[1ex]
+\$(          & x + y)\$     & {\color{darkred}\text{shift } x             }\\[1ex]
+\$(x         & + y)\$       & {\color{darkred}\text{reduce } F \to id    }\\[1ex]
+\$(F         & + y)\$       & {\color{darkred}\text{reduce } T \to F     }\\[1ex]
+\$(T         & + y)\$       & {\color{darkred}\text{reduce } E \to T     }\\[1ex]
+\$(E         & + y)\$       & {\color{darkred}\text{shift } +             }\\[1ex]
+\$(E+        & y)\$         & {\color{darkred}\text{shift } y             }\\[1ex]
+\$(E+y       & )\$          & {\color{darkred}\text{reduce } F \to id    }
+\end{array}$
+};
+
+\node[anchor=north west] (replay-r) at ($(replay-l.north west) + (0.5\textwidth,0)$) {\small
+$\begin{array}{lr|l}
+\text{stack} & \text{input} & \text{action}[X,a]        \\[1ex]\hline&&\\[-1.5ex]
+\$(E+F       & )\$          & {\color{darkred}\text{reduce } T \to F     }\\[1ex]
+\$(E+T       & )\$          & {\color{darkred}\text{reduce } E \to E + T }\\[1ex]
+\$(E         & )\$          & {\color{darkred}\text{shift } )             }\\[1ex]
+\$(E)        & \$           & {\color{darkred}\text{reduce } F \to (E)   }\\[1ex]
+\$F          & \$           & {\color{darkred}\text{reduce } T \to F     }\\[1ex]
+\$T          & \$           & {\color{darkred}\text{reduce } E \to T     }\\[1ex]
+\$E          & \$           & {\color{darkred}\text{reduce } S \to E     }\\[1ex]
+\$S         & \$           & {\color{darkred}\text{accept!}            }
+\end{array}$
+};
+
+\node[anchor=east] (xlabel) at ($(replay-l.north east) + (-10ex,4ex)$) { \footnotesize top of stack $X$ };
+\node[anchor=west] (alabel) at ($(replay-l.north east) + (-2ex,4ex)$) { \footnotesize next input token $a$ };
+
+\draw[darkred,->] (xlabel.east) to[out=-45,in=90]  ($(replay-l.north east) + (-7ex,-0.5ex)$);
+\draw[darkred,->] (alabel.west) to[out=-135,in=90]  ($(replay-l.north east) + (-5.5ex,-0.5ex)$);
+
+
+\node[anchor=south west,draw=darkred,draw opacity=0.7,rounded corners] 
+  at ($(replay-r.north east) + (-8ex,0)$) {\footnotesize
+    $\begin{array}{l}
+      S \to E \\
+      E \to E + T \mid T \\
+      T \to T * F \mid F \\
+      F \to (E) \mid \text{id} 
+    \end{array}$};
+
+
+\end{tikzpicture}

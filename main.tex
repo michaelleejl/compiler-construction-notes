@@ -224,6 +224,33 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
   escapeinside=!!
 }
 
+\lstdefinelanguage{Slang}{
+  keywords={
+    if,fi,then,else,ref,true,false,let,case,rec,in,begin,end,inl,inr,fst,snd,fun,nuf,case,of,while,do,od},
+  comment=[s]{(*}{*)},
+}
+\lstdefinestyle{Slang}{
+  basicstyle=\ttfamily\small,
+  basewidth=0.5em,
+  commentstyle=\color{darkgreen},
+  escapeinside={(**}{)},
+  keywordstyle=\bfseries,
+  language=Slang,
+  stringstyle=\color{darkblue},
+  showstringspaces=false,
+  mathescape=true,
+}
+
+\lstdefinestyle{ocaml-reg}{
+  language=OCaml,
+  basicstyle=\linespread{1.5}\normalsize\ttfamily\codecolor,
+  commentstyle=\color{darkpurple},
+  keywordstyle=\bfseries\color{darkred},
+  showstringspaces=false,
+  mathescape=true,
+  escapeinside=!!
+}
+
 \lstdefinestyle{pseudocode}{
   basicstyle=\ttfamily,
   escapeinside=!!,
@@ -289,9 +316,11 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
 \import{lec03}{context-free-grammars}
 \import{lec03}{parser-combinators}
 \import{lec04}{LL(k)}
-
+\import{lec05}{LR}
+\import{lec07}{typechecking}
+\import{lec07}{interpreter0}
 \import{lec08}{cps}
-
+\import{lec12}{garbage-collection}
 \bibliography{library}
 
 \end{document}

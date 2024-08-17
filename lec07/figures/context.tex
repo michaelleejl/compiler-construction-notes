@@ -1,0 +1,55 @@
+\begin{tikzpicture}
+\node[draw,darkred,rounded corners,anchor=north east,minimum height=0.1\textheight,fill=white] (lexing)
+ at (0, 0) {{\scriptsize {\textsf{lexing}}} };
+
+\node[draw,darkred,rounded corners,anchor=west,minimum height=0.1\textheight, fill=white] (parsing) at ($(lexing.east) + (0.5cm,0)$)
+{ {\textsf{\scriptsize parsing}}};
+
+\node[draw,darkred,rounded corners,anchor=west,minimum height=0.1\textheight, fill=linkcolor] (typechecking) at ($(parsing.east) + (0.5cm,0)$)
+{ \textcolor{white}{\textbf{\textsf{\scriptsize typing}}}};
+
+\node[anchor=east] (source) at ($(lexing.west) + (-0.4cm,0)$) {
+\parbox{0.11\textwidth}{\noindent\tiny
+\texttt{if a = 3}\\
+\texttt{then b else c}
+}
+};
+
+\node[anchor=west,xscale=0.5,yscale=0.6] (tree) at ($(typechecking.east) + (0.5cm,0)$) {
+\Tree [.$\color{darkred}\bullet$ [.$\color{darkred}\bullet$ $\color{darkred}\bullet$ $\color{darkred}\bullet$ ] [.$\color{darkred}\bullet$ ][.$\color{darkred}\bullet$ ]  ]
+};
+
+\node[draw,darkred,rounded corners,anchor=west,minimum height=0.1\textheight] (middle) at ($(tree.east) + (0.4cm,0)$) { \textsf{\tiny middle/back end} };
+
+\node[anchor=west,minimum width=0.2\textwidth] (low-level) at ($(middle.east) + (0.4cm,0)$) {
+\tiny
+\begin{lstlisting}[style=manual]
+!\color{darkred}L1:\,! grab !\color{darkred}2!
+    acc !\color{darkred}0!
+    push
+    const !\color{darkred}3!
+    eqint
+    branchifnot !\color{darkred}L3!
+    acc !\color{darkred}1!
+    return !\color{darkred}3!
+!\color{darkred}L2:\,! acc !\color{darkred}2!
+    ...
+\end{lstlisting}
+};
+
+\draw[darkred,->] (source) -- (lexing);
+\draw[darkred,->] (lexing) -- (parsing);
+\draw[darkred,->] (parsing) -- (typechecking);
+\draw[darkred,->] (typechecking) -- (tree);
+\draw[darkred,->] (tree) -- (middle);
+\draw[darkred,->] (middle) -- ($(low-level.west) + (0.5cm,0)$);
+
+\draw[rounded corners,dotted,black] ($(lexing.south west) + (-0.2cm,-0.6cm)$) rectangle ($(typechecking.north east) + (0.2cm,0.1cm)$);
+\node[black,fill=background,yshift=-0.6cm] at ($(lexing.south west)!0.5!(typechecking.south east)$) 
+{ \sffamily {\scriptsize front end }};
+  
+% \node[darkred,xscale=2.4,rotate=90,anchor=west] (lexing-brace) at (lexing.north) { \large \} };
+% \node[darkred] (today) at ($(lexing) + (0cm,2cm)$) { \scriptsize today's lecture };
+% \draw[thick,darkred] (today) to (lexing-brace);
+
+\end{tikzpicture}

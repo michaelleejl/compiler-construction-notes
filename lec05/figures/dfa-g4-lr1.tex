@@ -1,0 +1,149 @@
+\scalebox{0.9}{
+\begin{tikzpicture}
+
+\newcommand{\labelOn}[2]{\node[fill=background] at (#2.north)
+                           { \scriptsize #1 }}
+
+\node[rectangular state,inner sep=1pt] (s0) {
+$\begin{array}{l}~\\[-1.5ex]
+ L  \to   \bullet *R,:= \\
+ L \to  \bullet i,:= \\
+ R \to  \bullet L,\$ \\
+ L \to  \bullet *R,\$ \\
+ L \to  \bullet i,\$ \\
+ S \to  \bullet L:=R,\$ \\
+ S \to  \bullet \$,\$ \\
+ S' \to  \bullet S,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt] (s3) at ($(s0) + (2.65cm,4.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ S' \to S \bullet ,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north] (s1) at ($(s0.north) + (3.65cm,0cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ R \to  \bullet L,:= \\
+ L \to * \bullet R,:= \\
+ L \to  \bullet *R,:= \\
+ L \to  \bullet i,:= \\
+ R \to  \bullet L,\$ \\
+ L \to * \bullet R,\$ \\
+ L \to  \bullet *R,\$ \\
+ L \to  \bullet i,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west,opacity=1.0] (s4) at ($(s1.south west) + (0cm,-0.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ R \to L \bullet ,\$ \\
+ S \to L \bullet :=R,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west] (s5) at ($(s4.south west) + (0cm,-0.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ S \to R \bullet ,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt] (s2) at ($(s1) + (3.65cm,3cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ L \to i \bullet ,:= \\
+ L \to i \bullet ,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west] (s13) at ($(s2.south west) + (0cm,-0.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ L \to *R \bullet ,:= \\
+ L \to *R \bullet , \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west] (s12)  at ($(s13.south west) + (0cm,-0.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ R \to L \bullet ,:= \\
+ R \to L \bullet ,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west] (s6)  at ($(s12.south west) + (0cm,-0.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ R \to  \bullet L,\$ \\
+ L \to  \bullet *R,\$ \\
+ L \to  \bullet i,\$ \\
+ S \to L:= \bullet R,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt] (s7) at ($(s6) + (3.65cm,0.5cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ R \to  \bullet L,\$ \\
+ L \to * \bullet R,\$ \\
+ L \to  \bullet *R,\$ \\
+ L \to  \bullet i,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt] (s10) at ($(s7) + (0cm,-2.8cm)$)  {
+$\begin{array}{l}~\\[-1.5ex]
+ S \to L:=R \bullet , \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt] (s8) at ($(s7) + (2.65cm,2cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ L \to i \bullet ,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west] (s11) at ($(s8.south west) + (0.8cm,-1cm)$)  {
+$\begin{array}{l}~\\[-1.5ex]
+ L \to *R \bullet ,\$ \\
+\end{array}$};
+
+\node[rectangular state,inner sep=1pt,anchor=north west] (s9) at ($(s11.south west) + (0,-1.2cm)$) {
+$\begin{array}{l}~\\[-1.5ex]
+ R \to L \bullet ,\$ \\
+\end{array}$};
+
+\labelOn{$S_0$}{s0};
+\labelOn{$S_1$}{s1};
+\labelOn{$S_{10}$}{s10};
+\labelOn{$S_{11}$}{s11};
+\labelOn{$S_{12}$}{s12};
+\labelOn{$S_{13}$}{s13};
+\labelOn{$S_2$}{s2};
+\labelOn{$S_3$}{s3};
+\begin{scope}[opacity=1.0]\labelOn{$S_4$}{s4};\end{scope}
+\labelOn{$S_5$}{s5};
+\labelOn{$S_6$}{s6};
+\labelOn{$S_7$}{s7};
+\labelOn{$S_8$}{s8};
+\labelOn{$S_9$}{s9};
+
+
+\draw[->] (s0) to[out=80,in=200] node[above] {$S$} (s3.south west);
+\draw[->] (s0.north east) to[out=60,in=180] node[above] {$i$} (s2);
+\draw[->] (s0) -- node[above] {$*$} (s1);
+\draw[->] (s0) -- node[above] {$L$} (s4.north west);
+\draw[->] (s0) to[out=-70,in=120] node[above] {$R$} (s5.north west);
+
+%% \draw[->] (s1) -- node[above] {$*$} (s1);
+\draw[->,bend left=90,distance=0.6cm] 
+  ($(s1.north) + (-0.3cm,0)$) to[out=90,in=90] node[above] { $*$ } ($(s1.north) + (0.3cm,0)$);
+
+
+\draw[->] (s1) -- node[above] {$i$} (s2.south west);
+\draw[->] (s1) -- node[above] {$R$} (s13);
+\draw[->] (s1) -- node[above] {$L$} (s12);
+\draw[->] (s4) -- node[above] {$:=$} (s6);
+\draw[->] (s6) to[out=50,in=170] node[above] {$i$} (s8.north west);
+\draw[->] (s6) -- node[above] {$*$} (s7);
+\draw[->] (s6) to[out=-20,in=180] node[above] {$L$} (s9);
+\draw[->] (s6) -- node[above] {$R$} (s10.north west);
+%% \draw[->] (s7) -- node[above] {$*$} (s7);
+\draw[->,bend left=90,distance=0.6cm] 
+  ($(s7.north) + (-0.3cm,0)$) to[out=90,in=90] node[above] { $*$ } ($(s7.north) + (0.3cm,0)$);
+
+\draw[->] (s7) -- node[above] {$i$} (s8.south west);
+\draw[->] (s7) -- node[above] {$R$} (s11);
+\draw[->] (s7) -- node[above] {$L$} (s9.north west);
+
+%% \node[rectangle,rounded corners,draw=red,thick,minimum width=2.5cm,minimum height=1.3cm]
+%%  (highlight-s4) at (s4) { };
+
+
+\end{tikzpicture}
+}

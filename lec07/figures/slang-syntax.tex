@@ -1,0 +1,24 @@
+\newcommand{\listinline}{\lstinline[mathescape, basicstyle=\ttfamily]}
+\begin{tabular}{rcl}
+%% {\listinline!uop!} &:=& {\listinline!- $\mid$ !\;\textasciitilde} & {\small (\textasciitilde is boolean negation)}\\
+%% {\listinline!bop!} &::=& {\listinline!+ $\mid$ - $\mid$ * $\mid$ < $\mid$ = $\mid$ && $\mid$ ||!} \\
+%% {\listinline!t!} &::=& {\listinline!bool $\mid$ int $\mid$ unit $\mid$ (t) $\mid$ t * t $\mid$!}\\
+%%                 &   & {\listinline!t + t $\mid$ t -> t $\mid$ t ref!}\\
+{\listinline!e!} &::=& {\listinline!() $\;\;\mid\;\;$ (e) $\;\;\mid\;\;$ n $\;\;\mid\;\;$ x $\;\;\mid\;\;$ ? $\;\;\mid\;\;$!} \\[-0.2ex]
+&& {\footnotesize\color{darkred}(simple expressions; \listinline!?! reads an integer from standard input)}\\
+&& {\listinline!fun (x : t) -> e $\;\;\mid\;\;$ e e $\;\;\mid\;\;$ e bop e $\;\;\mid\;\;$ uop e $\;\;\mid\;\;$!}\\[-0.2ex]
+&& {\footnotesize\color{darkred}(functions, applications and operators)}\\
+&& {\listinline!true $\;\;\mid\;\;$ false $\;\;\mid\;\;$ if e then e else e $\;\;\mid\;\;$!}\\[-0.2ex]
+&& {\footnotesize\color{darkred}(booleans)}\\
+
+&& {\listinline!let x : t = e in e $\;\;\mid\;\;$ let f (x : t) : t = e in e $\;\;\mid\;\;$!}\\[-0.2ex]
+&& {\footnotesize\color{darkred}(local definitions)}\\
+&& {\listinline/!e $\;\;\mid\;\;$ ref e $\;\;\mid\;\;$ e := e $\;\;\mid\;\;$ /}\\[-0.2ex]
+&& {\footnotesize\color{darkred}(references and assignments)}\\
+&& {\listinline!begin e; e; $\ldots$ e end $\;\;\mid\;\;$ while e do e $\;\;\mid\;\;$!}\\[-0.2ex]
+&& {\footnotesize\color{darkred}(sequencing and loops)}\\
+&& {\listinline!(e, e) $\;\;\mid\;\;$ snd e $\;\;\mid\;\;$ fst e $\;\;\mid\;\;$!}\\[-0.2ex]
+&& {\footnotesize\color{darkred}(pairs)}\\
+&& {\listinline!inl t e $\;\;\mid\;\;$ inr t e $\;\;\mid\;\;$ case e of inl (x : t) ->$\;$e $\;\;\mid\;\;$ inr (x:t) ->$\;$e!} \\[-0.2ex]
+&& {\footnotesize\color{darkred}(sums; note type annotations)}
+\end{tabular}

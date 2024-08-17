@@ -1,0 +1,14 @@
+\begin{tikzpicture}
+  \node[draw] (x1)                          { $A \to \beta \bullet c \gamma$ };
+  \node[draw,anchor=north west] (y1) at ($(x1.north east) + (3,0)$) { $A \to \beta c \bullet \gamma$ };
+
+  \node[draw,anchor=north west] (x2) at ($(x1.south west) + (0,-1)$) { $A \to \beta \bullet B \gamma$ };
+  \node[draw,anchor=north west] (y2) at ($(x2.north east) + (3,0)$) { $A \to \beta B \bullet \gamma$ };
+
+  \node[draw,anchor=north west] (x3) at ($(x2.south west) + (0,-1)$) { $A \to \beta \bullet B \gamma$ };
+  \node[draw,anchor=north west] (y3) at ($(x3.north east) + (3,0)$) { $B \to \bullet \alpha_i$ };
+
+  \draw[thick,->] (x1) -- node[above] {$c$} (y1);
+  \draw[thick,->] (x2) -- node[above] {$B$} (y2);
+  \draw[thick,->] (x3) -- node[above] {$\epsilon$}  (y3);
+\end{tikzpicture}

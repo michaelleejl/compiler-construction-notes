@@ -1,0 +1,21 @@
+\centering
+\small
+$\begin{array}{c|llllll|lll}
+\hline\hline
+\multirow{2}*{\textsc{State}} & \multicolumn{6}{c|}{\textsc{Action}} & \multicolumn{3}{c}{\textsc{Goto}} \\\cline{2-10}
+                             & \text{id} & + & * & ( & ) & \$         & E & T & F \\
+\hline
+
+0  & s5 &    &    & s4 &    &  & 1 & 2 & 3\\
+1  &    & s6 &    &    &    & acc           \\
+2  &    & r \langle 1, E \rangle& s7 &    & r \langle 1, E \rangle& r \langle 1, E \rangle \\
+3  &    & r \langle 1, T \rangle & r \langle 1, T \rangle &    & r \langle 1, T \rangle & r \langle 1, T \rangle \\
+4  & s5 &    &    & s4 &    & & 8 & 2 & 3 \\
+5  &    & r \langle 1, F \rangle & r \langle 1, F \rangle &    & r \langle 1, F \rangle & r \langle 1, F \rangle \\
+6  & s5 &    &    & s4 &    & & & 9 & 3 \\
+7  & s5 &    &    & s4 &    &  & & & 10\\
+8  &    & s6 &    &    & s11&  \\
+9  &    & r \langle 3, E \rangle & s7 &    & r \langle 3, E \rangle & r \langle 3, E \rangle \\
+10 &    & r \langle 3, T \rangle & r \langle 3, T \rangle &    & r \langle 3, T \rangle & r \langle 3, T \rangle  \\
+11 &    & r \langle 3, F \rangle & r \langle 3, F \rangle &    & r \langle 3, F \rangle & r \langle 3, F \rangle
+\end{array}$

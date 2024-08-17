@@ -1,0 +1,36 @@
+\definecolor{mdgrey}{HTML}{9696A0}
+\definecolor{ltgrey}{HTML}{D5D5DC}
+
+\begin{tikzpicture}
+        \draw[draw=ltgrey, fill=ltgrey] (0, 0.01) rectangle ++(5,0.56);
+        
+        \node[anchor=south] (stack) at (3, 0) {\textcolor{mdgrey}{\textsf{\textbf{Stack $\rightarrow$}}}};
+        \node[anchor=south, draw, fill = white] (b) at (0.3,0) {\textcolor{white}{$E$}};
+        \node[anchor=south, draw, fill = white] (b1) at (0.9,0) {\textcolor{white}{$E$}};
+        \node[anchor=south, draw, fill = white] (b2) at (1.5,0) {\textcolor{white}{$E$}};
+        \node[anchor=south] (s) at (0.3,0) {$\$$};
+        \node[anchor=south] (E) at (0.9,0) {$E$};
+        \node[anchor=south] (+) at (1.5,0) {$+$};
+        
+        \begin{scope}[darkest,opacity=0.5]
+        \draw (0.0, 0) -- (0.0, 0.3);
+        \draw (0.6, 0) -- (0.6, 0.3);
+        \draw (1.2, 0) -- (1.2, 0.3);
+        \end{scope}
+
+        \node[rectangular state, anchor = north east] (i0) at (-0.8, -0.4) {
+$I_0$
+};
+
+\node[rectangular state, anchor = north] (i4) at (1.2, -0.4) {
+$I_1$
+};
+
+\node[rectangular state, anchor = north west] (i7) at (3.2, -0.4) {
+$I_6$
+};
+
+\draw[->] ($(i0.north east)$) to[out=45, in=-155] (0.6,0);
+\draw[->] ($(i4.north)$) to (1.2,0);
+\draw[->] ($(i7.north west)$) to[out=135, in=-25] (1.8,0);
+    \end{tikzpicture}

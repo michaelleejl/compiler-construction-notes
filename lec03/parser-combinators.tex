@@ -275,8 +275,10 @@ The stack is \textit{implicit} in the \textit{call stack} of the program. You ma
     $\ldots$ & $\ldots$
     \end{tabular}
 \end{minipage}%
-\section{Parser Combinators$^*$}
-Recursive descent might seem ad-hoc and unsatisfactory. We can make this less ad-hoc by the technique of parser combinators. A parser combinator is a higher-order function that allow us to construct larger parsers from smaller parsers. A parser combinator \textit{library} exposes a suite of combinators that lets us build parsers in a less ad-hoc way. In fact, if you build your library in a smart way, it can negate a lot of the disadvantages of parser combinators! Much of this section follows \citet{krishnaswami-2019}, which you can read \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{here}.
+\section{Parser Combinators$^*$}\label{section:parser-combinator}
+\textit{This optional section is based on \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{A Typed, Algebraic Approach to Parsing} by} \citet{krishnaswami-2019}.
+
+Recursive descent might seem ad-hoc and unsatisfactory. We can make this less ad-hoc by the technique of parser combinators. A parser combinator is a higher-order function that allow us to construct larger parsers from smaller parsers. A parser combinator \textit{library} exposes a suite of combinators that lets us build parsers in a less ad-hoc way. In fact, if you build your library in a smart way, it can negate a lot of the disadvantages of parser combinators! 
 
 We begin by investigating the parser combinator, and then discuss how it mitigates some of the disadvantages of recursive descent. The key observation is to notice that many functions follow the same format, for example
 
@@ -471,16 +473,16 @@ let infixr op base =
 The only difference is the \texttt{map}, which just musters the resulting trees into the right shape. Recall that sequencing constructs a \textit{tree} via a \textit{pair}. But if the right branch is \texttt{None}, then we can perform the following transformation, to make the parse tree have a nicer shape
 \begin{center}
     \begin{tikzpicture}
-           \node(s) at (1.5cm, 0) {\texttt{e}}
+           \node(s) at (1.5cm, 0) {\texttt{e}};
            
-          \node[] at ($(s.west) - (0.26cm,0.05cm)$) {$\Rightarrow$}
+          \node[] at ($(s.west) - (0.26cm,0.05cm)$) {$\Rightarrow$};
         
           \begin{scope}[xshift=0cm, yshift=-0.14cm]
             \Tree [.$\textsf{Node}$
                      {$\texttt{e}$} 
                      {$\texttt{\textbf{None}}$}
                   ]
-          \end{scope}
+          \end{scope};
      \end{tikzpicture}
 \end{center}
     
@@ -495,7 +497,7 @@ If the right branch is \texttt{Some(+, e')}, then we want to perform the followi
                      {$\texttt{e}$} 
                      {$\texttt{e'}$}
                   ]
-          \end{scope}
+          \end{scope};
            
           \node[] at ($(s.west) - (1.26cm,0.05cm)$) {$\Rightarrow$}
         
@@ -504,7 +506,7 @@ If the right branch is \texttt{Some(+, e')}, then we want to perform the followi
                      {$\texttt{e}$} 
                      {$\texttt{\textbf{Some}(+, e')}$}
                   ]
-          \end{scope}
+          \end{scope};
      \end{tikzpicture}
 \end{center}
 

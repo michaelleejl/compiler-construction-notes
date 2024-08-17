@@ -2,7 +2,7 @@
 
 \node[state,initial] (q1) [right of=q0]{ q$_1$ };
 \node[state,fill=highlight,fill opacity=0.1,text opacity=1.0] (q2) [right of=q1]{ q$_2$ };
-\node[state,accepting] (q3) [right of=q2]{ q$_3$ };
+\node[state] (q3) [right of=q2]{ q$_3$ };
 
 
 \path[->] (q1)  edge[loop above] node (sss) {a,\textsc{s} $\to$ \textsc{ss}} (q1);
@@ -43,13 +43,13 @@
 \node (ssz) at ($(stack.south) + (0,10ex)$) { \textsc{s} };
 \node (sssz) at ($(stack.south) + (0,14ex)$) { \textsc{s} };
 
-\node (id) at ($(q3) + (0,-17ex)$) {
+\node (id) at ($(q3) + (0,-10ex)$) {
 \small
 ID $\langle {\color{highlight}q_2}, {\color{highlight}bbb}, {\color{highlight}sssz} \rangle$
   };
 
 \draw[highlight,->] ($(id.north) + (-4ex,-0.5ex)$) to[out=90,in=-80] (q2);
-\draw[highlight,->] ($(id.north) + (1ex,-0.5ex)$) to[out=90,in=-90] (15.44,1.28);
-\draw[highlight,->] ($(id.north) + (6.5ex,-0.5ex)$) to[out=90,in=-90] (stack);
+\draw[highlight,->] ($(id.north) + (1ex,-0.5ex)$) to[out=60,in=-120] (15.44,1.28);
+\draw[highlight,->] ($(id.north) + (6.5ex,-0.5ex)$) to[out=40,in=-120] ($(stack.south)$);
 
 \end{tikzpicture}

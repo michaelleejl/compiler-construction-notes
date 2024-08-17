@@ -1,0 +1,57 @@
+\begin{tikzpicture}
+  \node(s){$\nonterminal{S}$}
+
+  \node[] at ($(s.east) + (0.22cm,-0.07cm)$) {$\Rightarrow$}
+
+  \begin{scope}[xshift=1cm, yshift=-0.14cm]
+    \Tree [.$\nonterminal{S}$
+             {$\nonterminal{E}$} 
+          ]
+  \end{scope}
+
+  \node[] at ($(s.east) + (1.22cm,-0.07cm)$) {$\Rightarrow$}
+
+  \begin{scope}[xshift=2cm, yshift=-0.14cm]
+    \Tree [.$\nonterminal{S}$
+             [.$\nonterminal{E}$
+             {$\nonterminal{T}$}
+             ]
+          ]
+  \end{scope}
+
+  \node[] at ($(s.east) + (2.22cm,-0.07cm)$) {$\Rightarrow$}
+
+  \begin{scope}[xshift=3cm, yshift=-0.14cm]
+    \Tree [.$\nonterminal{S}$
+             [.$\nonterminal{E}$
+                [.$\nonterminal{T}$
+                {$\nonterminal{F}$}
+                ]
+             ]
+          ]
+  \end{scope}
+
+  \node[] at ($(s.east) + (3.22cm,-0.07cm)$) {$\Rightarrow$}
+
+  \begin{scope}[xshift=4cm, yshift=-0.14cm]
+    \Tree [.$\nonterminal{S}$
+             [.$\nonterminal{E}$
+                [.$\nonterminal{T}$
+                   [.$\nonterminal{F}$
+                   {$($}
+                   {$\nonterminal{E}$}
+                   {$)$}
+                   ]
+                ]
+             ]
+          ]
+  \end{scope}
+
+  \node[] at ($(s.east) + (4.22cm,-0.07cm)$) {$\Rightarrow$}
+
+  \begin{scope}[xshift=5.1cm, yshift=-0.14cm]
+    \node(then){$\ldots$}
+  \end{scope}
+  
+\end{tikzpicture}
+

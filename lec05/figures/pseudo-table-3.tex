@@ -1,0 +1,20 @@
+\centering
+\small
+$\begin{array}{c|llllll}
+\hline\hline
+\multirow{2}*{\textsc{State}} & \multicolumn{6}{c}{\textsc{Lookahead}} \\\cline{2-7}
+                             & \text{id} & + & * & ( & ) & \$\\
+\hline
+0  & s5 &    &    & s4 &    &  \\
+1  &    & s6 &    &    &    & acc           \\
+2  &    & r \langle 1, E \rangle & s7 &    & r \langle 1, E \rangle & r \langle 1, E \rangle  \\
+3  &    & r \langle 1, T \rangle & r \langle 1, T \rangle &    & r \langle 1, T \rangle & r \langle 1, T \rangle \\
+4  & s5 &    &    & s4 &    &  \\
+5  &    & r \langle 1, F \rangle & r \langle 1, F \rangle &    & r \langle 1, F \rangle & r \langle 1, F \rangle \\
+6  & s5 &    &    & s4 &    &  \\
+7  & s5 &    &    & s4 &    &  \\
+8  &    & s6 &    &    & s11&  \\
+9  &    & r \langle 3, E \rangle & s7 &    & r \langle 3, E \rangle & r \langle 3, E \rangle \\
+10 &    & r \langle 3, T \rangle & r \langle 3, T \rangle &    & r \langle 3, T \rangle & \langle 3, T \rangle  \\
+11 &    & r \langle 3, F \rangle & r \langle 3, F \rangle &    & r \langle 3, F \rangle & r \langle 3, F \rangle
+\end{array}$

@@ -1,0 +1,110 @@
+\scalebox{0.7}{
+\begin{tikzpicture}
+\node[draw=darkest,rounded corners] (g1) {\footnotesize
+  \parbox{0.28\textwidth}{\vspace{5pt}
+    $E \to E + E
+  \mid E * E
+  \mid (E)
+  \mid \text{id}$}
+};
+
+\node[draw=darkest,rounded corners,anchor=north west] (g2) at ($(g1.north east) + (2.3,0)$) {\footnotesize
+\parbox{0.16\textwidth}{\vspace{5pt}
+  $E \to E + T \mid T $\\
+  $T \to T * F \mid F $\\
+  $F \to (E) \mid \text{id} $
+}
+  };
+\node[draw=darkest,rounded corners,anchor=north west] (g3) at ($(g2.north east) + (2.3,0)$) {\footnotesize
+\parbox{0.19\textwidth}{\vspace{5pt}
+  $E  \to T \;E' $\\
+  $E' \to + \;T\; E' \;\mid\; \epsilon$\\
+  $T  \to F\; T'$\\
+  $T' \to * \;F\; T' \;\mid\; \epsilon$\\
+  $F  \to (\;E\;) \;\mid\; \text{id}$
+}
+
+  };
+
+\node[draw=darkest,rounded corners,anchor=north west,opacity=0.25] (g1prime) at ($(g1.south west) + (0,-3.2)$) {\footnotesize
+  \parbox{0.28\textwidth}{\vspace{5pt}
+  $S \to E $ \\
+  $E \to E + E \mid E * E \mid (E) \mid \text{id}$
+    }
+  };
+\node[draw=highlight,thick,rounded corners,anchor=north west] (g2prime) at ($(g1prime.north east) + (2.3,0)$) {\footnotesize
+\parbox{0.16\textwidth}{\vspace{5pt}
+  $S \to E $\\
+  $E \to E + T \mid T $\\
+  $T \to T * F \mid F $\\
+  $F \to (E) \mid \text{id} $
+}
+
+  };
+\node[draw=darkest,rounded corners,anchor=north west] (g3prime) at ($(g2prime.north east) + (2.3,0)$) {\footnotesize
+\parbox{0.19\textwidth}{\vspace{5pt}
+  $S \to E \;\$ $\\
+  $E  \to T \;E' $\\
+  $E' \to + \;T\; E' \;\mid\; \epsilon$\\
+  $T  \to F\; T'$\\
+  $T' \to * \;F\; T' \;\mid\; \epsilon$\\
+  $F  \to (\;E\;) \;\mid\; \text{id}$
+}
+ };
+
+\node[fill=white] at ($(g1.north)$) { \scriptsize\color{darkest} $G_1$ };
+\node[fill=white] at ($(g2.north)$) { \scriptsize\color{darkest} $G_2$ };
+\node[fill=white] at ($(g3.north)$) { \scriptsize\color{darkest} $G_3$ };
+\node[fill=white] at ($(g1prime.north)$) { \scriptsize\color{white} $G'_1$ };
+\node[opacity=0.25] at ($(g1prime.north)$) { \scriptsize\color{darkest} $G'_1$ };
+\node[fill=white] at ($(g2prime.north)$) { \scriptsize\color{darkred} \bfseries $G'_2$ };
+\node[fill=white] at ($(g3prime.north)$) { \scriptsize\color{darkest} $G'_3$ };
+
+\coordinate (g1exit) at ($(g1.south) + (2ex,0)$);
+\coordinate (g2entry) at ($(g2.south west) + (0,2ex)$);
+\coordinate (g1primeexit) at ($(g1prime.south) + (2ex,0)$);
+\coordinate (g2primeentry) at ($(g2prime.south west) + (0,2ex)$);
+\coordinate (g2exit) at ($(g2.south) + (2ex,0)$);
+\coordinate (g3entry) at ($(g3.south west) + (0,2ex)$);
+\coordinate (g2primeexit) at ($(g2prime.south) + (2ex,0)$);
+\coordinate (g3primeentry) at ($(g3prime.south west) + (0,2ex)$);
+
+
+\draw[darkest,rounded corners,->](g1exit.south)
+   -- (g1exit.south|-g2entry)
+   -- node[midway,darkest,fill=background] {\scriptsize \parbox{11ex}{\centering eliminate\\ambiguity}} (g2entry);
+\draw[darkest,opacity=0.25,rounded corners,->](g1primeexit.south)
+   -- (g1primeexit.south|-g2primeentry)
+   -- node[midway,darkest,fill=background,fill opacity=1.0] {\scriptsize \parbox{11ex}{\centering \color{background}eliminate\\ambiguity}}
+      node[midway,darkest] {\scriptsize \parbox{11ex}{\centering eliminate\\ambiguity}}
+ (g2primeentry);
+
+\draw[darkest,opacity=0.25,rounded corners,->](g2primeexit.south)
+   -- (g2primeexit.south|-g3primeentry)
+   -- node[midway,darkest,fill=background,fill opacity=1.0] {\scriptsize \parbox{15ex}{\centering \color{background}eliminate\\left recursion}} 
+      node[midway,darkest]                                  {\scriptsize \parbox{15ex}{\centering                   eliminate\\left recursion}}
+ (g3primeentry);
+
+\draw[darkest,rounded corners,->](g2exit.south)
+   -- (g2exit.south|-g3entry)
+   -- node[midway,darkest,fill=background] {\scriptsize \parbox{15ex}{\centering eliminate\\left recursion}} (g3entry);
+
+  %% --            ($(g2.south west) + (0,1ex)$);
+\draw[darkest,opacity=0.25,->] ($(g1.south) + (-4ex,0)$)
+ -- node[midway,fill=white,fill opacity=1.0] { \color{background}\scriptsize add $S$ } 
+    node[midway,darkest] { \scriptsize add $S$  } 
+          ($(g1prime.north) + (-4.5ex,0)$);
+\draw[darkest,->] ($(g2.south) + (-4ex,0)$)
+ -- node[midway,darkest,fill=white] { \scriptsize add $S$ }
+ ($(g2prime.north) + (-4ex,0)$);
+\draw[darkest,->] ($(g3.south) + (-4ex,0)$) 
+ -- node[midway,darkest,fill=white] { \scriptsize add $S$, $\$$ }
+ ($(g3prime.north) + (-4ex,0)$);
+
+\node[anchor=north east] (label) at ($(g2prime.south west) + (-0.5,-0.5)$)
+{ \small\textcolor{highlight}{\textbf{Today's running example}} };
+
+\draw[darkred,thick] (label) -- (g2prime.south west);
+
+\end{tikzpicture}
+}

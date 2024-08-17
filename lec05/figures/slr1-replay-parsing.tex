@@ -1,0 +1,24 @@
+\begin{tikzpicture}
+  \node (table) {
+$\begin{array}{lr|cll}
+\text{stack,} & \text{input} & \text{state} & \text{action} & \text{reason} \\
+\hline &&&&\\[-1.5ex]
+\$, & (x+y)\$ & I_0 & {\color{highlight}\text{shift }} ( & F \to  \bullet (E) \in \delta(I_0,\epsilon) = I_0 \\
+\$(, & x+y)\$ & I_4 & {\color{highlight}\text{shift }} x & F \to  \bullet \text{id} \in \delta(I_0,\texttt{(}) = I_4 \\
+\$(x, & +y)\$ & I_5 & {\color{highlight}\text{reduce }} F \to \text{id} & \texttt{``+''} \in \textsc{follow}(F) \\
+\$(F, & +y)\$ & I_3 & {\color{highlight}\text{reduce }} T \to F & \texttt{``+''} \in \textsc{follow}(T) \\
+\$(T, & +y)\$ & I_2 & {\color{highlight}\text{reduce }} E \to T & \texttt{``+''} \in \textsc{follow}(E) \\
+\$(E, & +y)\$ & I_8 & {\color{highlight}\text{shift }} + & E \to E \bullet +T \in \delta(I_0,\texttt{(E}) = I_8 \\
+\$(E+, & y)\$ & I_6 & {\color{highlight}\text{shift }} y & F \to  \bullet \text{id} \in \delta(I_0,\texttt{(E+}) =I_6 \\
+\$(E+y, & )\$ & I_5 & {\color{highlight}\text{reduce }} F \to \text{id} & \texttt{``)''} \in \textsc{follow}(F) \\
+\$(E+F, & )\$ & I_3 & {\color{highlight}\text{reduce }} T \to F & \texttt{``)''} \in \textsc{follow}(T) \\
+\$(E+T, & )\$ & I_9 & {\color{highlight}\text{reduce }} E \to E + T & \texttt{``)''} \in \textsc{follow}(E) \\
+\$(E, & )\$ & I_8 & {\color{highlight}\text{shift }} ) & E \to (E \bullet ) \in \delta(I_0,\texttt{(E}) = I_8  \\
+\$(E), & \$ & I_{11} & {\color{highlight}\text{reduce }} F \to (E) & \texttt{``\$''} \in \textsc{follow}(F) \\
+\$F, & \$ & I_3 & {\color{highlight}\text{reduce }} T \to F & \texttt{``\$''} \in \textsc{follow}(T) \\
+\$T, & \$ & I_2 & {\color{highlight}\text{reduce }} F \to E & \texttt{``\$''} \in \textsc{follow}(E) \\
+\$E, & \$ & I_1 & {\color{highlight}\text{reduce }} S \to E & \texttt{``\$''} \in \textsc{follow}(S) \\
+\$S, & \$ & \multicolumn{2}{l}{\text{accept!}} 
+\end{array}$
+    };
+\end{tikzpicture}

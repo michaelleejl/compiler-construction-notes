@@ -1,0 +1,567 @@
+\chapter{Type-Checking and Translation}
+\begin{center}
+    \import{figures}{context}
+\end{center}
+
+\newcommand{\slangLink}[1]{{\color{darkred}\href{https://github.com/yallop/cc_cl_cam_ac_uk/tree/master/slang/#1}{slang/#1}}}
+
+\newcommand{\sizelessOCamlBasicStyle}{\linespread{0.95}\footnotesize\ttfamily}
+\newcommand{\ocamlInline}{\lstinline[basicstyle=\sizelessOCamlBasicStyle]}
+
+\section{Overview}
+We have, at this stage, completed the parsing section of the course. In doing so, we have gone from a sequence of characters to a sequence of tokens, and from a sequence of tokens to a parse tree. We now come to the final section of the front-end, the type checker and translator. 
+
+% We have reached the stage of the course where we can stop playing with toy examples and start working with something a little bit more realistic. We will thus begin by introducing a language, Slang, that will serve as a running example through the type-checker, translator, and middle-end (\Cref{section:slang-intro}).
+
+We will explain what it is the type-checker (\Cref{section:type-checking-goals}) and translator (\Cref{section:translation-goals}) do, and why they do it. We will not, however, have much time to go into the algorithms that make them work. We have included these as optional sections (\Cref{section:hm-type-checking,section:btc}).
+
+% \section{Slang}\label{section:slang-intro}
+% The Slang (for \textit{simple language}) language is a variant on \textit{L3} from \textsf{Semantics of Programming Languages}. 
+
+% In \Cref{fig:slang-syntax}, we present the syntax of Slang. In \Cref{fig:slang-examples}, we present two programs written in Slang.
+
+% A Slang compiler, i.e. a compiler for the Slang language, written in \texttt{OCaml}, is available \href{https://github.com/yallop/cc_cl_cam_ac_uk/tree/master/slang}{here}.
+
+% A good way to understand compilers is to modify an existing one. The \href{https://www.cl.cam.ac.uk/teaching/2223/CompConstr/}{course website} suggests several improvements (some easy, some trickier).
+
+% \begin{figure}[H]
+%     \centering
+%     \import{figures}{slang-syntax}
+%     \caption{Slang Syntax (informally)}
+%     \label{fig:slang-syntax}
+% \end{figure}
+
+% \begin{figure}[H]
+%     \centering
+%     \begin{subfigure}{0.44\textwidth}
+%         \import{figures}{slang-example-1}
+%         \caption{From \slangLink{examples/fib.slang}}
+%     \end{subfigure}
+%     \begin{subfigure}{0.54\textwidth}
+%         \import{figures}{slang-example-2}
+%         \caption{From \slangLink{examples/gcd.slang}}
+%     \end{subfigure}
+%     \caption{Two examples of Slang code}
+%     \label{fig:slang-examples}
+% \end{figure}
+
+\section{Type Checking}\label{section:type-checking-goals}
+The role of the type checker is threefold. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{type-checking}
+    \caption{The role of the type checker is threefold: checking, tagging, and resolution}
+    \label{fig:type-inference}
+\end{figure}
+
+The first is \textbf{checking} --- making sure all sub-expressions can be typed. That is, to make sure you don't have expressions like
+\[\texttt{true}+3\]
+Where one part of the expression ($+3$) tells you that \texttt{true} must be of type \texttt{int}, and the other part of the expression (\texttt{true}) tells you that \texttt{true} must be of type \texttt{bool}.
+
+The second role of a type checker is \textbf{resolution}: to \textit{resolve} expressions using context-sensitive rules. Think of this as a syntax tree where each node is tagged with a type. This is useful for two reasons:
+
+First, for monomorphisation. Consider a polymorphic equality function
+\begin{minted}[bgcolor=backcolour]{ocaml}
+let (EQ : 'a -> 'a -> bool) (x : 'a) (y : 'a) = ...
+\end{minted}
+Which has type
+\[\forall \alpha. \; \alpha \to \alpha \to \texttt{bool}\]
+Where $\alpha$ ranges over any arbitrary type. This polymorphism makes it very easy to \textit{write} code, because you don't have to define separate \textit{monomorphic} functions, one for each type (\texttt{EQI} for integers, \texttt{EQB} for booleans, etcetera). This results in faster code (see \href{https://doc.rust-lang.org/book/ch10-01-syntax.html#performance-of-code-using-generics}{these} \href{https://rustc-dev-guide.rust-lang.org/backend/monomorph.html#monomorphization}{blogs} on monomorphisation in \texttt{Rust}).
+
+Second, in a similar vein, we can use the types to determine if functions are recursive or not.
+
+Note, importantly, that resolution is \textit{context-sensitive}. For example, to determine if a usage of $=$ is \texttt{EQI} or \texttt{EQB}, we need to determine what is on the left and right hand side of the equality. Hence, the type checker \textit{selectively} applies context-sensitive rules.
+
+The third role of the type checker is \textbf{elaboration}, or tagging: if a sub-expression (a sub-tree in the abstract syntax tree) is well-typed, then it must \textit{have a type}. We tag that sub-expression with the relevant type. This can be useful for type-based optimisations, such as that in \Cref{section:partial-evaluation}.
+
+\section{Translation}\label{section:translation-goals}
+The idea behind translation is an exceedingly simple one. 
+
+We want to \textit{raise the semantic gap} (\textsf{Part IB Introduction to Computer Architecture}). That is, we want to give the user a range of programming constructs to use, to express code in a readable, maintainable, and efficient way. However, when we are preparing to compile down to an intermediate representation, it is better to keep the base language small. By keeping the base language small, we have fewer things to translate, fewer things to check, and fewer ways in which we can mess up. 
+
+Bridging this gap is why we use \textit{syntactic sugar}. For example, in \textsf{Part II Semantics of Programming Languages}, you learnt that \texttt{let} $x = e_1$ \texttt{in} $e_2$ was just syntactic sugar for $(\lambda x. e_1) e_2$.
+
+The role of the translator is therefore to get rid of syntactic sugar. 
+
+\section{Hindley-Milner Type-Checking$^*$}\label{section:hm-type-checking}
+\textit{This section is based on \href{https://steshaw.org/hm/hindley-milner.pdf}{this paper} by} Grant.
+
+Hindley-Milner Type Checking is a standard algorithm for performing type-checking. 
+
+Hopefully you agree that type-checking a simple language, without polymorphism, is fairly easy. The power of Hindley-Milner Type Checking, therefore, is in its ability to handle polymorphism. The key mechanism for handling polymorphism is \textit{unification}.
+
+\subsection{Type Checking vs Type Inference}
+We begin by illustrating the challenges posed by polymorphism. Consider a polymorphic \texttt{cons} function of type
+\[\texttt{cons}: \; \forall \alpha. \; \alpha \to \texttt{List} \, \alpha \to \texttt{List} \, \alpha\]
+Consider what the type of the following expression is
+\[\texttt{fun} \, x \rightarrow \; \texttt{cons} \, 1 \, x \]
+It is
+\[\texttt{List int} \rightarrow \texttt{List int}\]
+In other words, we set $\alpha := \texttt{int}$.
+
+This illustrates the challenge introduced by polymorphic functions. Polymorphic functions have universal types. Universal types introduce \textit{type variables}, which indicate ``any type''. When a polymorphic function is \textit{applied}, however, we need to \textit{instantiate} these type variables ($\alpha$) to concrete types (\texttt{int}). 
+
+One way of handling this is to delegate the responsibility of instantiating types to the user. In \textsf{Part II Types}, you will see syntax that looks like
+\[\texttt{let cons} \, x \, xs = \Lambda \alpha . \, x :: xs \]
+That is, the $\Lambda \alpha$ is the user \textit{explicitly} parameterising over the type variable $\alpha$
+and
+\[\texttt{fun} \, x \rightarrow \; \texttt{cons} \, \texttt{int} \, 1 \, x \]
+Where, as the programmer, you need to \textit{explicitly} instantiate the type of \texttt{cons} to \texttt{int $\rightarrow$ List int $\rightarrow$ List int}. 
+
+Note that, if this is not annoying enough, if you want to retain polymorphism, you have to \textit{explicitly} instantiate one polymorphic type ($\alpha$) to another polymorphic type ($\beta$). That is, to define a polymorphic append function, you have to write something like
+\[\texttt{fun append} \, xs \, ys = \Lambda \beta . \texttt{if} \, xs = x::xs \, \texttt{then} \, \texttt{cons} \, \beta  \, x  \, (\texttt{append}  \, \beta  \, xs  \, ys) \, \texttt{else} \, ys   \]
+Note how we need to keep instantiating the polymorphic types to polymorphic types (\texttt{cons} $\beta$, \texttt{append} $\beta$). If we adopt this approach, our type checker simply needs to \textit{check} that the user supplied types match up.
+
+For user-centric reasons, we tend \textbf{not} to want to delegate this responsibility to the user. If we adopt this approach, our type checker needs to \textit{infer} which types to use in instantiating the type variables.
+
+The type checking \textbf{goal} can therefore be solved either by a type checking \textbf{algorithm} (if sub-expressions are tagged with types) or a type inference \textbf{algorithm} (if sub-expressions are not tagged with types).
+
+A type checking algorithm takes a context, $\Gamma$, an expression $e$, a type $T$, and checks $e$ against the type:
+\[\Gamma \vdash e \textcolor{linkcolor}{\Leftarrow} T\]
+
+A type inference algorithm takes a context, $\Gamma$, an expression $e$, and produces a type $T$ if $e$ is well-typed:
+\[\Gamma \vdash e \textcolor{highlight}{\Rightarrow} T\]
+
+Type inference is a valid strategy even when you don't have polymorphism (and indeed, we will build up the intuition for type inference by first considering how to infer types in a language without polymorphism).
+
+Type inference is generally harder than type checking (as you will learn in \textsf{Part IB Complexity Theory}, checking that something is correct is often much less complex than generating something that is correct).
+
+The Hindley-Milner algorithm is a type inference algorithm. It is adopted by languages like \texttt{ML}, \texttt{OCaml}, and \texttt{Haskell}, which is why you don't have to write types everywhere!
+
+\subsubsection{Inferring the Most General Type}
+We should be more specific. A type inference algorithm does not just infer \textit{a} type, but \textit{the most general} type. In this section, we shall explore the need to infer \textit{the most general} type.
+
+In some cases, it is unambiguous which type we should infer (that is, there is only \textit{one} possible type). This is not, however, true in the general case. Consider the function \texttt{swap}, which takes a function $f$, two arguments, $x$ and $y$, and applies them in the order $y, x$.
+\[\texttt{swap} \, f \, x \, y = f \, y \,  x\]
+What type should we infer for \texttt{swap}?
+
+We could infer the following type
+\[
+\texttt{swap} : \forall \alpha. \, \forall \beta. \, \forall \gamma. \; (\alpha \to \beta \to \gamma) \to \beta \to \alpha \to \gamma
+\]
+But we could also infer the alternative type
+\[
+\texttt{swap} : (\texttt{int} \to \texttt{int} \to \texttt{int}) \to \texttt{int} \to \texttt{int} \to \texttt{int}
+\]
+Hopefully, intuitively, you see that the first type is \textit{better} than the second. Let's make this intuition concrete: the first type does not pre-suppose anything about $f$, $x$, or $y$, whereas the second assumes information about $f$, $x$, and $y$ that does not \textit{need} to hold. 
+
+As another example, consider a function \texttt{swap1}, of the form
+\[\texttt{swap1} \, f \, x \, y = f \, y \,  (x+1)\]
+The right type for this is
+\[
+\texttt{swap} : \forall \alpha. \, \forall \beta. \, \; (\alpha \to \texttt{int} \to \beta) \to \alpha \to \texttt{int} \to \beta
+\]
+The point, in other words, is that the right type only \textit{commits} to a specific type when it is absolutely necessary to do so, and retains as much polymorphism otherwise. 
+
+\subsection{Type Inference as Constraint Generation and Solving}
+\textit{This section is bassed on \href{http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf}{this paper} by} \citet{pottier-2014}.
+
+We have motivated the need for a type inference algorithm (polymorphism), and clarified the goal of a type inference algorithm (to type check a program by inferring its most general type). We shall now consider how to implement type inference.
+
+To do this, we shall first present the typing rules of a simple programming language with booleans, naturals, and functions. 
+
+\vspace{3mm}
+
+\begin{minipage}[t]{0.33\textwidth}
+\centering
+    \AxiomC{}
+    \UnaryInfC{$\Gamma \vdash \texttt{true}: \texttt{bool}$}
+    \DisplayProof
+\end{minipage}%
+\begin{minipage}[t]{0.33\textwidth}
+\centering    
+    \AxiomC{}
+    \UnaryInfC{$\Gamma \vdash \texttt{false}: \texttt{bool}$}
+    \DisplayProof
+\end{minipage}%
+\begin{minipage}[t]{0.33\textwidth}
+    \centering
+    \AxiomC{}
+    \UnaryInfC{$\Gamma \vdash \texttt{n}: \texttt{nat}$}
+    \DisplayProof
+\end{minipage}
+
+\vspace{3mm}
+
+\begin{minipage}[t]{0.5\textwidth}
+    \centering
+    \AxiomC{$x:T \in \Gamma$}
+    \UnaryInfC{$\Gamma \vdash x : T$}
+    \DisplayProof
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\AxiomC{}
+    \centering
+    \AxiomC{$\Gamma \vdash e_1 : T_1$}
+    \AxiomC{$\Gamma, x:T_1 \vdash e_2 : T_2$}
+    \BinaryInfC{$\Gamma \vdash \texttt{let} \, x = \, e_1 \, \texttt{in} \, e_2 : T_2$}
+    \DisplayProof
+\end{minipage}
+
+\vspace{3mm}
+
+\begin{minipage}[t]{0.5\textwidth}
+    \centering
+    \AxiomC{$\Gamma, x:T_1 \vdash e : T_2$}
+    \UnaryInfC{$\Gamma \vdash \texttt{fun} x. e : T_1 \to T_2$}
+    \DisplayProof
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\AxiomC{}
+    \centering
+    \AxiomC{$\Gamma \vdash e_1 : T_1 \to T_2$}
+    \AxiomC{$\Gamma \vdash e_2 : T_1$}
+    \BinaryInfC{$\Gamma \vdash e_1 e_2 : T_2$}
+    \DisplayProof
+\end{minipage}
+
+\vspace{3mm}
+
+\begin{minipage}[t]{\textwidth}
+\AxiomC{}
+    \centering
+    \AxiomC{$\Gamma \vdash e : T$}
+    \AxiomC{$\alpha$ not free in $T$}
+    \BinaryInfC{$\Gamma \vdash e: \forall \alpha . T$}
+    \DisplayProof
+\end{minipage}
+
+The key idea / analogy is that of type inference as \textit{constraint-solving}. Informally, every expression $e$ generates some set of constraints. Let's first consider a language without polymorphism, and see how to infer that $e$ has type $T$ in context $\Gamma$:
+
+\begin{enumerate}
+    \item If $e$ is of the form $x$, and $\Gamma(x) = T'$, then $T = T'$
+    \item If $e$ is of the form $\texttt{fun} \, x. e'$, then for some types $T_1$ and $T_2$
+    \begin{enumerate}
+        \item $e'$ must have type $T_2$ in context $\Gamma, x: T_1$ 
+        \item $T = T_1 \to T_2$
+    \end{enumerate}
+    \item If $e$ is of the form $e_1 e_2$, then for some type $T'$
+    \begin{enumerate}
+        \item $e_1$ should have type $T' \to T$
+        \item $e_2$ should have type $T$
+    \end{enumerate}
+\end{enumerate}
+
+Even though we have not considered polymorphism, the principle remains clear: type inference is the process of \textit{generating} a set of constraints, and then solving them by finding some type that satisfies all of them at once. This idea --- of constraint generation and constraint solving --- is the basis of many program analyses and compiler optimisations, and you will see more examples in \textsf{Part II Optimising Compilers}.
+
+This section will thus focus on how we \textit{generate} constraints.
+
+Formally, we will introduce a constraint language $C$. You will hear $C$ referred to as a \textit{meta}-language, or part of the meta-theory of the programming language. This is just jargon for ``a formal language that we can use to talk about the programming language''. The constraint language $C$ can be defined as follows
+\[\begin{array}{lcl}
+     C&:=&\textsf{True} \mid T_1 = T_2 \mid C_1 \land C_2 \mid \exists \alpha . C 
+     \end{array}\]
+We use \textsf{True} whenever the constraint is trivially satisfied. We use $T_1 = T_2$ to express that two types should be equal. $C_1 \land C_2$ is used to combine constraints, and $\exists \alpha. C$ is used to formalise statements of the form ``for some types $T_1, T_2$''. 
+
+To deal with polymorphic types, we need to introduce the notion of \textit{constraint abstraction}. Consider a polymorphic function
+\[ \texttt{cons}\, : \; \forall \alpha . \alpha \to \texttt{List} \, \alpha \to \texttt{List} \, \alpha \]
+\textbf{If} we know what $\alpha$ actually is (\texttt{bool}, \texttt{int}, etcetera), then we can simply apply the constraints we have specified above. Therefore, the constraint we would like to generate involves \textit{abstracting} over $\alpha$
+\[\lambda \alpha. C\]
+Once we actually know what $\alpha$ is, we can simply apply it to the constraint abstraction, and generate a constraint in our monomorphic language.
+
+In fact, our constraint abstractions can be used in a different way. Rather than passing in \texttt{bool} or \texttt{int}, we can pass in the whole type, that is, $\texttt{bool} \to \texttt{List bool} \to \texttt{List bool}$. This is important, because it allows us to express the constraint abstraction in the following form:
+\[ \lambda \alpha. (e \text{ has type } \alpha) \]
+From this follows an important theorem. If the constraint abstraction $\lambda \alpha. C$ is satisfiable, then the constraint $C$ can always be re-written such that the constraint abstraction reads
+\[\lambda \alpha. \exists \vec{\beta}. (\alpha = T)\]
+For suitably chosen type variables $\vec{\beta}$ and  type $T$. For example, we may write
+\[\lambda \alpha. \exists \beta. (\alpha = \beta \to \texttt{List}\, \beta \to \texttt{List}\, \beta)\]
+Then, if we apply this constraint abstraction to $\texttt{bool} \to \texttt{List bool} \to \texttt{List bool}$, we get the constraint
+\[\exists \beta . \, \texttt{bool} \to \texttt{List bool} \to \texttt{List bool} = \beta \to \texttt{List}\, \beta \to \texttt{List}\, \beta\]
+When written in this canonical form, the constraint is known as a \textit{type scheme}, and given the shorthand $\forall \vec{\beta}. T$. 
+
+The switch from $\forall$ to $\exists$ might be confusing. Here's one way of understanding it: when \textit{you} declare the type $\forall \vec{\beta}. T$, you are telling \textit{yourself} that $\vec{\beta}$ may be instantiated to anything. When \textit{the type checker} generates and solves constraints, it cares about determining what the polymorphic type $\forall \vec{\beta}. T$ has been instantiated to in the surrounding context (for example, \texttt{cons 1 xs}). It knows that it \textit{must} be instantiated, but it is not sure what to. So there \textit{exists} an instantiation for $\vec{beta}$ that it is to determine.
+
+With these constraint abstractions, we can then extend our constraint language as such
+\[\begin{array}{lcl}
+     C&:=&\textsf{True} \mid T_1 = T_2 \mid C_1 \land C_2 \mid \exists \alpha . C \\
+        &&\textsf{let}\, x = \lambda \alpha . C_1 \, \textsf{in} \, C_2 \mid x T
+     \end{array}
+\]
+The syntax reflects that polymorphic function definitions (which correspond to constraints $C_1$) \textit{must} be solved in a context of use (corresponding to constraint $C_2$).
+
+\newcommand{\interpret}[1]{[\![#1]\!]}
+We can then define a function $\interpret{}$ that takes a statement of the form $e: T$ (meaning $e$ has type $T$), and generates a constraint $\interpret{e: T}$.
+
+We can define $\interpret{e:T}$ as follows
+\[\begin{array}{rcl}
+     \interpret{x:T}&=&x \, T  \\
+     \interpret{\lambda x.e: T}&=&\exists \alpha_1, \alpha_2 . T = \alpha_1 \to \alpha_2 \land \textsf{let} \,  x = \lambda \alpha. (\alpha = \, \alpha_1) \textsf{in} \, \interpret{e: \alpha_2}\\
+     \interpret{e_1 e_2: T} &=& \exists \alpha. (\interpret{e_1: \alpha \to T} \land \interpret{e_2: \alpha}) \\
+     \interpret{\texttt{let}\, x = e_1 \, \texttt{in} \, e_2} &=& \textsf{let}\, x = \lambda \alpha. \interpret{e_1: \alpha} \, \textsf{in} \, \interpret{e_2: T}
+\end{array}\]
+
+Type inference then boils down to finding the most general type $T$ such that $T = \beta$ satisfies the constraint $\interpret{e: \beta}$.
+
+\subsection{Solving Constraints: Unification}
+The technique for solving the generated constraints is unification. You will see unification in both \textsf{Part IB Logic and Proof} and \textsf{Part IB Prolog}.
+
+The central idea behind unification is that we want to find a common substitution (if one exists) that renders two terms equal. For example, given two terms
+
+\begin{center}
+\begin{minipage}[t]{0.3\textwidth}
+\centering
+$\alpha$
+\end{minipage}%
+\begin{minipage}[t]{0.3\textwidth}
+\centering
+\texttt{int}
+\end{minipage}
+\end{center}
+
+We \textit{unify} the terms via the substitution [$\alpha \mapsto \texttt{int}$]. 
+
+Hopefully you can see why unification can be useful in inferring the types of polymorphic functions! Some expressions will be given polymorphic types, like 
+\[\alpha \to \alpha \to \alpha\]
+Where $\alpha$ could be anything, but once $\alpha$ is something, all three variables \textbf{must} be the same thing.
+
+Perhaps some analysis gives us the constraint that $\alpha$ and \texttt{int} should be ``equal''. Unification will give us a substitution [$\alpha \mapsto$ \texttt{int}], which renders them equal. Applying this substitution to the type, we get
+\[\texttt{int} \to \texttt{int} \to \texttt{int}\]
+We shall now proceed to define unification in the context of type inference.
+
+We will assume concrete types like \texttt{int}, \texttt{bool}. We will assume type constructors $\to$, $\times$, and $+$. That is, 
+\[\begin{array}{lllr}
+    \to(A, B) &=& A \to B & \text{(function types)} \\
+    \times(A, B) &=& A \times B & \text{(product types)} \\
+    +(A, B) &=& A + B & \text{(sum types)}
+\end{array}
+\]
+We will use $\alpha, \beta, \gamma, \ldots$ to refer to type variables. 
+
+The terms we want to consider are types \footnote{actually, type \textit{schemes}, since they can contain variables not bound by quantifiers}. Concrete types (like \texttt{int}) and variables (like $\alpha$) are terms. Any constructor applied to any set of terms is also a term (like $\alpha \to \texttt{int}$, $\alpha \times \beta$, or $\texttt{int} + (\alpha \times (\texttt{bool} \to \texttt{bool}))$). We shall use $t_1, t_2, t_3, \ldots$ to refer to terms.
+
+A substitution is a mapping from variables to terms. We will use $\sigma_1, \sigma_2, \sigma_3, \ldots$ to refer to substitutions. For example, the following is a substitution
+\[[\alpha \mapsto (\texttt{int} \times \beta), \; \beta \mapsto \gamma]\]
+We apply a substitution to a term, $t \sigma$, by replacing each variable $\alpha$ with that specified by the substitution $\sigma(\alpha)$ (in this case, $ \texttt{int} \times \beta$). The substitution happens \textit{simultaneously}, not sequentially. That is, we will replace $\alpha$ with $\texttt{int} \times \beta$, \textbf{not} $\texttt{int} \times \gamma$. Below, we detail one example of applying a substitution 
+\[(\alpha \to (\alpha + \gamma))[\alpha \mapsto (\texttt{int} \times \beta), \; \beta \mapsto \gamma] = (\texttt{int} \times \beta) \to ((\texttt{int} \times \beta) + \gamma))\]
+%
+We can \textit{compose} substitutions. Given two substitutions $\sigma_1$ and $\sigma_2$, their composition 
+\[\sigma_1 \circ \sigma_2\]
+Involves \textit{first} applying $\sigma_1$ \textit{and then} $\sigma_2$. That is, 
+\[t (\sigma_1 \circ \sigma_2) = (t \sigma_1) \sigma_2 \]
+%
+A substitution $\sigma$ is a unifier of terms $t_1$ and $t_2$ if
+\[t_1 \sigma = t_2 \sigma\]
+Where the equality refers to \textit{syntactic} equality. 
+
+For example, given the two terms
+
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\alpha \to \alpha$
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\beta \to \texttt{int}$
+\end{minipage}
+
+The substitution [$\alpha \mapsto \texttt{int}$, $\beta \mapsto \texttt{int}$] is a unifier.
+
+Some pairs of terms do not have unifiers, such as
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\alpha \to \alpha$
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\alpha$
+\end{minipage}
+
+Further, some pairs of terms have multiple unifiers. For example, given the terms
+
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\alpha \to \beta$
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\gamma \to \delta$
+\end{minipage}
+
+[$\alpha \mapsto \gamma$, $\beta \mapsto \delta$] is a unifier. But so is [$\alpha \mapsto \texttt{int}$, $\beta \mapsto \texttt{int}$, $\gamma \mapsto \texttt{int}$, $\delta \mapsto \texttt{int}$].
+
+In these cases, the ``right'' unifier is the one that presumes the least about the variables. (Recall that this is exactly what we wanted when instantiating variables!). We call this unifier the \textbf{most general unifier}. Formally, given two terms $t_1$, $t_2$, the most general unifier $\sigma_M$ is
+\begin{enumerate}
+    \item A unifier of $t_1$ and $t_2$, $t_1 \sigma_M = t_2 \sigma_M$, and
+    \item The most general such. That is, there does not exist two non-empty substitutions, $\sigma_1$ and $\sigma_2$, such that we can write $\sigma_M$ as $\sigma_1 \circ \sigma_2$ (if we could, then $\sigma_1$ would be \textit{more general} than $\sigma_M$!)
+\end{enumerate}
+
+These definitions extend naturally to unifiers of a \textit{set} of terms, rather than just \textit{pairs} of terms.
+
+We have introduced unification in the context of types. The principles extend to any system where you have:
+
+\begin{enumerate}
+    \item Atoms $a, b, c, \ldots$ (our ground types, \texttt{int} and \texttt{bool}),
+    \item Variables $x, y, z, \ldots$ (our type variables $\alpha, \beta, \gamma$),
+    \item Constructors $f, g, h, \ldots$ (our type constructors $\to, \times, +$)
+\end{enumerate}
+
+We have given the notational convention here that is used in \textsf{Part IB Logic and Proof}.
+
+\subsubsection{Finding the Most General Unifier}
+\citet{robinson-1965} gives an algorithm for finding the most general unifier of two terms, $t_1$ and $t_2$. The algorithm is simple.
+
+Assume a set of pairs of terms 
+\[E \triangleq \{(t_1, s_1), \ldots, (t_n, s_n)\}\]
+And we want to find the most general unifier $\sigma_M$ such that
+\[t_1\sigma_M = \ldots = t_n\sigma_M = s_1\sigma_M = \ldots = s_n\sigma_M\]
+
+The algorithm for this, \texttt{unify}, is simple. It pattern matches on $E$, as follows
+
+\begin{enumerate}
+    \item \texttt{unify}($\emptyset$) $=$ [] \textit{the identity substitution}
+    \item \texttt{unify}($\{(x, y)\} \cup E$) $=$ \texttt{unify}($E[x \mapsto y]$)
+    \item \texttt{unify}($\{(x, t)\} \cup E$) $=$ \texttt{unify}($E[x \mapsto t]$) \textit{if} $x$ \textit{does not occur in} $t$
+    \item \texttt{unify}($\{(a, a)\} \cup E$) $=$ \texttt{unify}($E$)
+    \item \texttt{unify}($\{(f(t_1, \ldots t_n), f(s_1, \ldots s_n))\} \cup E$) $=$ \texttt{unify}($\{(t_1, s_1), \ldots, (t_n, s_n)\} E$)
+    \item \texttt{unify}($E$) fails otherwise
+\end{enumerate}
+
+The first case deals with when there is nothing more to unify. The second considers unifying a variable with a variable. The third unifies a variable with a term (and incurs the occurs check). The fourth unifies two equal atoms. The last unifies two non-atomic terms with the same constructor.
+
+Note that fast implementations of unification rely on the Union-Find data structure you learnt about in \textsf{Part IA Algorithms II}!
+
+\subsection{Putting it all together: Algorithm W}
+We now describe \textbf{Algorithm W}, which implements both constraint \textit{generation} and constraint \textit{solving} simultaneously.
+
+Algorithm W takes a context $\Gamma$ and an expression $e$, and returns a type $T$, plus the substitution $\sigma$ such that 
+\[\Gamma \sigma \vdash e : T\]
+You can think of $\Gamma$ as a list of variables to types, and so $\Gamma \sigma$ just maps the substitution to each of the types in $\Gamma$. For example, assuming $\Gamma = [x: \alpha, y: \beta]$, and $\sigma = [\alpha \mapsto \texttt{int}, \beta \mapsto \texttt{bool}]$, $\Gamma \sigma = [x: \texttt{int}, y: \texttt{bool}]$.
+
+\begin{code}[Algorithm W]
+\label{code:algorithm-w}
+\begin{lstlisting}[style=pseudocode]
+let W(!$\Gamma$!, !$e$!) = 
+  match !$e$! with
+  | true  -> (bool, [])
+  | false -> (bool, [])
+  | n     -> (nat, [])
+  | x     -> (instantiate(!$\Gamma$!(x)), [])
+  | !$\lambda x. e$! -> let !$T$!, !$\sigma$! = W(!$(\Gamma, x: \beta)$!, !$e$!) in (!$\beta\sigma$!, !$\sigma$!)
+  | !$e_1 e_2$! -> let !$T_1$!, !$\sigma_1$! = W(!$\Gamma $!, !$e_1$!) in 
+           let !$T_2$!, !$\sigma_2$! = W(!$\Gamma \sigma_1$!, !$e_2$!) in 
+           let !$U$! = unify(!$T_1 \sigma_2$!, !$T_2 \to \beta$!) in
+           (!$\Gamma \sigma_1 \sigma_2 U$!, !$\beta U$!)
+  | let x = !$e_1$! in !$e_2$! -> let !$T_1$!, !$\sigma_1$! = W(!$\Gamma $!, !$e_1$!) in
+                       let !$T_1'$! = close(!$\Gamma\sigma_1, T_1$!) in
+                       let !$T_2$!, !$\sigma_2$! = W((!$\Gamma \sigma_1, x: T_1'$!), !$e_2$!) in
+                       (!$T_2$!, !$\sigma_1 \sigma_2$!)
+\end{lstlisting}
+\vspace{1mm}
+\end{code}
+
+We detail Algorithm W in \Cref{code:algorithm-w}. 
+
+There are only a couple of tricky aspects worth mentioning. 
+
+\begin{enumerate}
+    \item Fresh variables $\beta$. Whenever you see a $\beta$, this means a new, fresh variable (i.e. one that we have not used before). We typically use $\beta$ to mean ``its type is \textit{something}, but we're not sure what'', and let unification sort it out for us. As an example, we use $T_2 \to \beta$ to mean ``this is a function from $T_2$ to something, figure out what''. 
+    \item The instantiation function \texttt{instantiate}. Whenever we encounter a variable \texttt{x}, we look up its type. If its type is of the form $\forall \alpha_1, \alpha_2, \ldots, \alpha_n . T$, then we know that, based on the context, each of the $\alpha_i$ is actually some concrete type, but we're not sure what. We thus replace each $\alpha_i$ with $\beta_i$: $\texttt{instantiate}(\forall \alpha_i T) = T[\beta_i / \alpha_i]$. Importantly, the $\beta_i$ are \textbf{not} quantified over --- they are variables, because we do not know what they are, but they must be instantiated to a single concrete type. They are no longer allowed to range over all types.
+    \item The close function \texttt{close} is in some sense the opposite of the instantiation function. \texttt{close} takes a context $\Gamma$, and a type $T$, and finds all type variables $\beta_i$ in $T$ that are \textit{not} in the domain of $\Gamma$, and are not quantified over. These $\beta_i$ are the result of instantiation, but unification has not assigned these a concrete type. This implies that they are not used in a way that constrains their type -- we can set $\beta_i$ to be any type, and everything will still work out. Hence, unification is implicitly telling us to assign each of these $\beta_i$ a universal quantifier. This is exactly what the \texttt{close} function does. $\texttt{close}(\Gamma, T) = \forall \beta_i . T$. As an alternative interpretation, recall that we discussed the need to \textit{explicitly} instantiate polymorphic functions with polymorphic variables (our definition of polymorphic append). This is what \texttt{close} infers for us.
+\end{enumerate}
+
+
+\subsection{Hindley-Milner for Elaboration}
+\textit{This section is bassed on \href{http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf}{this paper} by} \citet{pottier-2014}.
+
+We have seen how Hindley-Milner can be used for type inference. We know that it can take an expression and tell us what its type is. We have \textit{not} yet seen how it can be used for elaboration: annotating each of the sub-expressions with types. 
+
+At first glance, this may seem simple: in the process of type inference, we \textit{must} infer the types of each sub-expression. Can we leverage this to perform elaboration?
+
+The answer is yes, but it requires a little work. Currently, our type inference algorithm is only producing a single type $T$ for the whole expression. What we want it to do is produce a \textit{witness} $W$, whose shape is dictated by the constraint $C$, and therefore has the same structure as our abstract-syntax tree. At a high level, you can think of $W$ as a tree, with \textit{exactly} the same shape as our the abstract syntax tree $e$. Each node in the abstract syntax tree $e$ thus has a counterpart in $W$ --- its counterpart is exactly its type! We then define a function, \texttt{elaborate}, that ``fuses'' the two trees together.
+
+This is a feasible idea, and some implementations of elaboration are indeed based on this! However, it has two unsavoury aspects:
+\begin{enumerate}
+    \item We have to keep the term $e$ and $W$ ``in synchrony'', which is painful and ugly,
+    \item It requires us to finish type inference before we begin elaboration. Ideally, we would like to express the elaboration \textit{alongside} the inference, because this is a cleaner and more maintainable program.
+\end{enumerate}
+
+We expand on the second point. In effect, we want to adapt the pseudocode given earlier, such that our type-inference-and-elaboration algorithm looks like:
+
+\begin{enumerate}
+    \item If $e$ is of the form $x$, and $\Gamma(x) = T'$, then $T = T'$ \textcolor{highlight}{and we elaborate $x$ to $x$}
+    \item If $e$ is of the form $\texttt{fun} \, x. e'$, then for some types $T_1$ and $T_2$
+    \begin{enumerate}
+        \item $e'$ must have type $T_2$ in context $\Gamma, x: T_1$ 
+        \item $T = T_1 \to T_2$
+    \end{enumerate}
+    \textcolor{highlight}{and we elaborate $e$ to $\lambda x: T_1 . \hat{e'}$}
+    \item If $e$ is of the form $e_1 e_2$, then for some type $T'$
+    \begin{enumerate}
+        \item $e_1$ should have type $T' \to T$
+        \item $e_2$ should have type $T$
+    \end{enumerate}
+    \textcolor{highlight}{and we elaborate $e$ to $\hat{e_1} \hat{e_2}$}
+\end{enumerate}
+
+That is, \textbf{we want to express inference and elaboration together}. 
+
+However, \textbf{inference and elaboration must be executed separately (sequentially)}. The reason for this is that elaboration relies on the constraints having been solved. Constraint solving is a global process. Consider the constraint 
+\[(\exists \alpha. C_1) \land C_2\]
+The final value of $\alpha$ depends not only on $C_1$ but also $C_2$ (since $C_2$ can impose more constraints on $\alpha$). Hence, we must wait for constraint solving to terminate before we can get a value for $\alpha$, and thus perform elaboration.
+
+This is the fundamental challenge: we want to express inference and elaboration together, but execute them separately.
+
+The solution to this is surprisingly simple! We get each $C$ to return both a constraint (which it can pass to a constraint solver), and a function $f$ to execute once the constraint solver returns. 
+
+At the top level, $f$ is just \texttt{elaborate} $e$! That is, while it is not possible to perform elaboration simultaneously with inference (since we do not yet have the witness $W$), it is possible to \textit{build the elaboration function} while performing type inference.
+
+This allows us to express elaboration and inference together, but execute them separately. 
+
+That's the key idea. The mechanics of implementation are also, thankfully, relatively simple. Let's recall our constraint syntax
+\[\begin{array}{lcl}
+     C&:=&\textsf{True} \mid T_1 = T_2 \mid C_1 \land C_2 \mid \exists \alpha . C \\
+        &&\textsf{let}\, x = \lambda \alpha . C_1 \, \textsf{in} \, C_2 \mid x T
+     \end{array}
+\]
+We will now give these a semantics of \textit{constraints with a value}. That is, each $C$ is not just something that is / is not satisfied, but \textit{if} satisfied, will return a value. This value may be anything, but we will choose a function which takes the type returned by the solver, and constructs an elaborated / tagged value of that type. 
+
+Our language is just missing one thing: the ability to take tagged sub-expressions and combine them into larger sub-expressions. To do this, we will introduce a single new construct: \textsf{map}
+\[\begin{array}{lcl}
+     C&:=&\textsf{True} \mid T_1 = T_2 \mid C_1 \land C_2 \mid \exists \alpha . C \\
+        &&\textsf{let}\, x = \lambda \alpha . C_1 \, \textsf{in} \, C_2 \mid x T\\
+        &&\textsf{map} f C
+     \end{array}
+\]
+Where $f$ is a function in the meta-language (the paper chooses \texttt{OCaml}). Think of $f$ as an expression constructor. For example, solving our constraints might return a pair of tagged sub-expressions, that look like
+\[V = (x: \texttt{bool}, \texttt{if} x \, \texttt{then} \, 1 \, \texttt{else} \, 2: \texttt{bool} \rightarrow \texttt{nat})\]
+Where the first is the argument of a function and the second the body of a function. We need to be able to put these elaborated sub-expressions together into an elaborated function expression. To do this, we let our function $f$ be a function constructor, such that
+\[\textsf{map} f \, V = (\texttt{fun} \, x. \texttt{bool}.\; \texttt{if} \,  x \, \texttt{then} \, 1 \, \texttt{else} \, 2): \texttt{bool} \rightarrow \texttt{nat}\]
+
+\subsection{The Limitations of Hindley-Milner}
+Hindley-Milner has several limitations. 
+
+First, pattern-matching. Hindley-Milner Type Checking, as illustrated, cannot automatically deal with pattern matching. The problem, in summary, is that the result of type-checking the right-hand-side of a pattern match can't just be a type and a series of substitutions. It must also contain a context: the types of the variables referred to by the left-hand-side of the expression. Most papers of pattern matching side-step the issue, but the system \textit{can} be extended to deal with this.
+
+Second, Hindley-Milner deals with a very specific type of polymorphism: rank one parametric polymorphism. In particular, in its base form, it cannot deal with higher-ranked parametric polymorphism, or other forms of polymorphism (subtyping, ad-hoc polymorphism. See \textsf{Part IB Concepts in Programming Languages}).
+
+\textit{Prenex-only} (or rank one) parametric polymorphism is a fancy way of saying that the $\forall$ quantifiers are at the top-level. Here's an example of a type that is \textit{not} rank one polymorphic:
+\[\texttt{let} \,  f = \texttt{fun} \, x. \, 1 \; : \; (\forall \alpha. \alpha) \to \texttt{nat}\]
+Note that the $\forall$ quantifier only applies to the argument. In particular, this means that each time $f$ is applied, it can be applied to a value of a different type. In other words, we can write an expression that looks like
+\[f \, \texttt{true} + f \, \texttt{3}\]
+Whereas its rank one equivalent, \[\texttt{let} \,  g = \texttt{fun} \, x. \, 1 \; : \; \forall \alpha. (\alpha \to \texttt{nat})\]
+would not be able to be used in such a manner. 
+
+Third, Hindley-Milner is a type inference algorithm that can run into decidability issues (that is, it will ask questions that definitely cannot be answered via an algorithm, see \textsf{Part IB Computation Theory}). This means that it does not scale well as type systems get more elaborate (see, for example, dependent type systems, which will be introduced in \textsf{Part IB Concepts in Programming Languages} and elaborated on in \textsf{Part II Types}).
+
+\section{Bi-directional Type Checking$^*$}\label{section:btc}
+Bi-directional Type Checking systems are motivated by the need to deal with some of the weaknesses of Hindley-Milner Type Checking. 
+
+Hindley-Milner Type Checking is sufficient for languages like \texttt{OCaml}, where sub-typing is not frequently used, but inadequate for languages like \texttt{C++} or \texttt{Java}, where sub-typing is a frequently used form of polymorphism. 
+
+If we consider some \texttt{C++} or \texttt{Java} code, it is clear that the algorithm used for type checking is not \textit{purely} based on type inference. For example, whenever you declare a function, you \textit{have} to explicitly declare its return value and the types of its arguments
+
+\begin{minted}[bgcolor=backcolour]{Java}
+public static void main(String args[]){
+    ...
+}
+\end{minted}
+But neither is the type checking algorithm purely a checker, since it is able to infer sub-typing relationships. This is what allows something like
+
+\begin{minted}[bgcolor=backcolour]{Java}
+Shape s = Circle(radius:2.0)
+\end{minted}
+To be well-typed (also note that values do not have to be explicitly annotated with types).
+
+Languages like \texttt{C++} and \texttt{Java} use neither a type checking nor a type inference algorithm --- they use an algorithm that, depending on the expression being checked, \textit{either} performs type-checking \textit{or} performs type-inference. In the literature, we say that the algorithm has two modes, checking and inference/synthesis. The typing rules of the language thus have to explicitly indicate if the checking or the inference mode have to be used for a particular expression.
+
+% \section{Type-Checking Dependent Types$^*$}\label{section:dependent-types}

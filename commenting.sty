@@ -596,7 +596,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                COMMANDS                 %%%
 
-\newcommand{\comment}{\@ifstar{\comm@comment@star}{\comm@comment@plain}}
+\renewcommand{\comment}{\@ifstar{\comm@comment@star}{\comm@comment@plain}}
 \def\comm@comment@plain{\comm@parse@args{comm@comment}}
 \def\comm@comment@star{\comm@parse@args{comm@comment@}}
 

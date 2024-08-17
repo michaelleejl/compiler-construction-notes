@@ -1,0 +1,104 @@
+\begin{tikzpicture}
+  \node(s){$(x+y)$};
+
+  \node[] at ($(s.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] at ($(s.east) + (0.63cm,0cm)$) {$($};
+  
+  \begin{scope}[xshift=1.63cm, yshift=0.95cm]
+    \Tree [.$\nonterminal{F}$
+             {$x$} 
+          ]
+  \end{scope}
+
+  \node[] (first) at ($(s.east) + (1.4cm,0cm)$) {$+\,y)$};
+
+  \node[] at ($(s.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] at ($(first.east) + (0.63cm,0cm)$) {$($};
+  
+  \begin{scope}[xshift=3.55cm, yshift=2cm]
+    \Tree [.$\nonterminal{T}$
+             [.$\nonterminal{F}$
+             {$x$}
+             ] 
+          ]
+  \end{scope}
+
+  \node[] at ($(first.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] (second) at ($(first.east) + (1.4cm,0cm)$) {$+\,y)$};
+
+  \node[] at ($(second.east) + (0.63cm,0cm)$) {$($};
+  
+  \begin{scope}[xshift=5.48cm, yshift=3.06cm]
+    \Tree [.$\nonterminal{E}$
+             [.$\nonterminal{T}$
+                [.$\nonterminal{F}$
+                {$x$}
+                ]
+             ] 
+          ]
+  \end{scope}
+
+  \node[] at ($(second.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] (third) at ($(second.east) + (1.4cm,0cm)$) {$+\,y)$};
+
+  \node[] at ($(third.east) + (0.63cm,0cm)$) {$($};
+  
+  \begin{scope}[xshift=7.43cm, yshift=3.06cm]
+    \Tree [.$\nonterminal{E}$
+             [.$\nonterminal{T}$
+                [.$\nonterminal{F}$
+                {$x$}
+                ]
+             ] 
+          ]
+  \end{scope}
+
+  \node[] at ($(third.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] () at ($(third.east) + (1.2cm,0cm)$) {$+$};
+
+  \begin{scope}[xshift=8.115cm, yshift=0.95cm]
+    \Tree [.$\nonterminal{F}$
+             {$y$} 
+          ]
+  \end{scope}
+
+  \node[] (fourth) at ($(third.east) + (1.75cm,0cm)$) {$)$};
+
+  \node[] at ($(fourth.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] at ($(fourth.east) + (0.63cm,0cm)$) {$($};
+
+\begin{scope}[xshift=9.41cm, yshift=3.06cm]
+    \Tree [.$\nonterminal{E}$
+             [.$\nonterminal{T}$
+                [.$\nonterminal{F}$
+                {$x$}
+                ]
+             ] 
+          ]
+  \end{scope}
+
+  \node[] () at ($(fourth.east) + (1.2cm,0cm)$) {$+$};
+
+  \begin{scope}[xshift=10.1cm, yshift=2cm]
+    \Tree [.$\nonterminal{T}$
+             [.$\nonterminal{F}$
+             {$y$}
+             ]
+          ]
+  \end{scope}
+
+  \node[] (fifth) at ($(fourth.east) + (1.75cm,0cm)$) {$)$};
+
+  \node[] at ($(fifth.east) + (0.22cm,-.02cm)$) {$\Rightarrow$};
+
+  \node[] at ($(fifth.east) + (0.82cm,-.12cm)$) {$\ldots$};
+
+
+\end{tikzpicture}
+

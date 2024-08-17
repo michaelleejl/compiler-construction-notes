@@ -1,0 +1,48 @@
+\begin{tikzpicture}
+  \node[draw,draw opacity=0.5,rounded corners] (rl) {
+$\begin{array}{rcl}
+\nonterminal{S} & \Rightarrow_{rm} & \nonterminal{E} \\
+& \Rightarrow_{rm} & \nonterminal{T} \\
+& \Rightarrow_{rm} & \nonterminal{F} \\
+& \Rightarrow_{rm} & (\nonterminal{E}) \\
+& \Rightarrow_{rm} & (\nonterminal{E} +\nonterminal{T}) \\
+& \Rightarrow_{rm} & (\nonterminal{E} +\nonterminal{F}) \\
+& \Rightarrow_{rm} & (\nonterminal{E}+y) \\
+& \Rightarrow_{rm} & (\nonterminal{T}+y) \\
+& \Rightarrow_{rm} & (\nonterminal{F}+y) \\
+& \Rightarrow_{rm} & (x+y) \\
+\end{array}$
+    };
+
+
+  \node[draw,draw opacity=0.5,rounded corners,anchor=north west] (lr) at ($(rl.north east) + (0.3\textwidth,0)$) {
+$\begin{array}{rcl}
+ (x+y) & \Leftarrow & \\
+ (\nonterminal{F}+y) & \Leftarrow & \\
+ (\nonterminal{T}+y) & \Leftarrow & \\
+ (\nonterminal{E}+y) & \Leftarrow & \\
+ (\nonterminal{E}+\nonterminal{F}) & \Leftarrow & \\
+ (\nonterminal{E}+\nonterminal{T}) & \Leftarrow & \\
+ (\nonterminal{E}) & \Leftarrow & \\
+ \nonterminal{F} & \Leftarrow & \\
+ \nonterminal{T} & \Leftarrow & \\
+\nonterminal{E} & \Leftarrow & \nonterminal{S} \\
+\end{array}$
+    };
+
+\node[fill=background,rotate=-90] at (rl.east) { \footnotesize Rightmost derivation};
+\node[fill=background,rotate=-90] at (lr.east) { \footnotesize \textbf{Reversed} rightmost derivation};
+
+\draw[line width=0.05cm,color=darkred,->]
+   ($(lr.north east) + (5ex,-1ex)$)
+   -- node[midway,fill=background,rotate=-90] { parsing direction }
+   ($(lr.south east) + (5ex,1ex)$);
+
+\draw[->,draw=darkred,line width=0.05cm,bend left=90,distance=1cm] 
+ ($(rl.north east) + (1ex,-2ex)$)
+   to[out=60,in=120]
+    node[midway,fill=background,rounded corners] { \bfseries\large \color{darkred}flip! }
+ ($(lr.north west) + (-1ex,-2ex)$);
+
+
+\end{tikzpicture}

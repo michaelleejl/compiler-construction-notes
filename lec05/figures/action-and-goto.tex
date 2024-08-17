@@ -1,0 +1,20 @@
+\centering
+\small
+$\begin{array}{c|llllll|lll}
+\hline\hline
+\multirow{2}*{\textsc{State}} & \multicolumn{6}{c|}{\textsc{Action}} & \multicolumn{3}{c}{\textsc{Goto}} \\\cline{2-10}
+                             & \text{id} & + & * & ( & ) & \$         & E & T & F \\
+\hline
+0  & s5 &    &    & s4 &    &  & 1 & 2 & 3  \\
+1  &    & s6 &    &    &    & acc           \\
+2  &    & r2 & s7 &    & r2 & r2            \\
+3  &    & r4 & r4 &    & r4 & r4            \\
+4  & s5 &    &    & s4 &    &  & 8 & 2 & 3  \\
+5  &    & r6 & r6 &    & r6 & r6            \\
+6  & s5 &    &    & s4 &    &  &   & 9 & 3  \\
+7  & s5 &    &    & s4 &    &  &   &   & 10 \\
+8  &    & s6 &    &    & s11&               \\
+9  &    & r1 & s7 &    & r1 & r1            \\
+10 &    & r3 & r3 &    & r3 & r3            \\
+11 &    & r0 & r0 &    & r0 & r0
+\end{array}$

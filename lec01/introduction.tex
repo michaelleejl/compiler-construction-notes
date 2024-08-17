@@ -15,9 +15,7 @@ let rec fibonacci n =
 \end{minted}
 \end{code}
 
-And turns it into something that a processor understands, like \Cref{code:fib-assembly} \footnote{If you're interested in how the output was generated, I used \href{https://godbolt.org/}{The Compiler Explorer}, which lets you play around with the output of a compiler.}
-
-You don't have to understand the code in \Cref{code:fib-assembly}! We just want to show you the shape of the output of a compiler.
+And turns it into something that a processor understands, like \Cref{code:fib-assembly} \footnote{If you're interested in how the output was generated, I used \href{https://godbolt.org/}{The Compiler Explorer}, which lets you play around with the output of a compiler.} You don't have to understand the code! We just want to show you the shape of the output of a compiler.
 
 \begin{code}[A Fibonacci function in \texttt{x86 Assembly}]
 \label{code:fib-assembly}
@@ -285,7 +283,7 @@ In other words, it prints its own source code! Such programs are called \emph{qu
 \[q = PC(q)\]
 In other words, a quine is a \emph{fixed-point}. Quines are certainly interesting --- but what makes a quine a quine? Do different compilers have different quines? How do quines (or the space of possible quines) differ depending on the compiler?
 
-\textbf{Compilers view the same program from many different perspectives.} Recall that compilation is fundamentally a process of \textit{analysis} $+$ \textit{transformation}. It should not be surprising that different types of analysis and different types of transformation require looking at the same program from many different perspectives. Some transformations involve looking at the meaning or semantics of a program to figure out how to transform it in a way that preserves the semantics, but makes it faster or smaller in some way. Another class of transformations uses \emph{type-level} information. For example, a common optimisation is to use constant folding, that is, to turn expressions like \texttt{1+1} into constants like \texttt{2}. Constant folding can be blocked in cases where one of the inputs to the expression is \emph{dynamic} (that is, its value is not known until run-time), for example
+\textbf{Compilers view the same program from many different perspectives.} Recall that compilation is fundamentally a process of \textit{analysis} $+$ \textit{transformation}. It should not be surprising that different types of analysis and different types of transformation require looking at the same program from many different perspectives. Some transformations involve looking at the meaning or semantics of a program to figure out how to transform it in a way that preserves the semantics, but makes it faster or smaller in some way. Another class of transformations uses \emph{type-level} information. For example, a common optimisation is to use constant folding, that is, to turn expressions like \texttt{1+1} into constants like \texttt{2}. Constant folding can be blocked in cases where one of the inputs to the expression is \emph{dynamic} (that is, its value is not known until run-time), for example \label{content:the-trick}
 
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 int f(int x){
@@ -496,7 +494,7 @@ As a result, the structure of the compiler, \textit{for the purposes of this cou
 \end{center}
 
 \section{Compile Time Efficiency$^{*}$}
-At this point, it is important to make explicit two \emph{different} efficiencies that we care about, which we'll call the compile-time and run-time efficiencies.
+At this point, it is important to make explicit two \emph{different} types of efficiency that we care about, which we'll call the compile-time and run-time efficiency.
 
 When we speak about the \emph{compile-time} efficiency, we're talking about the time it takes for the \emph{compiler} to run. In contrast, the \emph{run-time} efficiency refers to the time it takes for the \emph{compiled program} to run.
 

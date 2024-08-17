@@ -1,0 +1,12 @@
+\begin{tikzpicture}
+\node (lr0-item) {$E \to E + \bullet \; T$};
+\node[anchor=north east, align = center] (goal) at ($(lr0-item.south west) + (-0.5,-1)$) { \small \textbf{Possible} goal: \\ match $E$ };
+\node[anchor=north west] (matched) at ($(lr0-item.south east) + (-2,-1)$) { \small\parbox{12ex}{\centering Matched: $E +$} };
+
+\node[anchor=north west] (todo) at ($(lr0-item.south east) + (0.5,-1)$) { \small\parbox{12ex}{\centering \textbf{Possible} Todo: match $T$} };
+
+\draw[->] (goal.north east) to[out=45,in=-90] ($(lr0-item.south west) + (2ex,0.5ex)$);
+\draw[->] (matched.north) to[out=135,in=-90] ($(lr0-item.south east) + (-8ex,0.5ex)$);
+\draw[->] (todo.north west) to[out=135,in=-90] ($(lr0-item.south east) + (-2ex,0.5ex)$);
+
+\end{tikzpicture}

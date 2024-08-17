@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+
+\node (tuple) {$A \to \alpha \bullet \beta, a$};
+
+\node[rotate=90,yscale=5,xscale=1.2,xshift=-1ex,anchor=west] (lr1-brace) at (tuple.north) {\}};
+
+\node[rotate=-90,yscale=3.8,xscale=1.2,xshift=-1ex,yshift=-0.5ex,anchor=south west] (lr0-brace) at (tuple.south west) {\}};
+\node[rotate=-90,anchor=south,yshift=-3ex] (lookahead) at (lr0-brace.north) {\}};
+
+\node at (lr1-brace.east) { \footnotesize LR(1) item };
+\node[anchor=east,xshift=3ex] at (lr0-brace.east) { \footnotesize LR(0) item };
+\node[anchor=north west,xshift=-2ex,yshift=1.2ex] at (lookahead.east) { \footnotesize lookahead token };
+\end{tikzpicture}

@@ -1,0 +1,55 @@
+\begin{tikzpicture}
+  \node(derivation) {
+    $\begin{array}{rcl}
+      ~\\
+      (x+y) & \Leftarrow \\[0.4ex]
+      (F+y) & \Leftarrow \\[0.4ex]
+      (T+y) & \Leftarrow \\[0.4ex]
+      (E+y) & \Leftarrow \\[0.4ex]
+      (E+F) & \Leftarrow \\[0.4ex]
+      (E+T) & \Leftarrow \\[0.4ex]
+      (E) & \Leftarrow \\[0.4ex]
+      F & \Leftarrow \\[0.4ex]
+      T & \Leftarrow \\[0.4ex]
+      E & \Leftarrow & S 
+    \end{array}$
+  };
+  
+  \node[anchor=north west] (states) at ($(derivation.north east) + (5cm,0)$) {
+    $\begin{array}{lr}
+      \text{stack} & \text{input}\\
+      \hline
+      \$ &  (x+y)\$ \\
+      \$(F & +y)\$ \\
+      \$(T & +y)\$ \\
+      \$(E & +y)\$ \\
+      \$(E+F & )\$ \\
+      \$(E+T & )\$ \\
+      \$(E) & \$ \\
+      \$F & \$ \\
+      \$T & \$ \\
+      \$E & \$ \\
+      \$S & \$ 
+    \end{array}$
+    };
+
+  \draw[line width=0.2ex,->] ($(derivation.north east) + (0,-1cm)$)
+   -- node[fill=white,midway] (label)
+       {\parbox{3.3cm}{\scriptsize\centering
+           View  reversed derivation\\ as a stack machine
+           %% (use $\$$ as stack bottom and end-of-input).
+         }} ($(states.north west) + (-0.2cm,-1cm)$);
+
+
+% \node[draw=darkest,rounded corners,anchor=south] (g2prime) at ($(states.north) + (0,0.5)$) {\footnotesize
+% \vspace{5pt}
+%   \begin{tabular}{lp{2ex}l}
+%   $S \to E $ &&   $T \to T * F \mid F $\\
+%   $E \to E + T \mid T $ &&  $F \to (E) \mid \text{id} $
+%   \end{tabular}
+%   };
+% \node[fill=background] at ($(g2prime.north)$) { \small\color{darkred} \bfseries $G'_2$ };
+
+   %% \node[draw,red,anchor=north] at ($(label.south) + (0,-0.5cm)$) { \parbox{3cm}{Can we make this work?} };
+
+\end{tikzpicture}

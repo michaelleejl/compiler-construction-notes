@@ -1,0 +1,96 @@
+\begin{tikzpicture}[remember picture]
+\node[anchor=west,draw=darkred,draw opacity=0.5,rounded corners] (grammar)  at ($(current page.west) + (1,0)$) {\footnotesize
+$\begin{array}{l}~\\[-1.5ex]
+  S \to E \\
+  E \to E + T \mid T \\
+  T \to T * F \mid F \\
+  F \to (E) \mid \text{id} 
+\end{array}$
+};
+\node[darkred,fill=background] at (grammar.north) { \small Grammar };
+
+  
+  \node[draw,rounded corners,anchor=south west] (lr0-nfa) at ($(grammar.north east) + (2,0.75)$) {  $A \to \alpha \bullet \beta$  };
+
+\node[darkred,anchor=south,fill=background] at (lr0-nfa.north) { \small LR(0) NFA };
+
+
+  \node[draw,rounded corners,anchor=north west,fill=background,fill opacity=0.5] (lr1-nfa) at ($(grammar.south east-|lr0-nfa.west) + (0,-1.5)$) { $A \to \alpha \bullet \beta, c$  };
+
+\node[darkred,anchor=south,fill=background, text opacity=0.5] at (lr1-nfa.north) { \small LR(1) NFA };
+
+
+  \node[draw,rounded corners,anchor=north west] (lr0-dfa) at ($(lr0-nfa.north east) + (1,0)$) { \parbox{10ex}{
+$A \to \alpha \bullet \beta$ 
+
+$B \to \gamma \bullet \delta$
+}
+ };
+
+\node[darkred,anchor=south,fill=background] at (lr0-dfa.north) { \small LR(0) DFA };
+
+
+  \node[draw,rounded corners,anchor=north west] (lr1-dfa) at ($(lr1-nfa.north east) + (1,0)$) { 
+\parbox{12ex}{
+$A \to \alpha \bullet \beta, c$ 
+
+$B \to \gamma \bullet \delta, d$
+} };
+
+
+\node[darkred,anchor=south,fill=background] at (lr1-dfa.north) { \small LR(1) DFA };
+
+
+  \node[anchor=south west,dashed,fill=background,fill opacity=0.5] (lr0-table) at ($(lr0-dfa.north east) + (1,0.2)$) { 
+
+\tiny
+$\begin{array}{c|ll}
+\hline
+0  & s5 &    \\
+1  &    & s6 \\
+2  &    & r2 \\
+\end{array}$
+
+ };
+
+\node[darkred,anchor=south,fill=background, text opacity=0.5] at (lr0-table.north) { \small LR(0) table };
+
+
+  \node[anchor=north west] (slr1-table) at ($(lr0-dfa.south east-|lr0-table.west) + (0,-1)$) { 
+\tiny
+$\begin{array}{c|ll}
+\hline
+0  & s5 &    \\
+1  &    & s6 \\
+2  &    & r2 \\
+\end{array}$
+ };
+
+
+\node[darkred,anchor=south,fill=background] at (slr1-table.north) { \small SLR(1) table };
+
+  \node[anchor=west] (lr1-table) at ($(lr1-dfa.east) + (1,0)$) { 
+\tiny
+$\begin{array}{c|ll}
+\hline
+0  & s5 &    \\
+1  &    & s6 \\
+2  &    & r2 \\
+\end{array}$
+ };
+
+\node[darkred,anchor=south,fill=background] at (lr1-table.north) { \small LR(1) table };
+
+
+\draw[darkest,thick,opacity=0.8,->,dotted] (grammar) -- (lr0-nfa.west);
+\draw[darkest,thick,opacity=0.8,->,dotted] (grammar) -- (lr1-nfa.west);
+
+\draw[darkest,thick,opacity=0.8,->,dotted] (lr0-nfa) -- (lr0-dfa);
+\draw[darkest,thick,opacity=0.8,->,dotted] (lr1-nfa) -- (lr1-dfa);
+
+\draw[darkest,thick,opacity=0.8,->,dotted] (lr0-dfa) -- (lr0-table);
+\draw[darkest,thick,opacity=0.8,->,dotted] (lr0-dfa) -- (slr1-table);
+\draw[darkest,thick,opacity=0.8,->,dotted] (lr1-dfa) -- (lr1-table);
+
+
+\end{tikzpicture}

@@ -1,0 +1,90 @@
+\definecolor{mdgrey}{HTML}{9696A0}
+\definecolor{ltgrey}{HTML}{D5D5DC}
+\begin{tikzpicture}
+
+    \begin{scope}[xshift=0cm, yshift=0cm]
+    \draw[draw=ltgrey, fill=ltgrey] (0, 0.01) rectangle ++(4,0.56);
+    
+    \node[anchor=south] (stack) at (3, 0) {\textcolor{mdgrey}{\textsf{\textbf{Stack $\rightarrow$}}}};
+       \node[anchor=south, draw, fill = white] (b) at (0.6,0) {\textcolor{white}{$E\;\,\,\,E$}};
+    \node[anchor=south, draw, fill = white] (b1) at (2.1,0) {\textcolor{white}{$E\;\,\,\,E\;\,E$}};
+    \node[anchor=south] (s) at (0.6,0) {$\phi$};
+    \node[anchor=south] (+) at (2.1,0) {$\beta$};
+    
+    \draw[draw=ltgrey, fill=ltgrey] (0, -0.99) rectangle ++(4,0.56);
+    
+    \node[anchor=south] (spacestack) at (3, -1) {\textcolor{mdgrey}{\textsf{\textbf{States $\rightarrow$}}}};
+    \node[anchor=south, draw, fill = white] (sb) at (0.3,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb1) at (0.9,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb2) at (1.5,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb3) at (2.1,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb4) at (2.7,-1) {\textcolor{white}{$E$}};
+
+
+    \node[anchor=south] (0) at (0.3,-1) {$q_0$};
+    \node[anchor=south] (1) at (0.9,-1) {$q_1$};
+    \node[anchor=south] (6) at (1.5,-1) {$q_2$};
+    \node[anchor=south] (+) at (2.1,-1) {$q_3$};
+    \node[anchor=south] (-) at (2.7,-1) {$q_4$};
+
+    
+    \draw[rounded corners,dotted,black] ($(0.south west) + (-0.3cm,-0.3cm)$) rectangle ($(stack.north east) + (0.3cm,0.3cm)$);
+    \end{scope}
+    
+    \begin{scope}[xshift=5.5cm, yshift=0cm]
+    \draw[draw=ltgrey, fill=ltgrey] (0, 0.01) rectangle ++(4,0.56);
+    
+    \node[anchor=south] (stack) at (3, 0) {\textcolor{mdgrey}{\textsf{\textbf{Stack $\rightarrow$}}}};
+       \node[anchor=south, draw, fill = white] (b) at (0.6,0) {\textcolor{white}{$E\;\,\,\,E$}};
+    \node[anchor=south] (s) at (0.6,0) {$\phi$};
+    
+    \draw[draw=ltgrey, fill=ltgrey] (0, -0.99) rectangle ++(4,0.56);
+    
+    \node[anchor=south] (spacestack) at (3, -1) {\textcolor{mdgrey}{\textsf{\textbf{States $\rightarrow$}}}};
+    \node[anchor=south, draw, fill = white] (sb) at (0.3,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb1) at (0.9,-1) {\textcolor{white}{$E$}};
+
+
+    \node[anchor=south] (0) at (0.3,-1) {$q_0$};
+    \node[anchor=south] (1) at (0.9,-1) {$q_1$};
+
+    
+    \draw[rounded corners,dotted,black] ($(0.south west) + (-0.3cm,-0.3cm)$) rectangle ($(stack.north east) + (0.3cm,0.3cm)$);
+    \end{scope}
+
+
+    \begin{scope}[xshift=11cm, yshift=0cm]
+    \draw[draw=ltgrey, fill=ltgrey] (0, 0.01) rectangle ++(4,0.56);
+    
+    \node[anchor=south] (stack) at (3, 0) {\textcolor{mdgrey}{\textsf{\textbf{Stack $\rightarrow$}}}};
+       \node[anchor=south, draw, fill = white] (b) at (0.6,0) {\textcolor{white}{$E\;\,\,\,E$}};
+       \node[anchor=south, draw, fill = white] (b) at (1.5,0) {\textcolor{white}{$E$}};
+    \node[anchor=south] (s) at (0.6,0) {$\phi$};
+    \node[anchor=south] (b) at (1.5,0) {$A$};
+
+    
+    \draw[draw=ltgrey, fill=ltgrey] (0, -0.99) rectangle ++(4,0.56);
+    
+    \node[anchor=south] (spacestack) at (3, -1) {\textcolor{mdgrey}{\textsf{\textbf{States $\rightarrow$}}}};
+    \node[anchor=south, draw, fill = white] (sb) at (0.3,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb1) at (0.9,-1) {\textcolor{white}{$E$}};
+    \node[anchor=south, draw, fill = white] (sb2) at (1.5,-1) {\textcolor{white}{$E$}};
+
+
+    \node[anchor=south] (0) at (0.3,-1) {$q_0$};
+    \node[anchor=south] (1) at (0.9,-1) {$q_1$};
+    \node[anchor=south] (b) at (1.5,-1) {$q_5$};
+
+
+    
+    \draw[rounded corners,dotted,black] ($(0.south west) + (-0.3cm,-0.3cm)$) rectangle ($(stack.north east) + (0.3cm,0.3cm)$);
+    \end{scope}
+
+    \draw[->] (4.5, -0.25) -- (5, -0.25);
+
+    \draw[->] (10, -0.25) -- (10.5, -0.25);
+
+
+    % \draw[->] (12.5, -0.25) to[out=0, in=180] (-0.5, -3.25);
+    
+\end{tikzpicture}
