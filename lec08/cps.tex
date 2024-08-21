@@ -82,7 +82,7 @@ If the answer is yes, then the function is \textbf{not} tail recursive. Hence, t
 If the answer is no, then the function \emph{is} tail recursive. An easy example of a tail recursive function is checking if an element is in a list
 
 \begin{code}[A tail recursive program for checking if an element is in a list in \texttt{OCaml}]
-\label{code:sum-cps-ocaml}
+\label{code:mem-cps-ocaml}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let rec mem x xs = 
   match xs with
@@ -99,7 +99,7 @@ Let's consider, once again the \texttt{sum} function defined in \Cref{code:sum-o
 Let's describe this annoying ``extra work'' in a way that makes its nature more apparent. Rather than saying \texttt{x + sum xs}, we'll say \texttt{(fun res -> x + res) (sum xs)} (where \texttt{res} stands for result). Putting it together, 
 
 \begin{code}[Making the order of evaluation explicit]
-\label{code:sum-ocaml}
+\label{code:sum-ocaml-explicit}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let rec sum xs = 
    match xs with
@@ -182,7 +182,7 @@ let rec fib n = match n with
 \end{code}
 
 \begin{code}[A CPS-transformed fibonacci function in \texttt{OCaml}]
-\label{code:fib-ocaml-again}
+\label{code:fib-cps-ocaml}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let rec fib_cps n k = match n with
   | 0 -> k 1
@@ -226,7 +226,7 @@ In \Cref{code:sum-cps-ocaml}, we've chosen \texttt{res} as the name of the inter
 {\sffamily \textbf{(Non-Examinable)} CPS and SSA.} In addition, it is not \emph{just} that every intermediate result is named, but every function in the continuation is applied \emph{at most once}. In {\sffamily Part II Optimising Compilers}, you'll learn about \textit{Static Single Assignment} (SSA) form, a transformation commonly used in imperative intermediate representations. SSA form ensures that every user variable is assigned \textit{at most once}. For example, the following code is \textbf{not} in SSA form, since (for example) \texttt{a} is assigned to twice -- once the result of \texttt{f(1)}, and once the result of \texttt{f(6)}.
 
 \begin{code}[\texttt{C} Code that is not in SSA form]
-\label{code:fib-ocaml-again}
+\label{code:c-not-ssa}
 \begin{minted}[bgcolor=backcolour, linenos]{C}
 extern int f(int); 
 extern void h(int,int); 
@@ -242,7 +242,7 @@ void g() {
 To transform this code into SSA form, we number every assignment, so every variable is assigned to \emph{at most} once. 
 
 \begin{code}[\texttt{C} Code that is in SSA form]
-\label{code:fib-ocaml-again}
+\label{code:c-ssa}
 \begin{minted}[bgcolor=backcolour, linenos]{C}
 extern int f(int); 
 extern void h(int,int); 
@@ -300,7 +300,7 @@ let rec mul_cps xs k = match xs with
 We can make this multiplication faster, by simply returning zero whenever we encounter a zero. 
 
 \begin{code}[A faster \texttt{OCaml} function that multiplies the elements of a list]
-\label{code:mul-ocaml-fastest}
+\label{code:mul-ocaml-faster}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let rec mul_cps xs k = 
   match xs with
@@ -315,7 +315,7 @@ But this is still not the most optimal, since we will have to go through the \em
 However, since continuations are now explicit objects that we can manipulate, let's \emph{save} the continuation \emph{before} we do any multiplication, and call it \texttt{u}. If we reach a \texttt{0}, let's not apply the built up continuation \texttt{k}, but instead the saved continuation \texttt{u}.
 
 \begin{code}[An even faster \texttt{OCaml} function that multiplies the elements of a list]
-\label{code:fib-ocaml-again}
+\label{code:mul-ocaml-fastest}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let mul_cps xs u = 
   let rec mul_cps_inner xs k = 
@@ -331,7 +331,7 @@ let mul_cps xs u =
 Second, we can implement \texttt{Prolog} style backtracking in \texttt{OCaml}. Specifically, we implement an \texttt{amb} primitive, described first by \citet{mccarthy-1963} in 1961, that takes in a list of values it could be, and tries them in order. For example, in \Cref{code:amb-specification}, \texttt{x} first takes the value \texttt{1}, then \texttt{2}, then \texttt{3}, etcetera.
 
 \begin{code}[An example of the \texttt{amb} primitive in operation]
-\label{code:amb-specification}
+\label{code:amb-example}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let x = amb [1;2;3;4] in
 let y = amb [5;6;7;8] in
@@ -521,7 +521,7 @@ let fib_1 n = fib_cps n (fun x -> x)
 Next, define the \texttt{apply\_cont} function. 
 
 \begin{code}[Defunctionalisation Step 2]
-\label{code:defun-fib-1}
+\label{code:defun-fib-2}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 type cont = ID | K1 of int * cont | K2 of int * cont
 
@@ -543,7 +543,7 @@ let fib_1 n = fib_cps n (fun x -> x)
 Finally, replace each function with its constructor. 
 
 \begin{code}[Defunctionalisation Step 3]
-\label{code:defun-fib-1}
+\label{code:defun-fib-3}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 type cont = ID | K1 of int * cont | K2 of int * cont
 
@@ -575,7 +575,7 @@ K1(n1) :: K2(n2) :: []
 While we're at it, let's give \texttt{K1} and \texttt{K2} more meaningful names. Let's call \texttt{K1} ``\texttt{SUB2}'' and \texttt{K2} ``\texttt{PLUS}''. 
 
 \begin{code}[Uncovering the list structure]
-\label{code:defun-list-fib}
+\label{code:defun-fib-list}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 type tag = SUB2 of int | PLUS of int
 type tag_list_cont = taglist
@@ -667,7 +667,7 @@ We have our call stack, but we should do a couple of clean up steps before calli
 One feature that we'd like to get rid of is \emph{mutual recursion}. \texttt{apply\_tag\_list\_cont} will call \texttt{fib\_cps\_defun\_tags} and vice versa, so the two functions \textbf{have} to be defined together. Eliminating mutual recursion is \emph{easy}, both conceptually and in practice. Let's see it in a simple setting first. Here are two mutually recursive functions for determining the parity of a number.
 
 \begin{code}[A set of mutually recursive functions]
-\label{code:mutual-recursion}
+\label{code:eo-mutual-recursion}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let rec is_even n = n=0 || is_odd(n-1)
 and is_odd n = n <> 0 && is_even(n-1)
@@ -677,7 +677,7 @@ and is_odd n = n <> 0 && is_even(n-1)
 We'll convert this mutual recursion into single recursion by defining a single function, \texttt{is}, and a constructor, \texttt{eo}.
 
 \begin{code}[Eliminating mutual recursion]
-\label{code:mutual-recursion}
+\label{code:eo-mutual-recursion-elimination}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 type eo = Even | Odd
 let is f n = 
@@ -692,7 +692,7 @@ The abstract idea that we've shown in this concrete example is that we replace t
 Applying this technique to our fibonacci function, we get
 
 \begin{code}[Eliminating mutual recursion for our fibonacci function]
-\label{code:defun-list-fib}
+\label{code:fib-mutual-recursion-elimination}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 type state_type = FIB (*means we should act like fib_cps_defun_tags*)
                 | APP (*means we should act like apply_tag_list_cont*)
@@ -714,7 +714,7 @@ let fib_4 n = eval (FIB, n, [])
 Finally, \texttt{eval} is slightly clunky because it's a big function that calls itself recursively, but also has a lot of cases. Ideally, we want a function to either be a large pattern match or call itself recursively. We can do this by using a simple refactoring. 
 
 \begin{code}[Refactoring our fibonacci function]
-\label{code:defun-list-fib}
+\label{code:fib-final}
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}
 let step = function
   | FIB, 0, k -> APP, 1, k

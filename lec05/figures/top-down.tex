@@ -1,15 +1,15 @@
 \begin{tikzpicture}
-  \node(s){$\nonterminal{S}$}
+  \node(s){$\nonterminal{S}$};
 
-  \node[] at ($(s.east) + (0.22cm,-0.07cm)$) {$\Rightarrow$}
+  \node[] at ($(s.east) + (0.22cm,-0.07cm)$) {$\Rightarrow$};
 
   \begin{scope}[xshift=1cm, yshift=-0.14cm]
     \Tree [.$\nonterminal{S}$
              {$\nonterminal{E}$} 
           ]
-  \end{scope}
+  \end{scope};
 
-  \node[] at ($(s.east) + (1.22cm,-0.07cm)$) {$\Rightarrow$}
+  \node[] at ($(s.east) + (1.22cm,-0.07cm)$) {$\Rightarrow$};
 
   \begin{scope}[xshift=2cm, yshift=-0.14cm]
     \Tree [.$\nonterminal{S}$
@@ -17,9 +17,9 @@
              {$\nonterminal{T}$}
              ]
           ]
-  \end{scope}
+  \end{scope};
 
-  \node[] at ($(s.east) + (2.22cm,-0.07cm)$) {$\Rightarrow$}
+  \node[] at ($(s.east) + (2.22cm,-0.07cm)$) {$\Rightarrow$};
 
   \begin{scope}[xshift=3cm, yshift=-0.14cm]
     \Tree [.$\nonterminal{S}$
@@ -29,9 +29,9 @@
                 ]
              ]
           ]
-  \end{scope}
+  \end{scope};
 
-  \node[] at ($(s.east) + (3.22cm,-0.07cm)$) {$\Rightarrow$}
+  \node[] at ($(s.east) + (3.22cm,-0.07cm)$) {$\Rightarrow$};
 
   \begin{scope}[xshift=4cm, yshift=-0.14cm]
     \Tree [.$\nonterminal{S}$
@@ -45,13 +45,13 @@
                 ]
              ]
           ]
-  \end{scope}
+  \end{scope};
 
-  \node[] at ($(s.east) + (4.22cm,-0.07cm)$) {$\Rightarrow$}
+  \node[] at ($(s.east) + (4.22cm,-0.07cm)$) {$\Rightarrow$};
 
   \begin{scope}[xshift=5.1cm, yshift=-0.14cm]
-    \node(then){$\ldots$}
-  \end{scope}
+    \node(then){$\ldots$};
+  \end{scope};
   
 \end{tikzpicture}
 

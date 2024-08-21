@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+\node[draw,minimum width=6cm,minimum height=2cm] (block) {  };
+\draw ($(block.north west) + (2cm,0)$) -- ++ (0,-2cm);
+\draw ($(block.north west) + (4cm,0)$) -- ++ (0,-2cm);
+\node[anchor=north west,minimum width=2cm,inner sep=0pt,minimum height=2cm,fill=darkest,fill opacity=0.1] at (block.north west) { };
+
+\node[anchor=west] at (block.west)  { \parbox{2cm}{\centering\bfseries\color{highlight} size\\type\\\ldots}};
+
+
+\node at ($(block.west) + (3cm,0)$) { data };
+\node at ($(block.west) + (5cm,0)$) { data };
+
+\end{tikzpicture}

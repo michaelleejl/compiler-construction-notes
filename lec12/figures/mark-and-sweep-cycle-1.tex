@@ -1,0 +1,44 @@
+\scalebox{0.4}{
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+
+\gcblock{node-0}{(0,0)}
+
+\node[opacity=\arrowOpacity] (root) at ($(node-0) + (-3cm,-1cm)$) { \Large root };
+
+\gcblock{node-1}{($(node-0) + (-0.5cm,2cm)$)}
+\gcblock{node-2}{($(node-0) + (3cm,2cm)$)}
+\gcblock{node-3}{($(node-1) + (-1cm,2cm)$)}
+\gcblock{node-5}{($(node-3) + (-1cm,2cm)$)}
+
+\begin{scope}[opacity=\arrowOpacity]
+\draw[->] (root) -- (node-0.south west);
+\draw<1-2>[->] \fieldOne{node-0} -- (node-1.south west);
+\draw<3->[->,darkred,line width=1.2pt] \fieldOne{node-0} -- (node-1.south west);
+\draw<1-3>[->] \fieldTwo{node-0} -- (node-2.south west);
+\draw<4->[->,darkred,line width=1.2pt][->] \fieldTwo{node-0} -- (node-2.south west);
+\draw[->] \fieldOne{node-3} -- (node-5.south west);
+\draw[rounded corners=0.5cm,->] \fieldOne{node-5} -- ++ (-0.5cm,1cm) -- ++ (-1cm,-0.5cm) -- ++ (0.3cm,-1cm) to[out=-90,in=135] (node-3.south west);
+\draw[->] \fieldTwo{node-3} to[out=0,in=135] (node-2.south west);
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldTwo{node-0} {$\bullet$};
+\node at \fieldOne{node-3} {$\bullet$};
+\node at \fieldTwo{node-3} {$\bullet$};
+\node at \fieldOne{node-5} {$\bullet$};
+\end{scope}
+
+
+% \only<2-9>\markBlock{node-0}
+% \only<3-7>\markBlock{node-1}
+% \only<4-8>\markBlock{node-2}
+% \only<5>\highlightBlock{node-5}
+% \only<6->\collectBlock{node-5}
+% \only<6>\highlightBlock{node-3}
+% \only<7->\collectBlock{node-3}
+% \only<7>\highlightBlock{node-1}
+% \only<8>\highlightBlock{node-2}
+% \only<9>\highlightBlock{node-0}
+% \only<10>{}
+
+
+\end{tikzpicture}}

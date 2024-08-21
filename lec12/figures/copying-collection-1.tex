@@ -1,0 +1,22 @@
+\scalebox{0.3}{
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+\node[draw,minimum width=8.5cm,minimum height=4.5cm,fill=black!10!white,fill opacity=0.0] (fromspace) {
+};
+
+\copyblock{node-0}{($(fromspace.south) + (0,1.2cm)$)}
+\copyblock{node-1}{($(node-0) + (-2cm,2cm)$)}
+\copyblock{node-2}{($(node-0) + (2cm,2cm)$)}
+
+\draw[->,rounded corners=0.5cm] \fieldOne{node-0} -- ++(-0.2cm,-0.9cm)-- ++(-0.9cm,-0.2cm) -- (node-1.south west);
+\draw[->] \fieldOne{node-1} -- (node-0.south west);
+
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldTwo{node-1} {$\bullet$};
+\node at \fieldOne{node-1} {$\bullet$};
+
+\node[draw,minimum width=8.5cm,minimum height=4.5cm,anchor=west,fill=black!10!white,fill opacity=0.2] (tospace) at ($(fromspace.east) + (0.5cm,0)$) {
+
+};
+
+\end{tikzpicture}}

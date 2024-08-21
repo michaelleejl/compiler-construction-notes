@@ -1,0 +1,28 @@
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+
+\gcblock{node-0}{(0,0)}
+
+\node[draw=highlight,rounded corners,fill=highlight,fill opacity=0.1,inner sep=2ex,text opacity=1.0] (root) at ($(node-0) + (-3cm,-2cm)$) { root set };
+
+\gcblock{node-1}{($(node-0) + (-0.5cm,2cm)$)}
+\gcblock{node-2}{($(node-0) + (3cm,2cm)$)}
+\gcblock{node-3}{($(node-1) + (-1cm,2cm)$)}
+\gcblock{node-4}{($(node-2) + (3cm,2cm)$)}
+
+\draw[->]                         (root) -- (node-0.south west);
+
+\draw[->]                        \fieldOne{node-0} -- (node-1.south west);
+
+\draw[->]                          \fieldTwo{node-0} -- (node-2.south west);
+\draw[->]                          \fieldTwo{node-2} -- (node-4.south west);
+\draw[->]                          \fieldTwo{node-4} to[out=-90,in=-30,bend left=90] (node-2.south west);
+\draw[->]                       \fieldTwo{node-1} to[out=60,in=-170] (node-4.south west);
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldTwo{node-0} {$\bullet$};
+\node at \fieldTwo{node-1} {$\bullet$};
+\node at \fieldTwo{node-2} {$\bullet$};
+\node at \fieldTwo{node-4} {$\bullet$};
+
+
+\end{tikzpicture}

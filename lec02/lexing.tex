@@ -178,7 +178,7 @@ Regular expressions stand for potentially infinite sets, and they're not very fe
 \begin{figure}[H]
     \centering
     \import{figures}{nfa-example}
-    \captionof{figure}{A finite-state automaton that recognizes the language $\protect{L((a \lor b)\* abb)}$}
+    \captionof{figure}{A finite-state automaton that recognizes the language $L((a \lor b)* abb)$}
     \label{fig:nfa-example}
 \end{figure}
 
@@ -508,7 +508,7 @@ In addition, even if we consider a non-pathological case, where the lexer takes 
 
 This may be surprising, since the work done by the lexer is by far the simplest part of the compiler. The reason for this is that $n$ is the number of \emph{characters}, which is often much larger than the number of \emph{tokens}.
 
-\section{Lexing with Derivatives$^{*}$}
+\section{Lexing with Derivatives\optional}
 \textit{This section is based on \href{https://www.cambridge.org/core/journals/journal-of-functional-programming/article/regularexpression-derivatives-reexamined/E5734B86DEB96C61C69E5CF3C4FB0AFA}{Regular-expression derivatives re-examined} by} \citet{owens-2009}.
 
 You might not be particularly pleased with our method for constructing lexers, and you'd be right not to be. The method we've illustrated is rather indirect: each step is more or less simple, but there are a lot of them. In this, \textsf{\textbf{non-examinable}} section, we consider a much more direct and elegant approach.

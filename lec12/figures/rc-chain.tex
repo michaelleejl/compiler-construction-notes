@@ -1,0 +1,39 @@
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+
+\rcblock{node-0}{(0,0)}{0}
+
+\rcblock{node-1}{(4,1.5)}{1}
+
+\rcblock{node-2}{(8,3)}{1}
+
+\rcblock{node-3}{(12,4.5)}{1}
+
+% \rcblock{node-4}{(16,6)}{1}
+
+\node (p) at ($(node-0.south west) + (-1,-1)$) { \Large $\bullet$ };
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldOne{node-1} {$\bullet$};
+\node at \fieldOne{node-2} {$\bullet$};
+% \node at \fieldOne{node-3} {$\bullet$};
+
+\draw[->] (p) -- (node-0.south west);
+\draw[->] \fieldOne{node-0} to[out=90,in=-160] (node-1.south west);
+\draw[->] \fieldOne{node-1} to[out=90,in=-160] (node-2.south west);
+\draw[->] \fieldOne{node-2} to[out=90,in=-160] (node-3.south west);
+% \draw[->] \fieldOne{node-3} to[out=90,in=-160] (node-4.south west);
+
+% \node[fill=background,fill opacity=0.75,
+%       minimum width=3.2cm,minimum height=1.4cm,anchor=north west] at ($(node-0.north west) + (-0.2cm,0.2cm)$) { };
+
+% \node[fill=background,fill opacity=0.75,
+%       minimum width=3.2cm,minimum height=1.4cm,anchor=north west] at ($(node-1.north west) + (-0.2cm,0.2cm)$) { };
+
+% \node[fill=background,fill opacity=0.75,
+%       minimum width=3.2cm,minimum height=1.4cm,anchor=north west] at ($(node-2.north west) + (-0.2cm,0.2cm)$) { };
+
+% \node[fill=background,fill opacity=0.75,
+%       minimum width=3.2cm,minimum height=1.4cm,anchor=north west] at ($(node-3.north west) + (-0.2cm,0.2cm)$) { };
+
+
+\end{tikzpicture}

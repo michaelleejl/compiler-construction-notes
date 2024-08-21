@@ -1,0 +1,17 @@
+\scalebox{0.6}{
+\begin{tikzpicture}
+\gcblock{node-1}{(0,0)};
+\node at ($(node-1) + (2cm,0cm)$) {Node 1};
+
+\gcblock{node-2}{($(node-0) + (0cm,3cm)$)};
+\node at ($(node-2) + (2cm,0cm)$) {Node 2};
+
+\markBlock{node-1};
+
+\node at \fieldOne{node-1} {$\bullet$};
+\node at \fieldOne{node-2} {$\bullet$};
+
+\draw[->] \fieldOne{node-1} -- (node-2.south west);
+
+\end{tikzpicture}
+}

@@ -1,0 +1,30 @@
+\scalebox{0.3}{
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+\node[draw,minimum width=8.5cm,minimum height=4.5cm,fill=black!10!white,fill opacity=0.0] (fromspace) {
+};
+
+\forwardedblock{node-0}{($(fromspace.south) + (0,1.2cm)$)}
+\forwardedblock{node-1}{($(node-0) + (-2cm,2cm)$)}
+\copyblock{node-2}{($(node-0) + (2cm,2cm)$)}
+
+\draw[->,rounded corners=0.5cm] \fieldOne{node-0} -- ++(-0.2cm,-0.9cm)-- ++(-0.9cm,-0.2cm) -- (node-1.south west);
+\draw[->] \fieldOne{node-1} -- (node-0.south west);
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldTwo{node-1} {$\bullet$};
+\node at \fieldOne{node-1} {$\bullet$};
+
+\node[draw,minimum width=8.5cm,minimum height=4.5cm,anchor=west,fill=black!10!white,fill opacity=0.2] (tospace) at ($(fromspace.east) + (0.5cm,0)$) {
+
+};
+
+\copyblock{rnode-0}{($(tospace.south west) + (1.6cm,1.2cm)$)}
+\copyblock{rnode-1}{($(rnode-0) + (2.7cm,0cm)$)}
+
+\node at \fieldOne{rnode-0} {$\bullet$};
+\draw[rounded corners=0.3cm,->] \fieldOne{rnode-0} -- ++ (0.3cm,-0.7cm) -- ++ (1cm,0) -- (rnode-1.south west);
+
+\node at \fieldOne{rnode-1} {$\bullet$};
+\draw[rounded corners=0.3cm,->] \fieldOne{rnode-1} -- ++ (-0.4cm,-0.9cm) -- ++ (-1.5cm,0) -- (rnode-0.south west);
+
+\end{tikzpicture}}

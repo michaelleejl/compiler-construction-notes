@@ -1,0 +1,29 @@
+\begin{tikzpicture}
+\node[draw=darkest,draw opacity=0.5,rounded corners,minimum width=0.2\textwidth] (no-free) {
+\begin{lstlisting}[style=c]
+p = malloc(10);
+return OK;
+\end{lstlisting}
+};
+
+\node[draw=darkest,draw opacity=0.5,rounded corners,minimum width=0.2\textwidth,anchor=west] (double-free) at ($(no-free.east) + (1.5cm,0)$) {
+\begin{lstlisting}[style=c]
+free(p);
+free(p);
+\end{lstlisting}
+};
+
+\node[draw=darkest,draw opacity=0.5,rounded corners,minimum width=0.2\textwidth,anchor=west] (use-after-free) at ($(double-free.east) + (1.5cm,0)$) {
+\begin{lstlisting}[style=c]
+free(p);
+*p += 1;
+\end{lstlisting}
+};
+
+\node[darkred,fill=background] at (no-free.north) {\footnotesize missing free  };
+
+\node[darkred,fill=background] at (double-free.north) {\footnotesize double free  };
+
+\node[darkred,fill=background] at (use-after-free.north) {\footnotesize use after free  };
+
+\end{tikzpicture}

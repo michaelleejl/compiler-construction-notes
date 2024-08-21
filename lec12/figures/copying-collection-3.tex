@@ -1,0 +1,20 @@
+\scalebox{0.3}{
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+\node[draw,minimum width=8.5cm,minimum height=4.5cm,fill=black!10!white,fill opacity=0.2] (fromspace) {
+};
+
+\node[draw,minimum width=8.5cm,minimum height=4.5cm,anchor=west,fill=black!10!white,fill opacity=0.0] (tospace) at ($(fromspace.east) + (0.5cm,0)$) {
+
+};
+
+\copyblock{rnode-0}{($(tospace.south west) + (1.6cm,1.2cm)$)}
+\copyblock{rnode-1}{($(rnode-0) + (2.7cm,0cm)$)}
+
+\node at \fieldOne{rnode-0} {$\bullet$};
+\draw[rounded corners=0.3cm,->] \fieldOne{rnode-0} -- ++ (0.3cm,-0.7cm) -- ++ (1cm,0) -- (rnode-1.south west);
+
+\node at \fieldOne{rnode-1} {$\bullet$};
+\draw[rounded corners=0.3cm,->] \fieldOne{rnode-1} -- ++ (-0.4cm,-0.9cm) -- ++ (-1.5cm,0) -- (rnode-0.south west);
+
+
+\end{tikzpicture}}

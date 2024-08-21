@@ -1,0 +1,34 @@
+\begin{tikzpicture}
+\node[draw=darkest,draw opacity=0.5,rounded corners] (reference-counting) {
+\parbox{0.42\textwidth}{\scriptsize
+\vspace{3ex}
+
+Keep a \textbf{reference count}
+with each object that represents the number of
+pointers to it.\medskip
+
+An object is \textbf{garbage when its count is 0}
+}
+};
+
+\node[fill=background] at (reference-counting.north) {
+Reference counting
+};
+
+\node[draw=darkest,draw opacity=0.5,rounded corners,anchor=west] (tracing-gc)  at ($(reference-counting.east) + (0.05\textwidth,0)$) {
+\parbox{0.44\textwidth}{\scriptsize
+\vspace{3ex}
+
+Keep alive objects \textbf{reachable} from the root set\\
+(i.e.~transitive close of pointer graph)
+
+\medskip
+
+An object is \textbf{garbage when it is unreachable}
+}
+};
+
+\node[fill=background] at (tracing-gc.north) {
+Tracing garbage collection
+};
+\end{tikzpicture}

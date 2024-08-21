@@ -1,0 +1,70 @@
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\rcblock{node-0}{(2.5,9)}{1}
+\node(p0) at ($(node-0.south west) - (1,1)$) { $\bullet$ };
+\draw[->](p0) -- (node-0.south west);
+
+\node[anchor=north east, align = left] at ($(node-0.north west) + (-2,0)$) {\parbox{0.35\textwidth}{
+\textbf{\textsf{Creation:}}\\
+An object's reference count is 1
+when the object is created.
+}};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\rcblock{node-1}{(2.5,6)}{1}
+\node(p1) at ($(node-1.south west) - (1,1)$) { $\bullet$ };
+\draw[->](p1) -- (node-1.south west);
+
+\rcblock{node-2}{(9,6)}{2}
+\node(p2a) at ($(node-2.south west) - (1,1)$) { $\bullet$ };
+\node(p2b) at ($(node-2.south west) - (-1,1)$) { $\bullet$ };
+\draw[->](p2a) -- (node-2.south west);
+\draw[dashed,->](p2b) -- (node-2.south west);
+
+\draw[->,dotted,darkred] ($(node-1.east) + (0.5,0)$) -- ($(node-2.west) + (-0.5,0)$);
+
+\node[anchor=north east] at ($(node-1.north west) + (-2,0)$) {\parbox{0.35\textwidth}{
+\textbf{\textsf{Referencing:}}\\
+The count is incremented
+when a pointer newly references the object.
+}};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\rcblock{node-3}{(9,3)}{1}
+\node(p3) at ($(node-3.south west) - (1,1)$) { $\bullet$ };
+\draw[->](p3) -- (node-3.south west);
+
+\rcblock{node-4}{(2.5,3)}{2}
+\node(p4a) at ($(node-4.south west) - (1,1)$) { $\bullet$ };
+\node(p4b) at ($(node-4.south west) - (-1,1)$) { $\bullet$ };
+\draw[->](p4a) -- (node-4.south west);
+\draw[dashed,->](p4b) -- (node-4.south west);
+
+\draw[->,dotted,darkred] ($(node-4.east) + (0.5,0)$) -- ($(node-3.west) + (-0.5,0)$);
+
+\node[anchor=north east] at ($(node-4.north west) + (-2,0)$) {\parbox{0.35\textwidth}{
+\textbf{\textsf{Dereferencing:}}\\
+The count is decremented
+when a pointer no longer references the object:
+}};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\rcblock{node-5}{(9,0)}{0}
+
+\rcblock{node-6}{(2.5,0)}{1}
+\node(p6) at ($(node-6.south west) - (1,1)$) { $\bullet$ };
+\draw[dashed,->](p6) -- (node-6.south west);
+
+\draw[->,dotted,darkred] ($(node-6.east) + (0.5,0)$) -- ($(node-5.west) + (-0.5,0)$);
+
+\node[fill=background,fill opacity=0.75,
+      minimum width=2.8cm,minimum height=1.3cm,anchor=north west] at ($(node-5.north west) + (-0.2cm,0.2cm)$) { };
+
+\node[anchor=north east] at ($(node-6.north west) + (-2,0)$) {\parbox{0.35\textwidth}{
+\textbf{\textsf{Destruction:}}\\
+The object is unreachable garbage
+when the reference count goes to 0:
+}};
+
+\end{tikzpicture}

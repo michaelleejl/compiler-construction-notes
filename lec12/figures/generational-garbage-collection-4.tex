@@ -1,0 +1,80 @@
+\scalebox{0.3}{
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+\node[draw,minimum width=8.5cm,minimum height=8.5cm] (minor) {
+};
+
+\node[draw,minimum width=16.5cm,minimum height=10cm,anchor=south west] (major) at ($(minor.south east) + (0.5cm,0)$) {
+
+};
+
+\node[draw,minimum width=8.5cm,minimum height=8.5cm, fill=black!10!white,fill opacity=0.2] at (minor) {
+};
+
+\node[fill=background] at (minor.north) { \LARGE minor heap };
+
+\node[fill=background] at (major.north) { \LARGE major heap };
+
+
+\gcblock{rnode-0}{($(major.south) + (0,1cm)$)}
+
+\node (root) at ($(node-0) + (3cm,-2.5cm)$) { \LARGE root };
+
+\gcblock{rnode-1}{($(rnode-0) + (-0.5cm,2cm)$)}
+\gcblock{rnode-2}{($(rnode-0) + (3cm,2cm)$)}
+\gcblock{rnode-3}{($(rnode-1) + (-1cm,2cm)$)}
+\gcblock{rnode-4}{($(rnode-2) + (3cm,2cm)$)}
+\gcblock{rnode-5}{($(rnode-3) + (-1cm,2cm)$)}
+\gcblock{rnode-6}{($(rnode-4) + (-4cm,2cm)$)}
+\gcblock{rnode-7}{($(rnode-5) + (-1cm,2cm)$)}
+\gcblock{rnode-8}{($(rnode-6) + (-1cm,2cm)$)}
+
+
+
+%% \draw<2->[->,line width=1.2pt] (root) -- (rnode-0.south west);
+
+\only{\gcblock{promoted-node-0}{($(major.south west) + (1.6cm,1cm)$)}}
+\only{\gcblock{promoted-node-1}{($(promoted-node-0) + (3.2cm,0cm)$)}}
+
+{
+\draw[->,line width=1.2pt,rounded corners] \fieldOne{promoted-node-0} -- ++(0.3cm,0.9cm) -- ++(1.7cm,0cm) -- (promoted-node-1.south west);
+}
+
+
+\only{\draw[->,line width=1.2pt] \fieldTwo{promoted-node-1} -- (rnode-1.south west);}
+%% \draw<3->[->,line width=1.2pt] \fieldOne{rnode-0} -- (rnode-1.south west);
+
+\draw[->] \fieldOne{rnode-0} -- (rnode-1.south west);
+\draw[->] \fieldTwo{rnode-0} -- (rnode-2.south west);
+\draw[->,line width=1.2pt] \fieldOne{rnode-2} -- (rnode-6.south west);
+\draw[->,line width=1.2pt] \fieldTwo{rnode-2} -- (rnode-4.south west);
+\draw[->] \fieldTwo{rnode-2} -- (rnode-4.south west);
+\draw[->,line width=1.2pt] \fieldTwo{rnode-4} to[out=-90,in=-30,bend left=90] (rnode-2.south west);
+\draw[->,line width=1.2pt] \fieldTwo{rnode-1} to[out=60,in=-170] (rnode-4.south west);
+\draw[->,line width=1.2pt] \fieldOne{rnode-1} to[out=70,in=-90,bend right=30] (rnode-8.south west);
+\draw[->] \fieldOne{rnode-3} -- (rnode-5.south west);
+\draw[->] \fieldTwo{rnode-3} -- (rnode-6.south west);
+\draw[->] \fieldOne{rnode-5} -- (rnode-7.south west);
+\draw[->] \fieldTwo{rnode-5} -- (rnode-8.south west);
+
+\node at \fieldOne{rnode-0} {$\bullet$};
+\node at \fieldTwo{rnode-0} {$\bullet$};
+\node at \fieldOne{rnode-1} {$\bullet$};
+\node at \fieldTwo{rnode-1} {$\bullet$};
+\node at \fieldOne{rnode-2} {$\bullet$};
+\node at \fieldTwo{rnode-2} {$\bullet$};
+\node at \fieldTwo{rnode-4} {$\bullet$};
+\node at \fieldOne{rnode-3} {$\bullet$};
+\node at \fieldTwo{rnode-3} {$\bullet$};
+\node at \fieldOne{rnode-5} {$\bullet$};
+\node at \fieldTwo{rnode-5} {$\bullet$};
+
+\draw[->]                         (root) -- (promoted-node-0.south west);
+
+{
+\collectBlock{rnode-0}
+\collectBlock{rnode-3}
+\collectBlock{rnode-5}
+\collectBlock{rnode-7}
+}
+
+\end{tikzpicture}}

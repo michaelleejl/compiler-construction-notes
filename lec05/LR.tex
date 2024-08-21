@@ -755,7 +755,7 @@ The key to building an LR parser, therefore, is determining when to shift and wh
 
 This is summarised in \Cref{fig:lr-parsing-recap}.
 
-\section{LALR$^*$}
+\section{LALR\optional}
 In this optional section, we conclude the discussion on LR parsers by noting that an LR(1) DFA may have a very large number of states. LALR parsers, that are used by \texttt{yacc}, optimise the DFA by collapsing states. For example, consider two states
 
 \begin{center}
@@ -803,7 +803,7 @@ $\begin{array}{l}
     \end{tikzpicture}
 \end{center}
 
-Either these come from the same state, or from different states. If they came from the same state, then that state already had a shift reduce conflict. If they came from different states, then consider the state (call it $q$) with the item $B \to \gamma \bullet, b$. Since we merged the two states, $q$ \textit{must} have the same ``core item'' $A \to \alpha \bullet b \beta, \?$, only with a different lookahead token, here marked $\?$. So $q$ must have a shift-reduce conflict.
+Either these come from the same state, or from different states. If they came from the same state, then that state already had a shift reduce conflict. If they came from different states, then consider the state (call it $q$) with the item $B \to \gamma \bullet, b$. Since we merged the two states, $q$ \textit{must} have the same ``core item'' $A \to \alpha \bullet b \beta, ?$, only with a different lookahead token, here marked $?$. So $q$ must have a shift-reduce conflict.
 
 Hence, LALR will never introduce new shift-reduce conflicts. It might, however, introduce new reduce-reduce conflicts. Consider merging these two states
 \begin{center}
@@ -843,7 +843,7 @@ What this means, by the way, is that building an LALR parser is more expensive t
 
 Finally, we can see that LALR parsers tend to struggle with error detection and reporting. Recall that we can, in effect, fill the empty cells in the ACTION table with detailed error reporting. Merging states merges \textit{rows}, and thus cells with different error reporting. This makes error reporting hard with LALR, and is another example of the trade-offs we have to consider when building parsers!
 
-\section{Partial Evaluation: From Combinators to Generators$^*$}\label{section:partial-evaluation}
+\section{Partial Evaluation: From Combinators to Generators\optional}\label{section:partial-evaluation}
 \textit{This optional section is based on \href{https://dl.acm.org/doi/pdf/10.1145/215465.215579}{The Essence of LR Parsing} by} \citet{sperber-1995}, \textit{and \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{A Typed, Algebraic Approach to Parsing} by} \citet{krishnaswami-2019}. \textit{It is a continuation of} \Cref{section:parser-combinator} and \Cref{section:linear-parser-combinators}.
 
 We have seen both parser combinators (\Cref{section:parser-combinator}) and parser generators. Parser combinators allow you to use high-level abstractions, and are therefore easy to construct. Parser generators check for grammatical properties -- is your grammar in LL(1), LR(1), etcetera. We have seen how to ``have your cake and eat it too'': we can use \textit{the type system} to guarantee that our combinator will run in linear time. (\Cref{section:linear-parser-combinators}). 
@@ -1069,7 +1069,7 @@ let action items lookahead = (
 \end{minted}
 Here, I've used \texttt{State(0)} to represent the list of items in state 0 of the DFA. \texttt{Id(x)} matches id, \texttt{Plus} matches $+$, and so on.
 
-Note that \textit{all} the arguments to \textt{get\_action} are now static. This means that the partial evaluator can perform evaluation. This is the result:
+Note that \textit{all} the arguments to \texttt{get\_action} are now static. This means that the partial evaluator can perform evaluation. This is the result:
 \begin{minted}[bgcolor=backcolour, linenos]{ocaml}  
 let action items lookahead = (
     let actions = (match items, lookahead with

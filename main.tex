@@ -54,7 +54,7 @@
 \colorlet{selected}{selected}
 \usepackage[most]{tcolorbox}
 \newtcolorbox{tcbleftbar}[1][]{
-blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt}{0pt}{grey}, #1
+blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt}{0pt}{grey}, #1
 }
 \tcbset{on line, 
         boxsep=4pt, left=0pt,right=0pt,top=0pt,bottom=0pt,
@@ -214,9 +214,18 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
   comment=[s]{(*}{*)},
 }
 
+\lstdefinestyle{c}{
+  basicstyle=\linespread{0.88}\scriptsize\ttfamily,
+  commentstyle=\color{darkpurple},
+  keywordstyle=\color{darkred}\sffamily,
+  showstringspaces=false,
+  mathescape=true,
+  escapeinside=!!
+}
+
 \lstdefinestyle{ocaml}{
   language=OCaml,
-  basicstyle=\linespread{0.88}\scriptsize\ttfamily\codecolor,
+  basicstyle=\linespread{0.88}\scriptsize\ttfamily,
   commentstyle=\color{darkpurple},
   keywordstyle=\color{darkred}\sffamily,
   showstringspaces=false,
@@ -243,7 +252,7 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
 
 \lstdefinestyle{ocaml-reg}{
   language=OCaml,
-  basicstyle=\linespread{1.5}\normalsize\ttfamily\codecolor,
+  basicstyle=\linespread{1.5}\normalsize\ttfamily,
   commentstyle=\color{darkpurple},
   keywordstyle=\bfseries\color{darkred},
   showstringspaces=false,
@@ -256,6 +265,8 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
   escapeinside=!!,
   backgroundcolor=\color{backcolour}
 }
+
+\newcommand{\optional}{\texorpdfstring{$^*$}{(Optional)}}
 
 \makeatletter
 \newcommand\incircbin
@@ -310,9 +321,7 @@ blanker, breakable, left=1em, colback=white, before=\par\noindent, borderline we
 \maketitle
 
 \import{lec01}{introduction}
-
 \import{lec02}{lexing}
-
 \import{lec03}{context-free-grammars}
 \import{lec03}{parser-combinators}
 \import{lec04}{LL(k)}

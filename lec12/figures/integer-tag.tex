@@ -1,0 +1,7 @@
+\begin{tikzpicture}
+\node[draw,minimum width=6.4cm,minimum height=2cm] (block) { \quad 63 bits of integer or address data };
+\node[minimum width=0.1cm,minimum height=2cm,fill=highlight,anchor=north west] at (block.north west) { };
+\node[highlight,anchor=east] (label) at ($(block.west) + (-1.5cm,-1cm)$) { tag bit };
+\draw[->,dashed] (label) -- (block.west) ;
+
+\end{tikzpicture}

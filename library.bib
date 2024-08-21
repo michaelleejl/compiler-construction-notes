@@ -215,3 +215,205 @@ keywords = {type inference, polymorphism, elaboration, constraints},
 location = {Gothenburg, Sweden},
 series = {ICFP '14}
 }
+
+@book{hennessy-patterson-2017,
+author = {Hennessy, John L. and Patterson, David A.},
+title = {Computer Architecture, Sixth Edition: A Quantitative Approach},
+year = {2017},
+isbn = {0128119055},
+publisher = {Morgan Kaufmann Publishers Inc.},
+address = {San Francisco, CA, USA},
+edition = {6th},
+abstract = {Computer Architecture: A Quantitative Approach, Sixth Edition has been considered essential reading by instructors, students and practitioners of computer design for over 20 years. The sixth edition of this classic textbook is fully revised with the latest developments in processor and system architecture. It now features examples from the RISC-V (RISC Five) instruction set architecture, a modern RISC instruction set developed and designed to be a free and openly adoptable standard. It also includes a new chapter on domain-specific architectures and an updated chapter on warehouse-scale computing that features the first public information on Google's newest WSC. True to its original mission of demystifying computer architecture, this edition continues the longstanding tradition of focusing on areas where the most exciting computing innovation is happening, while always keeping an emphasis on good engineering design. Includes a new chapter on domain-specific architectures, explaining how they are the only path forward for improved performance and energy efficiency given the end of Moores Law and Dennard scaling Features the first publication of several DSAs from industry Features extensive updates to the chapter on warehouse-scale computing, with the first public information on the newest Google WSC Offers updates to other chapters including new material dealing with the use of stacked DRAM; data on the performance of new NVIDIA Pascal GPU vs. new AVX-512 Intel Skylake CPU; and extensive additions to content covering multicore architecture and organization Includes "Putting It All Together" sections near the end of every chapter, providing real-world technology examples that demonstrate the principles covered in each chapter Includes review appendices in the printed text and additional reference appendices available online Includes updated and improved case studies and exercises}
+}
+
+@inproceedings{boehm-1993,
+author = {Boehm, Hans-Juergen},
+title = {Space efficient conservative garbage collection},
+year = {1993},
+isbn = {0897915984},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/155090.155109},
+doi = {10.1145/155090.155109},
+abstract = {We call a garbage collector conservative if it has only partial information about the location of pointers, and is thus forced to treat arbitrary bit patterns as though they might be pointers, in at least some cases. We show that some very inexpensive, but previously unused techniques can have dramatic impact on the effectiveness of conservative garbage collectors in reclaiming memory. Our most significant observation is that static data that appears to point to the heap should not result in misidentified references to the heap. The garbage collector has enough information to allocate around such references. We also observe that programming style has a significant impact on the amount of spuriously retained storage, typically even if the collector is not terribly conservative. Some fairly common C and C++ programming style significantly decrease the effectiveness of any garbage collector. These observations suffice to explain some of the different assessments of conservative collection that have appeared in the literature.},
+booktitle = {Proceedings of the ACM SIGPLAN 1993 Conference on Programming Language Design and Implementation},
+pages = {197–206},
+numpages = {10},
+location = {Albuquerque, New Mexico, USA},
+series = {PLDI '93}
+}
+
+@inproceedings{reinking-2021,
+author = {Reinking, Alex and Xie, Ningning and de Moura, Leonardo and Leijen, Daan},
+title = {Perceus: garbage free reference counting with reuse},
+year = {2021},
+isbn = {9781450383912},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3453483.3454032},
+doi = {10.1145/3453483.3454032},
+abstract = {We introduce Perceus, an algorithm for precise reference counting with reuse and specialization. Starting from a functional core language with explicit control-flow, Perceus emits precise reference counting instructions such that (cycle-free) programs are _garbage free_, where only live references are retained. This enables further optimizations, like reuse analysis that allows for guaranteed in-place updates at runtime. This in turn enables a novel programming paradigm that we call _functional but in-place_ (FBIP). Much like tail-call optimization enables writing loops with regular function calls, reuse analysis enables writing in-place mutating algorithms in a purely functional way. We give a novel formalization of reference counting in a linear resource calculus, and prove that Perceus is sound and garbage free. We show evidence that Perceus, as implemented in Koka, has good performance and is competitive with other state-of-the-art memory collectors.},
+booktitle = {Proceedings of the 42nd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+pages = {96–111},
+numpages = {16},
+keywords = {Algebraic Effects, Handlers, Reference Counting},
+location = {Virtual, Canada},
+series = {PLDI 2021}
+}
+
+@article{mccarthy-1960,
+author = {McCarthy, John},
+title = {Recursive functions of symbolic expressions and their computation by machine, Part I},
+year = {1960},
+issue_date = {April 1960},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {3},
+number = {4},
+issn = {0001-0782},
+url = {https://doi.org/10.1145/367177.367199},
+doi = {10.1145/367177.367199},
+journal = {Commun. ACM},
+month = {apr},
+pages = {184–195},
+numpages = {12}
+}
+
+@article{bacon-2003,
+author = {Bacon, David F. and Cheng, Perry and Rajan, V. T.},
+title = {A real-time garbage collector with low overhead and consistent utilization},
+year = {2003},
+issue_date = {January 2003},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {38},
+number = {1},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/640128.604155},
+doi = {10.1145/640128.604155},
+abstract = {Now that the use of garbage collection in languages like Java is becoming widely accepted due to the safety and software engineering benefits it provides, there is significant interest in applying garbage collection to hard real-time systems. Past approaches have generally suffered from one of two major flaws: either they were not provably real-time, or they imposed large space overheads to meet the real-time bounds. We present a mostly non-moving, dynamically defragmenting collector that overcomes both of these limitations: by avoiding copying in most cases, space requirements are kept low; and by fully incrementalizing the collector we are able to meet real-time bounds. We implemented our algorithm in the Jikes RVM and show that at real-time resolution we are able to obtain mutator utilization rates of 45\% with only 1.6--2.5 times the actual space required by the application, a factor of 4 improvement in utilization over the best previously published results. Defragmentation causes no more than 4\% of the traced data to be copied.},
+journal = {SIGPLAN Not.},
+month = {jan},
+pages = {285–298},
+numpages = {14},
+keywords = {utilization, real-time scheduling, read barrier, defragmentation}
+}
+
+@inproceedings{zhao-2022,
+author = {Zhao, Wenyu and Blackburn, Stephen M. and McKinley, Kathryn S.},
+title = {Low-latency, high-throughput garbage collection},
+year = {2022},
+isbn = {9781450392655},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3519939.3523440},
+doi = {10.1145/3519939.3523440},
+abstract = {To achieve short pauses, state-of-the-art concurrent copying collectors such as C4, Shenandoah, and ZGC use substantially more CPU cycles and memory than simpler collectors. They suffer from design limitations: i) concurrent copying with inherently expensive read and write barriers, ii) scalability limitations due to tracing, and iii) immediacy limitations for mature objects that impose memory overheads.
+
+This paper takes a different approach to optimizing responsiveness and throughput. It uses the insight that regular, brief stop-the-world collections deliver sufficient responsiveness at greater efficiency than concurrent evacuation. It introduces LXR, where stop-the-world collections use reference counting (RC) and judicious copying. RC delivers scalability and immediacy, promptly reclaiming young and mature objects. RC, in a hierarchical Immix heap structure, reclaims most memory without any copying. Occasional concurrent tracing identifies cyclic garbage. LXR introduces: i) RC remembered sets for judicious copying of mature objects; ii) a novel low-overhead write barrier that combines coalescing reference counting, concurrent tracing, and remembered set maintenance; iii) object reclamation while performing a concurrent trace; iv) lazy processing of decrements; and v) novel survival rate triggers that modulate pause durations.
+
+LXR combines excellent responsiveness and throughput, improving over production collectors. On the widely-used Lucene search engine in a tight heap, LXR delivers 7.8\texttimes{} better throughput and 10\texttimes{} better 99.99\% tail latency than Shenandoah. On 17 diverse modern workloads in a moderate heap, LXR outperforms OpenJDK’s default G1 on throughput by 4\% and Shenandoah by 43\%.},
+booktitle = {Proceedings of the 43rd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+pages = {76–91},
+numpages = {16},
+keywords = {Garbage collection, Reference counting},
+location = {San Diego, CA, USA},
+series = {PLDI 2022}
+}
+
+@inproceedings{carpen-amarie-2023,
+author = {Carpen-Amarie, Maria and Vavouliotis, Georgios and Tovletoglou, Konstantinos and Grot, Boris and Mueller, Rene},
+title = {Concurrent GCs and Modern Java Workloads: A Cache Perspective},
+year = {2023},
+isbn = {9798400701795},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3591195.3595269},
+doi = {10.1145/3591195.3595269},
+abstract = {The garbage collector (GC) is a crucial component of language runtimes, offering correctness guarantees and high productivity in exchange for a run-time overhead. Concurrent collectors run alongside application threads (mutators) and share CPU resources. A likely point of contention between mutators and GC threads and, consequently, a potential overhead source is the shared last-level cache (LLC). This work builds on the hypothesis that the cache pollution caused by concurrent GCs hurts application performance. We validate this hypothesis with a cache-sensitive Java micro-benchmark. We find that concurrent GC activity may slow down the application by up to 3\texttimes{} and increase the LLC misses by 3 orders of magnitude. However, when we extend our analysis to a suite of benchmarks representative for today’s server workloads (Renaissance), we find that only 5 out of 23 benchmarks show a statistically significant correlation between GC-induced cache pollution and performance. Even for these, the performance overhead of GC does not exceed 10\%. Based on further analysis, we conclude that the lower impact of the GC on the performance of Renaissance benchmarks is due to their lack of sensitivity to LLC capacity.},
+booktitle = {Proceedings of the 2023 ACM SIGPLAN International Symposium on Memory Management},
+pages = {71–84},
+numpages = {14},
+keywords = {garbage collection, cache pollution, ZGC, JVM},
+location = {Orlando, FL, USA},
+series = {ISMM 2023}
+}
+
+@inproceedings{foderaro-1981,
+author = {Foderaro, John K. and Fateman, Richard J.},
+title = {Characterization of VAX Macsyma},
+year = {1981},
+isbn = {0897910478},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/800206.806364},
+doi = {10.1145/800206.806364},
+abstract = {The algebraic manipulation system Macsyma [Grou77, Fate80] has been running for over a year on Digital Equipment Corp. VAX-11 large-address-space medium-scale computers [Stre78]. In order to run Macsyma in this environment, a Lisp system for the VAX, FRANZ LISP[Fode50], was constructed at Berkeley. The goal of running Macsyma provided direction and motivation and is partially responsible for the rapid development of the Lisp system.Because Lisp is a high level language there are many decisions to be made about the internal framework of the system. Efforts to increase efficiency require that we be able to characterize the demands of a large, compiled, Lisp system. Fortunately, the VAX/UNIX operating system provides useful tools for determining such characteristics. This paper presents some of our data and related analysis.},
+booktitle = {Proceedings of the Fourth ACM Symposium on Symbolic and Algebraic Computation},
+pages = {14–19},
+numpages = {6},
+location = {Snowbird, Utah, USA},
+series = {SYMSAC '81}
+}
+
+@inproceedings{wilson-1992,
+author = {Wilson, Paul R.},
+title = {Uniprocessor Garbage Collection Techniques},
+year = {1992},
+isbn = {354055940X},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg},
+booktitle = {Proceedings of the International Workshop on Memory Management},
+pages = {1–42},
+numpages = {42},
+series = {IWMM '92}
+}
+
+@phdthesis{zorn-1989,
+author = {Zorn, Benjamin Goth},
+title = {Comparative performance evaluation of garbage collection algorithms},
+year = {1989},
+school = {University of California, Berkeley},
+publisher = {University of California, Berkeley},
+abstract = {This thesis shows that object-level, trace-driven simulation can facilitate evaluation of language runtime systems and reaches new conclusions about the relative performance of important garbage collection algorithms. In particular, I reach the unexpected conclusion that mark-and-sweep garbage collection, when augmented with generations, shows comparable CPU performance and much better reference locality than the more widely used copying algorithms. In the past, evaluation of garbage collection algorithms has been limited by the high cost of implementing the algorithms. Substantially different algorithms have rarely been compared in a systematic way. With the availability of high-performance, low-cost workstations, trace-driven performance evaluation of these algorithms is now economical. This thesis describes MARS, a runtime system simulator that is driven by operations on program objects, and not memory addresses. MARS has been attached to a commercial Common Lisp system and eight large Lisp applications are used in the thesis as test programs.To illustrate the advantages of the object-level tracing technique used by MARS, this thesis compares the relative performance of stop-and-copy, incremental, and mark-and-sweep collection algorithms, all organized with multiple generations. The comparative evaluation is based on several metrics: CPU overhead, reference locality, and interactive availability. Mark-and-sweep collection shows slightly higher CPU overhead than stop-and-copy collection (5\%), but requires significantly less physical memory to achieve the same page fault rate (30-40\%). Incremental collection has very good interactive availability, but implementing the read barrier on stock hardware incurs a substantial CPU overhead (30-60\%). In the future, I will use MARS to investigate other performance aspects of sophisticated runtime systems.},
+note = {AAI9029086}
+}
+
+@inproceedings{sansom-1993,
+author = {Sansom, Patrick M. and Peyton Jones, Simon L.},
+title = {Generational garbage collection for Haskell},
+year = {1993},
+isbn = {089791595X},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/165180.165195},
+doi = {10.1145/165180.165195},
+booktitle = {Proceedings of the Conference on Functional Programming Languages and Computer Architecture},
+pages = {106–116},
+numpages = {11},
+location = {Copenhagen, Denmark},
+series = {FPCA '93}
+}
+
+@inproceedings{zhao-2022,
+author = {Zhao, Wenyu and Blackburn, Stephen M. and McKinley, Kathryn S.},
+title = {Low-latency, high-throughput garbage collection},
+year = {2022},
+isbn = {9781450392655},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3519939.3523440},
+doi = {10.1145/3519939.3523440},
+abstract = {To achieve short pauses, state-of-the-art concurrent copying collectors such as C4, Shenandoah, and ZGC use substantially more CPU cycles and memory than simpler collectors. They suffer from design limitations: i) concurrent copying with inherently expensive read and write barriers, ii) scalability limitations due to tracing, and iii) immediacy limitations for mature objects that impose memory overheads.
+
+This paper takes a different approach to optimizing responsiveness and throughput. It uses the insight that regular, brief stop-the-world collections deliver sufficient responsiveness at greater efficiency than concurrent evacuation. It introduces LXR, where stop-the-world collections use reference counting (RC) and judicious copying. RC delivers scalability and immediacy, promptly reclaiming young and mature objects. RC, in a hierarchical Immix heap structure, reclaims most memory without any copying. Occasional concurrent tracing identifies cyclic garbage. LXR introduces: i) RC remembered sets for judicious copying of mature objects; ii) a novel low-overhead write barrier that combines coalescing reference counting, concurrent tracing, and remembered set maintenance; iii) object reclamation while performing a concurrent trace; iv) lazy processing of decrements; and v) novel survival rate triggers that modulate pause durations.
+
+LXR combines excellent responsiveness and throughput, improving over production collectors. On the widely-used Lucene search engine in a tight heap, LXR delivers 7.8\texttimes{} better throughput and 10\texttimes{} better 99.99\% tail latency than Shenandoah. On 17 diverse modern workloads in a moderate heap, LXR outperforms OpenJDK’s default G1 on throughput by 4\% and Shenandoah by 43\%.},
+booktitle = {Proceedings of the 43rd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+pages = {76–91},
+numpages = {16},
+keywords = {Reference counting, Garbage collection},
+location = {San Diego, CA, USA},
+series = {PLDI 2022}
+}

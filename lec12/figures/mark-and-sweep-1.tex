@@ -1,0 +1,68 @@
+\scalebox{0.4}{\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+
+\gcblock{node-0}{(0,0)}
+
+\node (root) at ($(node-0) + (-3cm,-1cm)$) { \Large root };
+
+\gcblock{node-1}{($(node-0) + (-0.5cm,2cm)$)}
+\gcblock{node-2}{($(node-0) + (3cm,2cm)$)}
+\gcblock{node-3}{($(node-1) + (-1cm,2cm)$)}
+\gcblock{node-4}{($(node-2) + (3cm,2cm)$)}
+\gcblock{node-5}{($(node-3) + (-1cm,2cm)$)}
+\gcblock{node-6}{($(node-4) + (-4cm,2cm)$)}
+\gcblock{node-7}{($(node-5) + (-1cm,2cm)$)}
+\gcblock{node-8}{($(node-6) + (-1cm,2cm)$)}
+
+\draw[->]                         (root) -- (node-0.south west);
+\draw[->,line width=1.2pt] (root) -- (node-0.south west);
+
+\draw[->]                        \fieldOne{node-0} -- (node-1.south west);
+\draw[->,line width=1.2pt] \fieldOne{node-0} -- (node-1.south west);
+
+\draw[->]                          \fieldTwo{node-0} -- (node-2.south west);
+\draw[->,line width=1.2pt]  \fieldTwo{node-0} -- (node-2.south west);
+\draw[->]                          \fieldOne{node-2} -- (node-6.south west);
+\draw[->,line width=1.2pt]  \fieldOne{node-2} -- (node-6.south west);
+\draw[->]                          \fieldTwo{node-2} -- (node-4.south west);
+\draw[->,line width=1.2pt]  \fieldTwo{node-2} -- (node-4.south west);
+\draw[->]                          \fieldTwo{node-4} to[out=-90,in=-30,bend left=90] (node-2.south west);
+\draw[->,line width=1.2pt]  \fieldTwo{node-4} to[out=-90,in=-30,bend left=90] (node-2.south west);
+\draw[->]                       \fieldTwo{node-1} to[out=60,in=-170] (node-4.south west);
+\draw[->,line width=1.2pt] \fieldTwo{node-1} to[out=60,in=-170] (node-4.south west);
+\draw[->]                       \fieldOne{node-1} to[out=70,in=-90,bend right=30] (node-8.south west);
+\draw[->,line width=1.2pt] \fieldOne{node-1} to[out=70,in=-90,bend right=30] (node-8.south west);
+\draw[->] \fieldOne{node-3} -- (node-5.south west);
+\draw[->] \fieldTwo{node-3} -- (node-6.south west);
+\draw[->] \fieldOne{node-5} -- (node-7.south west);
+\draw[->] \fieldTwo{node-5} -- (node-8.south west);
+
+%% \node[anchor=east] at (node-0.west) {  0 };
+%% \node[anchor=east] at (node-1.west) {  1 };
+%% \node[anchor=east] at (node-2.west) {  2 };
+%% \node[anchor=east] at (node-3.west) {  3 };
+%% \node[anchor=east] at (node-4.west) {  4 };
+%% \node[anchor=east] at (node-5.west) {  5 };
+%% \node[anchor=east] at (node-6.west) {  6 };
+%% \node[anchor=east] at (node-7.west) {  7 };
+%% \node[anchor=east] at (node-8.west) {  8 };
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldTwo{node-0} {$\bullet$};
+\node at \fieldOne{node-1} {$\bullet$};
+\node at \fieldTwo{node-1} {$\bullet$};
+\node at \fieldOne{node-2} {$\bullet$};
+\node at \fieldTwo{node-2} {$\bullet$};
+\node at \fieldTwo{node-4} {$\bullet$};
+\node at \fieldOne{node-3} {$\bullet$};
+\node at \fieldTwo{node-3} {$\bullet$};
+\node at \fieldOne{node-5} {$\bullet$};
+\node at \fieldTwo{node-5} {$\bullet$};
+
+% \only\markBlock{node-0}
+% \only\markBlock{node-1}
+% \only\markBlock{node-8}
+% \only\markBlock{node-4}
+% \only\markBlock{node-2}
+% \only\markBlock{node-6}
+
+\end{tikzpicture}}

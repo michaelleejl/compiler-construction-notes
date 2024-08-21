@@ -362,8 +362,7 @@ There is \textit{one} significant difference with the computation for \textsf{NU
 \begin{array}{rclr}
      \{ \epsilon \}&\subseteq&\textsf{FIRST}(A) & \text{if \textsf{NULLABLE}}(A) \\
      \textsf{FIRST}(X_1)&\subseteq&\textsf{FIRST}(A) & \text{if } A \to X_1X_2\ldots X_n \\
-     \ldots &&&
-     & 
+     \ldots &&& 
 \end{array}
 \]
 This may \textbf{not} have a unique solution. For example, setting $\textsf{FIRST}(A)$ to $T$ (all terminals) for all non-terminals $A$ is a perverse way of satisfying the subset constraints.

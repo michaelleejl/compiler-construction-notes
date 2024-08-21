@@ -1,0 +1,13 @@
+\begin{tikzpicture}[line cap=round,line join=round,>={Stealth[inset=0pt,length=8pt,angle'=28,round]}]
+
+\rcblock{node-0}{(0,0)}{1}
+
+\rcblock{node-1}{(5,0)}{1}
+
+\node at \fieldOne{node-0} {$\bullet$};
+\node at \fieldTwo{node-1} {$\bullet$};
+
+\draw[->,rounded corners=0.5cm] \fieldOne{node-0} -- ++(0.5cm,1.5cm) -- ++(2.5cm,0cm) -- (node-1.south west);
+\draw[->,rounded corners=0.5cm] \fieldTwo{node-1} -- ++(-0.5cm,-1.5cm) -- ++(-6cm,0cm) -- (node-0.south west);
+
+\end{tikzpicture}
