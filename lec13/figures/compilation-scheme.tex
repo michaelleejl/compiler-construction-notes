@@ -1,0 +1,43 @@
+\begin{tikzpicture}
+
+\node (exp-try) {
+\Tree [.{\texttt{try}}
+         {\texttt{e$_1$}}
+         {\texttt{x}}
+         {\texttt{e$_2$}} ]
+};
+
+\node (exp-raise)  at ($(exp-try.south) + (0,-15ex)$) {
+\Tree [.{\texttt{raise}}
+         {\texttt{e}} ]
+};
+
+%% \node[minimum height=0.8cm,draw,rounded corners] (compiler-3-try) at ($(exp-try) + (4,0)$) { \footnotesize
+%% \parbox{0.18\textwidth}{\centering
+%%   {compiler 3}\\
+
+%% } };
+
+\node[minimum width=0.35\textwidth,draw,rounded corners,draw opacity=0.5] (code-try) at ($(exp-try) + (6,0)$) {\ttfamily
+\begin{tabular}{rl}
+                    & TRY  {k}\\[0.3ex]
+                    & {<code for e$_1$>}\\[0.3ex]
+                    & UNTRY\\[0.3ex]
+                    & GOTO {m} \\[0.3ex]
+{k:} & {<code for ($\lambda$x.e$_2$)>}\\[0.3ex]
+                    & APPLY\\[0.3ex]
+{m:}
+\end{tabular}
+};
+
+\node[minimum width=0.35\textwidth,draw,rounded corners,draw opacity=0.5] (code-raise) at ($(exp-raise) + (6,0)$) {\ttfamily
+\begin{tabular}{rl}
+& \textit{<code for e>}\\[0.3ex]
+& RAISE
+\end{tabular}
+};
+
+\draw[->] (exp-try) -- (code-try);
+\draw[->] (exp-raise) -- (code-raise);
+
+\end{tikzpicture}

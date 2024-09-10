@@ -1,4 +1,4 @@
-\chapter{Garbage Collection}
+\chapter{Garbage Collection}\label{chapter:garbage-collection}
 
 \definecolor{compilergray}{HTML}{7D7F85}
 \newcommand{\compilergen}[1]{\texttt{\textit{\textcolor{compilergray}{#1}}}}
@@ -51,14 +51,14 @@
 }
 
 \section{Overview}
-We have completed our tour of the front and middle-ends of a compiler, and have compiled \texttt{Slang} down into an intermediate representation. 
+We have completed our tour of the front and middle ends of a compiler, compiling \texttt{Slang} into an intermediate representation.
 
-\texttt{Slang} is a good first language to teach compilers because it's a relatively simple language, so compilation is relatively easy. The compiler we've built is also a relatively simple one. More complex languages, like \texttt{OCaml} and \texttt{Java} and \texttt{C}, have many more interesting language features. Further, more complex compilers also tend to do more than what we've just described. In this third section of the course, we'll examine some of the ways more complex languages and compilers differ from what we've built.
+\texttt{Slang} is a good first language for teaching compilers because it is relatively simple, making compilation easier. The compiler we've built is also straightforward. In contrast, more complex languages like \texttt{OCaml}, \texttt{Java}, and \texttt{C} have more advanced features, and their compilers often do more than what we've covered. In these next chapters, we’ll explore how these more advanced languages and compilers differ.
 
-Our first such topic is garbage collection. More complex languages often have \textit{automatic memory management}, and their compilers therefore have been designed to effectively and efficiently support it.
+Our first topic is garbage collection, which involves automatic memory management, a feature that more complex languages require their compilers to support efficiently.
 
 \subsection{Manual Memory Management}
-In \textsf{Part IB C and C++}, you got to work with manual memory management, using \texttt{alloc}, and \texttt{free}. We hope you understood that freeing memory is important. We have a finite amount of space on the heap, and we need to free memory in order to avoid running out. More importantly, we hope you got to grips with managing memory manually, and know how to build programs that allocate and free memory precisely when they should. 
+In \textsf{Part IB C and C++}, you got to work with manual memory management, using \texttt{malloc}, and \texttt{free}. We hope you understood that freeing memory is important. We have a finite amount of space on the heap, and we need to free memory in order to avoid running out. More importantly, we hope you got to grips with managing memory manually, and know how to build programs that allocate and free memory precisely when they should. 
 
 \textit{Most} importantly, we hope that you absolutely hated the experience and never want to have to manage memory yourself. While manual management of memory gives you a lot of control, it is also extremely error-prone. There are three types of bugs: missing free, double-free, and use after free.
 
@@ -97,7 +97,7 @@ At a high level, we will also consider two important aspects of garbage collecto
 
 A correct garbage collector is \textit{safe}: it never collects anything that is not actually garbage, i.e. anything that the program still needs.
 
-A performant garbage collector is an elusive creature. The general idea is one of \textit{liveness}: it clears space for the program to do work. But the garbage collector itself needs space and time, and it can't take up too much of either! Defining the \textbf{metrics} by which performance is measured is thus really important --- do we care about latency, or throughput, or space? Do we care about average-case or worst-case guarantees? Are we testing on representative programs? 
+A performant garbage collector is an elusive creature. The general idea is one of \textit{liveness}: it clears space for the program to do work. But the garbage collector itself needs space and time, and it can't take up too much of either! Defining the \textbf{metrics} by which performance is measured is thus really important -- do we care about latency, or throughput, or space? Do we care about average-case or worst-case guarantees? Are we testing on representative programs? 
 
 Garbage collection is therefore one of the areas of compilers that lives closest to the statistical branch of computer science: your skills from \textsf{Part IB Data Science} will come in handy here.
 
@@ -135,7 +135,7 @@ Whether \texttt{d} is still in use depends on if \texttt{f} halts on \texttt{a}.
 
 If this is impossible, how then do garbage collection algorithms work? The identification of garbage collection algorithms is fundamentally based on an \textit{approximation}. 
 
-Recall that the heap is not directly accessible, but must be accessed via \textit{pointers}. These pointers can live in various places --- such as registers, global variables, and the stack. In order for a heap object to be accessible, it \textit{must} be reachable via some chain of pointers that starts at the root set.  
+Recall that the heap is not directly accessible, but must be accessed via \textit{pointers}. These pointers can live in various places -- such as registers, global variables, and the stack. In order for a heap object to be accessible, it \textit{must} be reachable via some chain of pointers that starts at the root set.  
 
 \begin{figure}
     \centering
@@ -318,7 +318,7 @@ fun drop(x){
 \end{minted}
 \end{code}
 
-Now onto the clever stuff: \texttt{Perceus} achieves precise reference counting --- objects are garbage collected as soon as they are no longer needed. The authors call this ``garbage free''. Further, when objects are freed, the memory can be immediately re-used. In effect, this allows one to write functional code that compiles down into in-place updates. The authors call this a ``functional but in-place'' paradigm. Finally, the authors use \texttt{Koka}'s language features to deal with cycles and concurrency.
+Now onto the clever stuff: \texttt{Perceus} achieves precise reference counting -- objects are garbage collected as soon as they are no longer needed. The authors call this ``garbage free''. Further, when objects are freed, the memory can be immediately re-used. In effect, this allows one to write functional code that compiles down into in-place updates. The authors call this a ``functional but in-place'' paradigm. Finally, the authors use \texttt{Koka}'s language features to deal with cycles and concurrency.
 
 \subsubsection{Precise Reference Counting}
 First, \texttt{Perceus} achieves precise reference counting. Let's consider, once again, the imprecise reference counting code. 
@@ -335,7 +335,7 @@ fun foo(){
 }
 \end{minted}
 \end{code}
-The inefficiency arises because the \texttt{foo} function is responsible for freeing \texttt{xs}. \texttt{Perceus} takes an alternative approach --- the ``ownership'' of the \texttt{xs} reference is passed to the functions that \textit{consume} \texttt{xs} (in this case, only the \texttt{map} function). Updating the reference count of \texttt{xs} becomes the responsibility of these consumers, and thus it will be \textit{a} consumer that is responsible for freeing it. 
+The inefficiency arises because the \texttt{foo} function is responsible for freeing \texttt{xs}. \texttt{Perceus} takes an alternative approach -- the ``ownership'' of the \texttt{xs} reference is passed to the functions that \textit{consume} \texttt{xs} (in this case, only the \texttt{map} function). Updating the reference count of \texttt{xs} becomes the responsibility of these consumers, and thus it will be \textit{a} consumer that is responsible for freeing it. 
 
 We thus need to insert functions that alter the reference count of \texttt{xs} in the \texttt{map} function. In the \texttt{Perceus} paper, this is known as \texttt{dup}/\texttt{drop} insertion. Let's first consider a standard \texttt{map} function in \texttt{Koka}
 
@@ -710,9 +710,9 @@ Copying collection has a very high space overhead, taking twice the space the pr
 
 In this section, we will see how tracing collectors can be used for real-time garbage collection. In doing so, we will see (a) the advantages and complexities of concurrent garbage collection, (b) the importance of scheduling policies, (c) how we can implement copying collection with low space overhead, and (d) how we can keep the cost of compaction low.
 
-First, we shall consider the constraints of real-time systems. We shall do so with a very visceral example. Imagine explaining to a family that the air bag did not deploy in time because the garbage collector took too long to run. Real-time systems need hard guarantees on worst-case performance: not measured in big-$O$ complexity, but in milliseconds or nanoseconds. 
+First, we shall consider the constraints of real-time systems. We shall do so with a very visceral example. Imagine a parachute does not deploy in time because the garbage collector took too long to run. Real-time systems need hard guarantees on worst-case performance: not measured in big-$O$ complexity, but in milliseconds or nanoseconds. 
 
-For a while, this was seen as \textit{the} requirement of real-time systems. One of the insights of \citet{bacon-2003} was that \textit{utilisation} is equally as important a metric. Once again, we choose a visceral example. Imagine explaining to a family that the air bag did not deploy in time \textit{not} because the garbage collector took too long to run, in fact, each run was pretty short, but it ran \textit{a lot} during that particular period. 
+For a while, this was seen as \textit{the} requirement of real-time systems. One of the insights of \citet{bacon-2003} was that \textit{utilisation} is equally as important a metric. Once again, we choose a visceral example. Imagine a parachute does not deploy \textit{not} because the garbage collector took too long to run, in fact, each run was pretty short, but it ran \textit{a lot} during that particular period. \footnote{This is why safety critical systems -- from tanks to forklifts to car -- aren't digital, but analogue}
 
 In order to meet these requirements, one has two options. The first is to not use garbage collection. Indeed, this was common for a while: \texttt{Java} has a real-time specification for when you need real-time guarantees. The second is to design one's garbage collector to meet real-time constraints. This will be the focus of this section.
 
@@ -836,7 +836,7 @@ Generational garbage collection is complex. We need to distinguish between point
 \subsection{Practical Applications of Hybrid Garbage Collection\optional}
 \textit{This section is based on \href{https://dl.acm.org/doi/pdf/10.1145/3519939.3523440}{Low-Latency, High-Throughput Garbage Collection} by} \citet{zhao-2022}
 
-In this section, we shall see how by using the generational hypothesis, we can design an algorithm --- \texttt{LXR} --- that achieves lower latency and higher throughput than modern concurrent garbage collectors.
+In this section, we shall see how by using the generational hypothesis, we can design an algorithm -- \texttt{LXR} -- that achieves lower latency and higher throughput than modern concurrent garbage collectors.
 
 As always, in garbage collection, it is important to consider the metrics that we want to optimise for. \citet{zhao-2022} consider settings where the goal is low-latency and high-throughput, and where responsiveness is important but not critical (so, for example, games but not safety-critical systems). Therefore, the trade-off that \texttt{LXR} makes is higher pause times (i.e. how long the garbage collector takes to run on each invocation), and lower responsiveness, for lower latency and higher throughput. 
 
@@ -862,15 +862,13 @@ This is an interesting insight: reference counting performs collection by consid
 If we plan on running \texttt{LXR} very frequently, we can assume that this long list will be allocated over many invocations of the collector. Long lists are thus kept by the collector more than they are freed. Thus, it makes sense to deploy reference counting than tracing collection.
 
 \subsubsection{Coalesced Reference Counting}
-\texttt{LXR}'s main and most frequently run collector is a coalesced reference counting algorithm. We have described coalesced reference counting in \Cref{section:coalesced-reference-counting} (\Cpageref{section:coalesced-reference-counting}). 
+\texttt{LXR}'s main and most frequently run collector is a coalesced reference counting algorithm that focuses on young objects. We have described coalesced reference counting in \Cref{section:coalesced-reference-counting} (\Cpageref{section:coalesced-reference-counting}). 
 
-Coalesced reference counting makes sense under the assumptions of generational garbage collection. We define young objects as those objects that were allocated during an epoch (the program execution between collections). By the generational hypothesis, a significant proportion of objects on the heap will be young. These young objects (a) cannot decrease the reference count of old objects over the epoch, since they did not exist at the start of the epoch, and symmetrically (b) can never have their own reference counts decremented by old objects. This greatly simplifies the task of coalescing. Further, \textit{if} after coalescing, we notice that a young object receives no increments, then it must be dead. This is known as the \textit{implicitly dead optimisation}. This inference is important, because it gives us an alternative mechanism to detecting and freeing dead, young objects. Traditionally, we would have had to detect and free dead objects via some form of tracing / recursion: free a parent, and decrement its pointers to its children. We now have an alternative, more direct mechanism. 
-
-Since allocation rates are high, many young objects are created. Since many of these young objects die, we are, in a sense, optimising for the common case. 
+Coalesced reference counting makes sense under the assumptions of generational garbage collection. We define young objects as those objects that were allocated during an epoch (the program execution between collections). By the generational hypothesis, a significant proportion of objects on the heap will be young. These young objects (a) cannot decrease the reference count of old objects over the epoch, since they did not exist at the start of the epoch, and symmetrically (b) can never have their own reference counts decremented by old objects. This greatly simplifies the task of coalescing. Further, the authors use an alternative reference counting scheme. Rather than allocating new objects as live with a reference count of one, they allocate new objects as dead, with a reference count of zero. Allocated objects only become live when they receive an increment. Thus, the responsibility of reference counting becomes to identify live, young objects (like tracing), rather than dead objects. This makes detecting dead, young objects easy. \textit{If} after coalescing, we notice that a young object receives no increments, then we can infer that it must be dead. This is known as the \textit{implicitly dead optimisation}. This optimises for the common case: that young objects will mostly die.
 
 The authors also consider what happens when a long list is freed, a weakness of reference counting. They suggest that when an object is freed, its children are freed lazily, and concurrent to the execution of the program. In particular, this means that when \texttt{LXR} frees a long list, it will free the first cell in that list during the pause, and then the rest concurrently with the program execution. It justifies this decision with a generational observation: since dead young objects are freed via the implicitly dead assumption rather than this recursive freeing, only \textit{old} objects are freed in such a manner. Since old objects die infrequently, this implies that only a small proportion of objects will be freed in such a manner. Hence, collecting this garbage is unlikely to free up a significant amount of space. It can thus be collected \textit{while}, instead of \textit{before} the program runs, with a minimal effect on performance.
 
-We hope that you are convinced that the generational hypothesis suggests that a reference counting approach optimises for the common case. The generational hypothesis can also be used to determine \textit{when} to stop the world and run the collector: \texttt{LXR} uses increment and survival thresholds. The increment threshold triggers the collector if a certain number of increments are queued, to keep pause times low. The survival threshold predicts young object survival rates to ensure that the number of surviving objects after collection is low, once again keeping pause times low.
+We hope that you are convinced that the generational hypothesis suggests that a reference counting approach optimises for the common case. The generational hypothesis can also be used to determine \textit{when} to stop the world and run the collector. \texttt{LXR} triggers the collector under three cases. First, memory has been exhausted. Second, if a certain number of increments are queued (this bounds the work that needs to be done in a collection, keeping pause times low). Third, if the predicted number of surviving young objects exceeds a threshold, once again keeping pause times low.
 
 \subsubsection{A Supplementary Tracing Collector}
 In addition to the reference counting collector, \texttt{LXR} also uses a tracing collector to collect cycles and objects with stuck reference counts (overflow). This tracing collector can run concurrently with the program. While it is expensive, two insights, both corollaries of the generational hypothesis, can keep costs down.

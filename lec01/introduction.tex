@@ -90,14 +90,14 @@ camlExample__frametable:
 
 Clearly, there is a huge gap (which we will creatively name ``The Gap'') between the code in \Cref{code:fib-ocaml} and in \Cref{code:fib-assembly}.
 
-We'll return to \emph{The Gap} in a moment, but it is the compiler's fundamental responsibility to \emph{bridge the gap} between the high level syntax in \Cref{code:fib-ocaml} --- one that is designed for humans like you and me to understand --- and the machine oriented syntax in \Cref{code:fib-assembly}. 
+We'll return to \emph{The Gap} in a moment, but it is the compiler's fundamental responsibility to \emph{bridge the gap} between the high level syntax in \Cref{code:fib-ocaml} -- one that is designed for humans like you and me to understand -- and the machine oriented syntax in \Cref{code:fib-assembly}. 
 
-\emph{The Gap} is thus one of abstraction, and compilers allow people to abstract away details they'd rather not consider. This allows those of us who think about \emph{the programmer} --- programming language designers and human-computer interaction people, for example --- to avoid having to think about the machine when playing around with fancy type systems or HCI properties. Symmetrically, they also allow those of us who think about \emph{the machine} --- computer architects who are considering different or novel instruction set architectures --- to avoid thinking about the human. 
+\emph{The Gap} is thus one of abstraction, and compilers allow people to abstract away details they'd rather not consider. This allows those of us who think about \emph{the programmer} -- programming language designers and human-computer interaction people, for example -- to avoid having to think about the machine when playing around with fancy type systems or HCI properties. Symmetrically, they also allow those of us who think about \emph{the machine} -- computer architects who are considering different or novel instruction set architectures -- to avoid thinking about the human. 
 
 \section{Why Study Compilers?}
-As we'll see in just a moment, and perhaps as you might already intuitively feel, crossing \emph{The Gap} is a herculean effort. The sheer volume of things to be learnt in the field of compilers is both exciting and incredibly daunting. Consequently, this course can challenge with its depth and breadth. It also mixes the highly theoretical with the highly practical, challenging you to both \emph{understand the theory} of compilers, and \emph{put into practice} the concepts by constructing compilers of your own. However, it is also incomplete --- at times barely scratching the surface of a much richer theory.
+As we'll see in just a moment, and perhaps as you might already intuitively feel, crossing \emph{The Gap} is a herculean effort. The sheer volume of things to be learnt in the field of compilers is both exciting and incredibly daunting. Consequently, this course can challenge with its depth and breadth. It also mixes the highly theoretical with the highly practical, challenging you to both \emph{understand the theory} of compilers, and \emph{put into practice} the concepts by constructing compilers of your own. However, it is also incomplete -- at times barely scratching the surface of a much richer theory.
 
-For those who wish to use this knowledge to build compilers --- perhaps for their Part II Projects, or perhaps for work --- the experience can therefore be frustrating. For those that do not plan on working in compilers, the experience may be even \emph{more} frustrating. This begs the question: why study compilers in the first place?
+For those who wish to use this knowledge to build compilers -- perhaps for their Part II Projects, or perhaps for work -- the experience can therefore be frustrating. For those that do not plan on working in compilers, the experience may be even \emph{more} frustrating. This begs the question: why study compilers in the first place?
 
 Each of you will have to find your own answer to the question, but here are some reasons we think studying compilers is worthwhile. 
 
@@ -106,12 +106,12 @@ Compilers are everywhere, not only in computer science, but also just in compute
 
 When interacting with a compiler, two questions invariably come to mind:
 
-\textbf{How can a compiler be so \emph{smart}?} In courses like {\sffamily Part IA Foundations of Computer Science}, you've become familiar with really high level languages like \texttt{OCaml}, that seem to allow you to play around with abstract objects. Last term, in {\sffamily Part IB Computer Architecture}, you learnt a little about the the low level assembly languages that move signals between hardware components like transistors. The compiler, so far, has been treated as a mysterious black box that magically performs the translation for you --- while also magically performing ``quality of life'' stuff that you would \emph{hate} to have to do on your own. For example,
+\textbf{How can a compiler be so \emph{smart}?} In courses like {\sffamily Part IA Foundations of Computer Science}, you've become familiar with really high level languages like \texttt{OCaml}, that seem to allow you to play around with abstract objects. Last term, in {\sffamily Part IB Computer Architecture}, you learnt a little about the the low level assembly languages that move signals between hardware components like transistors. The compiler, so far, has been treated as a mysterious black box that magically performs the translation for you -- while also magically performing ``quality of life'' stuff that you would \emph{hate} to have to do on your own. For example,
 
 \begin{enumerate}
     \item \textbf{Optimisation.} In {\sffamily Part IA Foundations of Computer Science} you learnt about how the \texttt{OCaml} compiler could automatically transform \emph{tail recursive} calls into \emph{iterative} calls, thereby using constant stack space. In fact, the compiler is responsible for performing many such optimisations for you. In {\sffamily Part IA Databases}, for example, you could focus on writing a \emph{correct} SQL query, and let the query optimiser focus on making sure it ran as efficiently as possible. This is compiler technology.
     \item \textbf{Garbage Collection.} In {\sffamily Part IA Object Oriented Programming}, you learnt about how \texttt{Java} relies on a garbage collector to automatically manage space on the heap for you, and in {\sffamily Part IB C and C++}, you hopefully saw how painful and error-prone managing memory on your own is. 
-    \item \textbf{Register Allocation.} In {\sffamily Part IB Computer Architecture} you would have learnt about instruction set architectures that expose a finite number of registers --- 32 or 64 --- that effectively act as \emph{variables} for the processor. It would be horrendous if \emph{you} as the programmer were limited to using these registers as variables. The fact that you are not --- and that you can use any number of variables as you'd like --- is because the compiler will handle register allocation for you.
+    \item \textbf{Register Allocation.} In {\sffamily Part IB Computer Architecture} you would have learnt about instruction set architectures that expose a finite number of registers -- 32 or 64 -- that effectively act as \emph{variables} for the processor. It would be horrendous if \emph{you} as the programmer were limited to using these registers as variables. The fact that you are not -- and that you can use any number of variables as you'd like -- is because the compiler will handle register allocation for you.
     \item \textbf{Loads More!} Other examples include \emph{linking and loading}, \emph{instruction scheduling}, and \emph{type checking}.
 \end{enumerate}
 
@@ -146,12 +146,12 @@ In some sense, therefore, a compiler is like that one friend who is an utter gen
 \begin{enumerate}
     \item Design programming languages, understanding how compilers work will help you better weigh the consequences of design decisions. 
     \item Design processors, the vast majority of the code you'll be running won't be written directly by a person, but instead compiled by a compiler, and you'll have to figure out whether your design decisions can be exploited by a compiler effectively
-    \item Design algorithms, those algorithms will have to be translated --- how can you have confidence the compiler can take advantage of your novel techniques?
+    \item Design algorithms, those algorithms will have to be translated -- how can you have confidence the compiler can take advantage of your novel techniques?
     \item Evaluate security of systems and processes, you will need to consider the compiler as a possible attack surface.
 \end{enumerate}
 
 \subsection{Why build compilers?}
-The second question is why \emph{build} compilers? What \emph{practical} skills will building compilers actually teach you --- and will they, like the theory, extend beyond the course?
+The second question is why \emph{build} compilers? What \emph{practical} skills will building compilers actually teach you -- and will they, like the theory, extend beyond the course?
 
 The answer is that there are three recurrent themes that extend beyond the course: \emph{representation}, \emph{analysis}, and \emph{transformation}. 
 
@@ -281,7 +281,7 @@ The answer is that it prints
 
 In other words, it prints its own source code! Such programs are called \emph{quine}s. Let's squish the processor $P$ and compiler $C$ together to get a function $PC = P \circ C$, that takes in a program $x$, and generates a result $y$. A quine $q$ is a program that satisfies the equation
 \[q = PC(q)\]
-In other words, a quine is a \emph{fixed-point}. Quines are certainly interesting --- but what makes a quine a quine? Do different compilers have different quines? How do quines (or the space of possible quines) differ depending on the compiler?
+In other words, a quine is a \emph{fixed-point}. Quines are certainly interesting -- but what makes a quine a quine? Do different compilers have different quines? How do quines (or the space of possible quines) differ depending on the compiler?
 
 \textbf{Compilers view the same program from many different perspectives.} Recall that compilation is fundamentally a process of \textit{analysis} $+$ \textit{transformation}. It should not be surprising that different types of analysis and different types of transformation require looking at the same program from many different perspectives. Some transformations involve looking at the meaning or semantics of a program to figure out how to transform it in a way that preserves the semantics, but makes it faster or smaller in some way. Another class of transformations uses \emph{type-level} information. For example, a common optimisation is to use constant folding, that is, to turn expressions like \texttt{1+1} into constants like \texttt{2}. Constant folding can be blocked in cases where one of the inputs to the expression is \emph{dynamic} (that is, its value is not known until run-time), for example \label{content:the-trick}
 
@@ -316,7 +316,7 @@ Its merits are hard to see in this trivial example, but it is used widely in com
 
 Which we will actually use to implement \texttt{while} function! {\sffamily Part II Denotational Semantics} will introduce another way to give a semantics to \texttt{while} \footnote{the \emph{Kleene-Tarski fixed-point theorem}}, and indeed this is \emph{another} way of implementing \texttt{while}.
 
-\textbf{Compilers are a Computer Science success story.} Compilers have been around nearly as long as computers themselves, and people have been constantly researching them since they were invented. This means that, unlike \emph{some} other inventions attributed to us as computer scientists, compilers are something we can be proud of --- we generally understand what it means to be a good compiler, what techniques are used in the building of a good compiler, and we're able to give guarantees of correctness. It's also still a fast moving field, with lots of exciting research (which we'll hope to give pointers to throughout the course).
+\textbf{Compilers are a Computer Science success story.} Compilers have been around nearly as long as computers themselves, and people have been constantly researching them since they were invented. This means that, unlike \emph{some} other inventions attributed to us as computer scientists, compilers are something we can be proud of -- we generally understand what it means to be a good compiler, what techniques are used in the building of a good compiler, and we're able to give guarantees of correctness. It's also still a fast moving field, with lots of exciting research (which we'll hope to give pointers to throughout the course).
 
 \textbf{Compilers involve self-application.} Compilers process (analyse and transform) programs, but they are \emph{themselves} programs, and so can analyse and transform not only other compilers, but themselves. 
 
@@ -335,7 +335,7 @@ We've now looked, broadly, at what a compiler is, and a non-exhaustive list of r
     \item \textbf{Nested scope}, that allow us to define things within some surrounding context.
 \end{enumerate}
 
-High level code is therefore \emph{great} to write and read in --- but it cannot be run on a machine. 
+High level code is therefore \emph{great} to write and read in -- but it cannot be run on a machine. 
 
 \textbf{Low Level Code}. In {\sffamily Part IB Computer Architecture}, you've seen the shape of the machines we'll need to actually run our code on, and the type of Assembly code that these machines support. This low-level code has several features that make it easy (or in some cases, feasible) for computer architects to implement the processor.
 
@@ -405,7 +405,7 @@ At a high level, the key role of the front-end is to take the high level syntax,
 
     By ``recover meaning'', consider a source program such as the fibonacci function in \Cref{code:fib-ocaml}. When we read the code, we are \emph{implicitly} leveraging two types of structure: a \emph{syntactic} structure and a \emph{semantic} structure.
 
-    In terms of the \emph{syntactic} structure, we are able to \emph{tokenize} --- divide the characters into units (``words''), each with its own role or function (this is very similar to tokenization in Natural Language Processing, as in {\sffamily Part IA Machine Learning and Real World Data}). For example, looking at the first line, we can recover three tokens: \texttt{let rec}, which is a \emph{keyword}, \texttt{fibonacci}, a user-given identifier for the variable, and \texttt{n}, another user-given identifier. 
+    In terms of the \emph{syntactic} structure, we are able to \emph{tokenize} -- divide the characters into units (``words''), each with its own role or function (this is very similar to tokenization in Natural Language Processing, as in {\sffamily Part IA Machine Learning and Real World Data}). For example, looking at the first line, we can recover three tokens: \texttt{let rec}, which is a \emph{keyword}, \texttt{fibonacci}, a user-given identifier for the variable, and \texttt{n}, another user-given identifier. 
 
     In terms of the \emph{semantic} structure, we are able to recover the \emph{meaning} of the function, by constructing (in our heads) an ``abstract syntax tree'' -- in a somewhat handwavy way, we are able to draw ``sensible brackets'' around phrases to indicate their role or responsibility in the code.
 \end{minipage}
@@ -429,7 +429,7 @@ let fibonacci x rec
 \begin{minted}[bgcolor=backcolour]{ocaml}
 let f (x: int) = if x then 3 else 5
 \end{minted}
-    By checking for errors, the front-end is responsible for ensuring only \emph{meaningful} expressions are allowed to pass to the middle-end. This is important --- as we'll see, the middle and back-end will transform the source program into something completely unrecognisable, so error-detection at this stage will be nearly useless from a debugging point of view.
+    By checking for errors, the front-end is responsible for ensuring only \emph{meaningful} expressions are allowed to pass to the middle-end. This is important -- as we'll see, the middle and back-end will transform the source program into something completely unrecognisable, so error-detection at this stage will be nearly useless from a debugging point of view.
 
     The final responsibility of the front-end is to look at the abstract syntax tree and discover types at each of the nodes. This overlaps a little with error detection, but is useful in its own right. Modern day compilers can leverage type information in order to generate efficient code. \strut
 \end{minipage}
@@ -479,9 +479,9 @@ int f(int x) {
 
     The second is to apply machine-dependent optimisations. Here are two examples of machine-dependent optimisations.
         
-    \textbf{Example 1: Register Allocation.} Assume that, in the intermediate representation, you have eighteen variables but the processor only has sixteen registers in its ISA (note that because we need to know how many registers we have in the ISA, this is a back-end optimisation). What is the best way to allocate the variables to the registers? Is it possible for variables to share a register? What if certain registers \emph{have} to be used for certain purposes --- for example, let's say register 1 is used for the return values of functions, and addition will always use the values in registers 2 and 3. How do you optimise register allocation in these cases? In {\sffamily Part II Optimising Compilers}, you'll learn techniques based on \emph{graph colouring}.
+    \textbf{Example 1: Register Allocation.} Assume that, in the intermediate representation, you have eighteen variables but the processor only has sixteen registers in its ISA (note that because we need to know how many registers we have in the ISA, this is a back-end optimisation). What is the best way to allocate the variables to the registers? Is it possible for variables to share a register? What if certain registers \emph{have} to be used for certain purposes -- for example, let's say register 1 is used for the return values of functions, and addition will always use the values in registers 2 and 3. How do you optimise register allocation in these cases? In {\sffamily Part II Optimising Compilers}, you'll learn techniques based on \emph{graph colouring}.
     
-    \textbf{Example 2: Instruction Scheduling.} As you'll have learnt in {\sffamily Part IB Computer Architecture}, loads can introduce load-to-use data dependencies and thus stalls. \textit{Load hoisting} can solve the problem, by scheduling loads to run as early as possible. This illustrates a general trend --- try to execute ``slow'' instructions as eagerly as possible, before their results are needed. To do this, we need knowledge of which instructions are slow and which are fast, and this is obviously dependent on the processor.
+    \textbf{Example 2: Instruction Scheduling.} As you'll have learnt in {\sffamily Part IB Computer Architecture}, loads can introduce load-to-use data dependencies and thus stalls. \textit{Load hoisting} can solve the problem, by scheduling loads to run as early as possible. This illustrates a general trend -- try to execute ``slow'' instructions as eagerly as possible, before their results are needed. To do this, we need knowledge of which instructions are slow and which are fast, and this is obviously dependent on the processor.
 \end{minipage}
 
 \subsection{The Focus of this Course}
@@ -502,7 +502,7 @@ In general, there is a tension between the two. If we try and do more analysis a
 
 You might have seen this in {\sffamily Part IB C and C++}, where you played with \texttt{gcc}'s different optimisation flags. Compiling a program with flag \texttt{-o3} will result in longer compilation times but in general faster programs than compiling with flag \texttt{-o1}.
 
-It may not seem obvious that compile-time efficiency can be as important as run-time efficiency. This is very clearly seen in Data Science. Many data scientists prefer to use languages that are directly interpreted, without any compilation phase, like \texttt{Python} or \texttt{R}. The reason for this is that data scientists often require \emph{very tight feedback loops} --- they can tweak a hypothesis and immediately run it on inputs. While the program might take more time to \emph{complete}, the response time --- the time to the \emph{first} result --- is shorter. 
+It may not seem obvious that compile-time efficiency can be as important as run-time efficiency. This is very clearly seen in Data Science. Many data scientists prefer to use languages that are directly interpreted, without any compilation phase, like \texttt{Python} or \texttt{R}. The reason for this is that data scientists often require \emph{very tight feedback loops} -- they can tweak a hypothesis and immediately run it on inputs. While the program might take more time to \emph{complete}, the response time -- the time to the \emph{first} result -- is shorter. 
 
 This leads to a general principle: the degree of \emph{interactivity} needed is the key factor deciding how important the compilation time is. \citet{nielsen-1993} describes three thresholds:
 
@@ -512,4 +512,4 @@ This leads to a general principle: the degree of \emph{interactivity} needed is 
     \item \textbf{Attention Threshold}: $10$ seconds. The time budget for keeping the user's attention focused on the task at hand.
 \end{enumerate}
 
-While this is not examinable, it could present an interesting dimension (and indeed, one far too often overlooked) when evaluating a compiler --- perhaps one you'll build/extend for your Part II project.
+While this is not examinable, it could present an interesting dimension (and indeed, one far too often overlooked) when evaluating a compiler -- perhaps one you'll build/extend for your Part II project.

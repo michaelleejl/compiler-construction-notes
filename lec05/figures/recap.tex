@@ -15,9 +15,9 @@ $\begin{array}{l}~\\[-1.5ex]
 \node[darkred,anchor=south,fill=background] at (lr0-nfa.north) { \small LR(0) NFA };
 
 
-  \node[draw,rounded corners,anchor=north west,fill=background,fill opacity=0.5] (lr1-nfa) at ($(grammar.south east-|lr0-nfa.west) + (0,-1.5)$) { $A \to \alpha \bullet \beta, c$  };
+  \node[draw,rounded corners,anchor=north west,fill=background] (lr1-nfa) at ($(grammar.south east-|lr0-nfa.west) + (0,-1.5)$) { $A \to \alpha \bullet \beta, c$  };
 
-\node[darkred,anchor=south,fill=background, text opacity=0.5] at (lr1-nfa.north) { \small LR(1) NFA };
+\node[darkred,anchor=south,fill=background] at (lr1-nfa.north) { \small LR(1) NFA };
 
 
   \node[draw,rounded corners,anchor=north west] (lr0-dfa) at ($(lr0-nfa.north east) + (1,0)$) { \parbox{10ex}{
@@ -41,7 +41,7 @@ $B \to \gamma \bullet \delta, d$
 \node[darkred,anchor=south,fill=background] at (lr1-dfa.north) { \small LR(1) DFA };
 
 
-  \node[anchor=south west,dashed,fill=background,fill opacity=0.5] (lr0-table) at ($(lr0-dfa.north east) + (1,0.2)$) { 
+  \node[anchor=south west,dashed,fill opacity=0.5] (lr0-table) at ($(lr0-dfa.north east) + (1,0.2)$) { 
 
 \tiny
 $\begin{array}{c|ll}
@@ -53,7 +53,7 @@ $\begin{array}{c|ll}
 
  };
 
-\node[darkred,anchor=south,fill=background, text opacity=0.5] at (lr0-table.north) { \small LR(0) table };
+\node[darkred,anchor=south,fill=background] at (lr0-table.north) { \small LR(0) table };
 
 
   \node[anchor=north west] (slr1-table) at ($(lr0-dfa.south east-|lr0-table.west) + (0,-1)$) { 

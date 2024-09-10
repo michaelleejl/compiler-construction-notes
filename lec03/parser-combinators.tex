@@ -70,7 +70,7 @@ and f = function
 
 We hope you notice that the structure of the recursive descent parser almost immediately mirrors the structure of our context-free grammar. We will now make this correspondence more explicit.
 
-Assume that our parser is parsing the word $(x + y) * z$ --- that is, verifying it has the right structure and constructing a parse tree. The starting symbol is $E$, so in other words we are verifying that $E$ can expand to $(x + y) * z$
+Assume that our parser is parsing the word $(x + y) * z$ -- that is, verifying it has the right structure and constructing a parse tree. The starting symbol is $E$, so in other words we are verifying that $E$ can expand to $(x + y) * z$
 
 Assume there exists a derivation sequence
 \[E \Rightarrow^{+} (x+y) * z\]
@@ -104,7 +104,7 @@ Renaming \texttt{uv} to \texttt{toks}, we get the definition of \texttt{e} as in
 
 Therefore, we can say each function takes a sequence of \texttt{toks}, matches some prefix of \texttt{toks}, and returns some suffix of \texttt{toks}.
 
-Note how the language features --- higher-order functions and pattern matching --- are effectively deployed to build a parser. This is what we mean by recursive descent parsers being ``easy to construct''.
+Note how the language features -- higher-order functions and pattern matching -- are effectively deployed to build a parser. This is what we mean by recursive descent parsers being ``easy to construct''.
 
 Having seen a concrete example, we can now define what a recursive parser \textit{is}
 
@@ -151,7 +151,7 @@ A predictive parser is more efficient, taking time linear in the number of token
 At this point, we have \textbf{told} you that our parser does not need to backtrack. That is, we have \textit{asserted} that any ambiguity can be resolved using a single token of look-ahead. But we have not \textit{justified} ourselves, and you should be skeptical. Justification will come in \Cref{chapter:llk}.
 
 \section{Left Recursive Grammars}
-Inefficiency, however, is \textit{not} the biggest problem with recursive descent parsers. That dishonour belongs to the left-recursive problem. Consider $G_3$ --- why do you think it looks so weird? Why did we not use $G_2$?
+Inefficiency, however, is \textit{not} the biggest problem with recursive descent parsers. That dishonour belongs to the left-recursive problem. Consider $G_3$ -- why do you think it looks so weird? Why did we not use $G_2$?
 
 Consider the $G_2$ production rule
 \[ E \rightarrow E + T \]
@@ -542,4 +542,4 @@ Hence, assuming our \texttt{base} parses patterns of the form $E$, then after th
 
 
 % \subsection{Looking Ahead: Linear-Time Parser Combinators}
-% Finally, we can use the \textit{type} system to ensure that our parser combinator has \textit{no backtracking} --- that is, it is guaranteed to take time linear in the number of tokens. The details can be found in the paper, but a very understandable introduction can be found \href{https://semantic-domain.blogspot.com/2023/07/linear-time-parser-combinators.html}{here}.
+% Finally, we can use the \textit{type} system to ensure that our parser combinator has \textit{no backtracking} -- that is, it is guaranteed to take time linear in the number of tokens. The details can be found in the paper, but a very understandable introduction can be found \href{https://semantic-domain.blogspot.com/2023/07/linear-time-parser-combinators.html}{here}.

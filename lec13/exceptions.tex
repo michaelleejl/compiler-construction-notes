@@ -1,0 +1,579 @@
+\chapter{Exceptions}
+
+\section{Overview}
+Many languages offer support for exceptions. You'll have used exceptions in \texttt{Java} and \texttt{OCaml}.
+
+In this chapter, we will first recap what exceptions are. Second, we will consider how to implement exceptions. Third, with a deeper understanding of how exceptions work, we will consider some subtleties regarding exceptions. Finally, in an optional section, we will see exceptions as a specific example of \textit{delimited control}.
+
+\section{Exception Semantics}
+Extending a language with exceptions requires adding two constructs: 
+\begin{enumerate}
+    \item The ability to raise an exception
+    \item The ability to handle an exception
+\end{enumerate}
+
+In this section, we will figure out, conceptually, what each of these constructs do. Once we have a precise conceptual model, we will (in an optional section) give them a formal semantics. 
+
+\subsection{Raise}
+We shall first try to extend our language with \texttt{raise}, ignoring \texttt{handle}. Once we consider \texttt{handle}, we will return and correct our semantics for \texttt{raise}.
+
+The \texttt{raise} construct looks, abstractly, like
+\[\texttt{raise}\, e\]
+Where we first evaluate $e$ to some exceptional value $v$ (in a strongly typed language, exceptional values have their own type), and then raise or throw $v$.
+
+Importantly, \textbf{ignoring \texttt{handle}}, \texttt{raise} \textit{discards} ``the rest of the computation''. That is, we have 
+\[\begin{array}{rcl}
+     (\texttt{raise}\, \texttt{E}(4)) + 1&\leadsto&\texttt{E}(4)  \\
+     \texttt{while}\, \texttt{True} \, \texttt{do} \, \texttt{raise} \, \texttt{E}(4) & \leadsto& \texttt{E}(4)\\
+     \texttt{if}\, \texttt{raise} \, \texttt{E}(4) \, \texttt{then} \, 5 \, \texttt{else} \, 7 & \leadsto&\texttt{E}(4)
+\end{array} \]
+The ``rest of the computation'' is specified as an evaluation context $C$. \textbf{Ignoring \texttt{handle}}, we write
+\[C[\texttt{raise} \, v] \leadsto v\]
+To illustrate that the context has been discarded. We consider this more thoroughly in the next, optional, sub-section.
+
+\subsubsection{Operational Semantics of \texttt{raise} (without \texttt{handle}) \optional}
+If, in \textsf{Part IB Semantics of Programming Languages}, you were asked to give an operational semantics to exceptions, you might have found it rather tricky. The reason for this is that the course shows you how to specify a \textit{local} semantics. For example, take the rules
+
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+    \AxiomC{}
+    \UnaryInfC{$(\lambda x. e')v \leadsto [v/x]e'$ }
+    \DisplayProof
+\end{center}
+\end{minipage}%
+\begin{minipage}{0.6\textwidth}
+\begin{center}
+    \AxiomC{$e_1 \leadsto e_1'$}
+    \UnaryInfC{$\texttt{if} \, e_1 \, \texttt{then} \, e_2 \, \texttt{else} \, e_3  \leadsto \texttt{if} \, e_1' \, \texttt{then} \, e_2 \, \texttt{else} \, e_3$ }
+    \DisplayProof
+\end{center}
+\end{minipage}
+
+In the rule on the left, you say, if I pattern match on my expression and find it is of the form $(\lambda x. e')v$ (one such example might be $(\lambda x. x>1)2$) then I will take the body of the function $e'$ ($x>1$), and wherever I see $x$, I will substitute $v$ ($2$).
+
+In the rule on the right, you are saying, if I pattern match on my expression and find it is an \texttt{if} statement, then I need to evaluate the conditional to determine which branch to take. 
+
+In using the rule on the right, you might try to solve a sub-goal, that invokes the rule on the left. For example, if you have the expression
+\[\texttt{if} \, (\lambda x. x>1)2 \, \texttt{then} \, e_2 \, \texttt{else} \, e_3\]
+Then you will first use the rule on the right to determine that you need to evaluate $(\lambda x. x>1)2$, which then requires the rule on the left. 
+
+The reason why you can invoke the rule on the left like this is because the rule on the left will never have an impact on whether, or how, you use the rule on the right. For this reason, we say the semantics we have given are \textit{local}. We can hone in on any sub-expression, and solve them independently of each other. 
+
+In contrast, consider the expression
+\[\texttt{if} \, \texttt{raise} \, \texttt{E}(4)\, \texttt{then} \, e_2 \, \texttt{else} \, e_3\]
+We attempt to do the same thing. We deploy the rule on the right, figure we need to try and evaluate $\texttt{raise} \, \texttt{E}(4)$, but this tells us we should throw away the rest of the \texttt{if} statement. Solving a sub-goal (evaluate \texttt{raise} $\texttt{E}(4)$) can cause us to change our original goal (evaluate the \texttt{if} expression) , and our semantics are no longer local. 
+
+Before we deal with non-local semantics, we first make explicit this notion of goal and sub-goal. We do so by introducing evaluation contexts, $C$, which identify ``holes'' in which evaluation may take place. Examples of evaluation contexts include 
+
+\begin{minipage}{0.33\textwidth}
+    \begin{center}
+        $(\lambda x. e') -$
+    \end{center}
+\end{minipage}%
+\begin{minipage}{0.33\textwidth}
+    \begin{center}
+        $\texttt{if}\, - \, \texttt{then}\, e_2 \, \texttt{else} e_3$
+    \end{center}
+\end{minipage}%
+\begin{minipage}{0.33\textwidth}
+    \begin{center}
+        $\texttt{if}\, (\lambda x. e') - \, \texttt{then}\, e_2 \, \texttt{else} e_3$
+    \end{center}
+\end{minipage}%
+
+A non-example of an evaluation context in \textit{L2} is
+
+\begin{center}
+        $\texttt{if}\, e_1 \, \texttt{then}\, - \, \texttt{else} \, e_3$
+\end{center}
+
+Since it implies you are evaluating a branch before evaluating the conditional, which the semantics of \textit{L2} do not allow. 
+
+Evaluation contexts allow us to say ``Evaluate this sub-expression as a sub-goal in evaluating the entire expression. Evaluating the sub-goal will never change what or how we evaluate.''. We write
+
+\begin{center}
+    \AxiomC{$e \leadsto e'$}
+    \UnaryInfC{$C[e] \leadsto C[e']$ }
+    \DisplayProof
+\end{center}
+
+Which means, if as a sub-goal, we find that $e$ evaluates to to $e'$, then it also evaluates to $e'$ in some context $C$. This helps us make progress in evaluating $C[e]$. Note that $C$ is unchanged, since evaluating the sub-goal does not change what or how we evaluate. 
+
+Of course, raising an exception does change what and how we evaluate. Specifically, raising an exception ``throws away'' the rest of the computation, or the goal. Hence, \textbf{ignoring \texttt{handle}}, we write
+
+\begin{center}
+    \AxiomC{}
+    \UnaryInfC{$C[\texttt{raise} \, v] \leadsto v$ }
+    \DisplayProof
+\end{center}
+
+By abandoning the context in which we were evaluating \texttt{raise} $v$, we allow the evaluation of exceptions to affect what, and how we evaluate. Specifically, we allow them to \textit{throw away} our previous objectives.
+
+\subsection{Handle}\label{section:exception-semantics:handle}
+Next, we will extend our language with \texttt{handle}. The \texttt{handle} construct looks, abstractly, like
+\[\texttt{try}\, e_1 \, \texttt{with} \, x \to \, e_2 \]
+If an exception is raised, then \texttt{handle} \textit{catches} the raised exception and performs some operation on it. Otherwise, \texttt{handle} is not called. Concretely,
+\[\begin{array}{rrccl}
+     1+\texttt{try}& 2+3\, & \texttt{with} \, \texttt{E}(x) \to x+10 &\leadsto^*&6  \\
+     1+\texttt{try}& 2+\texttt{raise}\, \texttt{E}(5)\, & \texttt{with} \, \texttt{E}(x) \to x+10 &\leadsto^*&16
+\end{array}\]
+Abstractly, given 
+\[\texttt{try}\, e_1 \, \texttt{with} \, x \to \, e_2 \]
+We are in one of two cases: 
+\begin{enumerate}
+    \item $e_1$ ($2+3$) reduces to some value $v$ ($5$), and so the entire \texttt{handle} block reduces to $v$ ($5$)
+    \item $e_1$ ($2+(\texttt{raise}\, \texttt{E}(5))$) reduces to a raise statement ($\texttt{raise} \, \texttt{E}(5)$) in some context $C_2$ ($2 + -$). The handler, $e_2$ ($\lambda \texttt{E}(x). x+10$) is called on the raised value (to give $5+10 = 15$)
+\end{enumerate}
+In both cases, the surrounding context $C_1$ ($1+-$) is unaffected (hence evaluation results in 6 and 16, respectively). Informally, the \texttt{handle} construct \textit{contains} the effect of the \texttt{raise}.
+
+Further, \textit{handle} \textit{handles} the raised exception value, by replacing the discarded computation with some function. In the earlier example, we replace the discarded computation $- + 1$ with the handler $- + 2$. This substitute for the discarded computation is specified by the handler body. 
+
+We will now correct our informal semantics for \texttt{raise}. We said that $\texttt{raise} \, v$ discards \textit{all of the rest of the computation}. As we have seen, this is not true if $C$ contains a handle! The \texttt{handle} should contain the effect of \texttt{raise}, protecting anything that comes after it. Hence, \texttt{raise} should discard the rest of the computation up to (and including) the \textbf{most recent} handle. The most recent handle is replaced by the handling code in its body.
+
+\subsubsection{Operational semantics for \texttt{raise} (with \texttt{handle}) \optional}
+We will now correct our formal semantics for \texttt{raise}. We said that $\texttt{raise}$ needs to discard the computation up to and including, the most recent handle, which is replaced by its handling body. To illustrate the protective effect of the handle, we write:
+
+\begin{center}
+    \AxiomC{}
+    \UnaryInfC{$C_1[\texttt{try} \, C_2[\texttt{raise} \, v] \, \texttt{with} \, x \to e_2] \leadsto C_1[[v/x]e_2]$ }
+    \DisplayProof
+\end{center}
+
+This makes clear that we only discard the context $C_2$ within the \texttt{try} block.
+
+To make clear that the \texttt{handle} is the \textit{most recent such}, we say that $C_2$ does not contain any \texttt{handle} statements. Formally, we write
+
+\begin{center}
+    \AxiomC{$\nexists C_3, C_4, e' . \; C_2 = C_3[\texttt{handle} \, C_4 \, \texttt{with} \, y \to e']$}
+    \UnaryInfC{$C_1[\texttt{try} \, C_2[\texttt{raise} \, v] \, \texttt{with} \, x \to e_2] \leadsto C_1[\texttt{try} \, \texttt{raise} \, v \, \texttt{with} \, x \to e_2]$ }
+    \DisplayProof
+\end{center}
+
+\subsubsection{Operational Semantics of \texttt{handle} \optional}
+Since the \texttt{handle} contains the effect of a \texttt{raise}, its semantics can be specified without reference to its surrounding context. In fact, its rules are very easy
+
+The first rule is a congruence rule
+
+\begin{center}
+    \AxiomC{$e_1 \leadsto e_1'$}
+    \UnaryInfC{$\texttt{try} \, e_1 \, \texttt{with} \, x \to e_2 \leadsto \texttt{try} \, e_1' \, \texttt{with} \, x \to e_2$ }
+    \DisplayProof
+\end{center}
+
+The second rule is a reduction rule that specifies what to do if no exception is raised
+
+\begin{center}
+    \AxiomC{}
+    \UnaryInfC{$\texttt{try} \, v \, \texttt{with} \, x \to e_2 \leadsto v$ }
+    \DisplayProof
+\end{center}
+
+The case where an exception is raised is specified under the operational semantics for \texttt{raise}.
+
+If you try to specify these rules within a surrounding context $C$, you'll notice that you do nothing to $C$ -- that's a sign that you can drop the context from your operational semantics.
+
+\subsection{A note on notation}
+In some papers, you might see $C[e]$ written as $\langle e, C \rangle$ or $\langle e \mid C \rangle$
+
+You may also see $C$ being referred to as $E$ (for \textbf{E}valuation context) and $K$ (for continuation).
+
+\subsection{Exceptions in \texttt{OCaml}}
+As a concrete example of exceptions, here's the exception handling syntax for exceptions in \texttt{OCaml}
+
+\subsubsection{Exception Types}
+In \texttt{OCaml}, the type of exceptions, \texttt{exn}, is defined as some extensible type
+\[\texttt{type exn} \, \texttt{=} \, \ldots\]
+It is extensible so that the user can extend it with exceptions of their own
+\[\texttt{type exn} \, \texttt{+=} \, \texttt{E of String} \]
+This is similar to how one \textit{subclasses} the \texttt{Exception} class in \texttt{Java}.
+
+\subsubsection{Raising and Handling Exceptions}
+In \texttt{OCaml}, we raise exceptions as follows
+\[\texttt{raise}(\texttt{E ""})\]
+And handle them using the construct
+\[\texttt{try} \,e \, \texttt{with} \, \texttt{E} \, \to e_1 \]
+\texttt{OCaml} also supports the pattern matching syntax
+\[\begin{array}{ll}
+    \texttt{try} \,e \, \texttt{with} & \; \, \, \texttt{E}_1 \, \to e_1  \\ 
+    & \mid \texttt{E}_2 \, \to e_2 \\
+    & \ldots
+\end{array}   \]
+Which is just syntactic sugar for 
+\[\begin{array}{ll}
+    \texttt{try} \,e\, \texttt{with} & \texttt{match} \, v \, \texttt{with} \\
+    & \mid \texttt{E}_1 \, \to e_1  \\ 
+    & \mid \texttt{E}_2 \, \to e_2 \\
+    & \ldots
+\end{array}   \]
+
+\section{Implementing Exceptions}
+In this section, we will illustrate how to implement exceptions in \texttt{JargonVM}. We will first describe how exceptions manipulate the stack (\Cref{section:stack-manipulation}). This will help us develop a set of low-level instructions for implementing exceptions. Following this, we will illustrate a semantically equivalent, but more efficient way to manipulate the stack (\Cref{section:exception-pointers}). We will then update the specification of each low-level instruction to use this optimised technique. Finally, we will illustrate a \textit{compilation scheme}: showing how we can compile the high level \texttt{raise} and \texttt{try/with} syntax into our low-level instructions.
+
+\subsection{Exceptions: A Stack's Perspective}\label{section:stack-manipulation}
+\begin{figure}[H]
+    \centering
+    \scalebox{0.7}{\import{figures}{stack-searching}}
+    \caption{Searching the stack for the \texttt{handle} closest to the top of the stack. All stack frames between the \texttt{handle} and the \texttt{raise} are discarded}
+    \label{fig:stack-searching}
+\end{figure}
+$C$ is the \textit{continuation}, the ``rest of the computation''. As we showed in \Cref{chapter:cps}, this continuation corresponds to the stack. Therefore, we can look at the meaning of the operational semantics in a slightly new light:
+
+\begin{enumerate}
+    \item \texttt{handle} frames are pushed onto the stack
+    \item If no exception is raised, then \texttt{handle} frames are silently popped off the stack.
+    \item On a \texttt{raise}, we discard \textit{the stack} ($C_2$) up to, and including, the \texttt{handle} \textit{closest to the top of the stack} (most recent \texttt{handle}). This is illustrated in \Cref{fig:stack-searching}. We then invoke the handling code.
+\end{enumerate}
+
+\subsubsection{Handler Frames}
+We should also consider the structure of a handler frame. This should contain all the information needed to handle a raised exception. When an exception is raised, we need to:
+\begin{enumerate}
+    \item Discard the stack frames up to, and including, the handler frame, and
+    \item Transfer control to the handling code
+\end{enumerate}
+
+After discarding the relevant stack frames, the frame pointer might no longer be pointing at the activation frame at the top of the stack. In order to restore the invariant, we need to restore the frame pointer to the value it was at the point when the handler frame was pushed onto the stack (\textbf{fp}). We save \textbf{fp} onto the stack.
+
+In order to transfer control to the handling code ($e_2$ in \texttt{try} $e_1$ \texttt{with} $x \to e_2$), we use a code pointer. After compilation, $e_2$ will be some consecutive series of instructions with an address / location. We thus also need a code pointer, \textbf{cp}, that points to the address of $e_2$ in the compiled code. The structure of the handler frame is shown in \Cref{fig:handler-frame}.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{handler-frame}
+    \caption{The structure of a handler frame}
+    \label{fig:handler-frame}
+\end{figure}
+
+This perspective is important because it helps us outline a specification for the instructions we need to introduce:
+
+\begin{enumerate}
+    \item We need an instruction, called \texttt{TRY}, that pushes a handler frame onto the stack.
+    \item We need an instruction, called \texttt{UNTRY}, that performs the required operations when an exception is \textit{not} raised. \texttt{UNTRY} will quietly remove the handler frame from the stack. 
+    \item We need an instruction, called \texttt{RAISE}, that performs the required operations when an exception is raised. It will:
+    \begin{enumerate}
+        \item Search the stack for the handler frame closest to the top of the stack,
+        \item Throw away all frames between the raised value and the handler frame, 
+        \item Restore the frame pointer, and
+        \item Invoking the handling code, pointed to by the code pointer
+    \end{enumerate}
+\end{enumerate}
+\subsection{Optimisation: Exception Pointers}\label{section:exception-pointers}
+Looking at the specification, it seems that \texttt{RAISE} is being asked to do a lot. We shall try and cut down on the amount of work it has to do. Specifically, searching the stack for the \texttt{handle} \textit{closest to the top of the stack} is inefficient. One optimisation is to augment our virtual machine configuration to include an \textit{exception pointer}. This exception pointer remembers which handler frame is currently nearest the top of the stack. 
+
+This leads to the new virtual machine configuration, which has a stack, a code pointer, a frame pointer, and an exception pointer. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{exception-pointer}
+    \caption{Augmenting the virtual machine configuration to include an exception pointer, that points to the handler frame nearest the top of the stack.}
+    \label{fig:exception-pointer}
+\end{figure}
+
+To make this optimisation work, notice that whenever we push a handler frame on the stack, we update our exception pointer from ep' (a pointer to the old handler frame) to ep (a pointer to the current frame). Whenever we pop the handler frame off the stack, we will need to restore our exception pointer to point at the old handler frame, ep'. In order to make sure we don't need to search the stack to find our old handler frame, we store ep with the handler frame. This leads to a new handler frame structure, illustrated in \Cref{fig:handler-frame-with-exception-pointer}
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{handler-frame-with-exception-pointer}
+    \caption{The structure of a handler frame, with the exception pointer optimisation}
+    \label{fig:handler-frame-with-exception-pointer}
+\end{figure}
+
+\subsection{New Instructions: \texttt{TRY}, \texttt{UNTRY}, \texttt{RAISE}}
+We will now provide specifications for \texttt{TRY}, \texttt{UNTRY}, and \texttt{RAISE}. 
+
+\subsubsection{TRY}
+\texttt{TRY} saves the old value of the exception pointer (e2) pushes a handler frame onto the stack (with the old exception pointer, e2), and updates the exception pointer to point at this new handler frame (e1). Further, the code pointer is incremented by one. This is illustrated in \Cref{fig:try-specification}.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{try}
+    \caption{The effect of \texttt{TRY} on the stack}
+    \label{fig:try-specification}
+\end{figure}
+
+\subsubsection{UNTRY}
+\texttt{UNTRY} pops the exception frame nearest the top of the stack off of the stack, and restores the exception pointer to its old value. Further, the code pointer is incremented by one. This is illustrated in \Cref{fig:untry-specification}.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{untry}
+    \caption{The effect of \texttt{UNTRY} on the stack}
+    \label{fig:untry-specification}
+\end{figure}
+
+\subsubsection{RAISE}\label{section:raise-specification}
+The specification of \texttt{RAISE} is by far the most complex, since it performs several tasks: it finds the exception frame closest to the top of the stack, throws away the frames in between, restores the frame and exception pointers, and then calls the handler. We shall step through these operations, one at a time.
+
+\texttt{RAISE} expects the value to be raised, \textbf{v}, to be at the top of the stack. Further, it expects the exception pointer to point at the handler frame closest to the top of the stack, \textbf{ep}.
+
+\begin{center}
+    \import{figures/raise}{raise-1}
+\end{center}
+
+Using the exception pointer, \textbf{e1}, we find the handler frame at the top of the stack. This allows us to retrieve the following values:
+
+\begin{enumerate}
+    \item The code pointer to the handling code, \textbf{k},
+    \item The saved frame pointer, \textbf{j}, and
+    \item The saved exception pointer, \textbf{e2}
+\end{enumerate}
+
+Next, also using the exception pointer, we can throw away everything on the stack between \textbf{v} and the handler frame (inclusive).
+
+\begin{center}
+    \import{figures/raise}{raise-2}
+\end{center}
+
+Notice how our frame pointer (with value \textbf{i}) and exception pointer (with value \textbf{e1}), are now broken and need to be fixed. Thankfully, we have saved their previous values, and can fix them by restoring them to their previous states. We thus restore the frame pointer to \textbf{j} and the exception pointer to \textbf{e2}. 
+
+\begin{center}
+    \import{figures/raise}{raise-3}
+\end{center}
+
+Finally, to invoke the handler, we update the code pointer \textbf{cp} to \textbf{k}, the address of the handling code. 
+
+\begin{center}
+    \import{figures/raise}{raise-4}
+\end{center}
+
+This entire process is illustrated in \Cref{fig:raise-specification}.
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{raise}
+    \caption{The combined effect of \texttt{RAISE} on the stack}
+    \label{fig:raise-specification}
+\end{figure}
+
+\subsection{Compilation Scheme}
+Having given specifications for \texttt{TRY}, \texttt{UNTRY}, and \texttt{RAISE}, we will now describe a compilation scheme from our high level $\texttt{raise} \, e$ and $\texttt{try} \, e_1 \, \texttt{with} \, x \to e_2$ syntax (specifically, the abstract syntax trees generated by said syntax) into these low level primitives (\Cref{fig:exception-compilation-scheme}). 
+
+\begin{figure}[H]
+    \centering
+    \scalebox{0.7}{\import{figures}{compilation-scheme}}
+    \caption{A compilation scheme for \texttt{try} and \texttt{handle} expressions}
+    \label{fig:exception-compilation-scheme}
+\end{figure}
+
+\section{Example Execution}
+To emphasise the nature of exceptions, and their implementation details in \texttt{JargonVM}, we will consider the \texttt{JargonVM} code generated by the following two expressions, from \Cref{section:exception-semantics:handle}
+\[\begin{array}{rrc}
+     1+\texttt{try}& 2+3\, & \texttt{with} \, \texttt{E}(x) \to x+10  \\
+     1+\texttt{try}& 2+\texttt{raise}\, \texttt{E}(5)\, & \texttt{with} \, \texttt{E}(x) \to x+10
+\end{array} \]
+We shall call the first \textsf{try} and the second \textsf{try + raise}.
+
+\subsubsection{Tracing try}
+We shall first trace the execution of the expression
+\[ 1+(\texttt{try} \, (2+3)\, \texttt{with} \, \texttt{E}(x) \to x+10)\]
+We begin with the stack and the heap in the starting configuration.
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try}{tt-1}}
+\end{center}
+
+On line \texttt{0}, we encounter push 1 onto the stack
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try}{tt-2}}
+\end{center}
+
+On line \texttt{1}, we encounter a \texttt{TRY}, and perform the described transformation. Notice that the code pointer on the stack points to line \texttt{7}, the exception handling code. Our configuration now looks like:
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try}{tt-3}}
+\end{center}
+
+On line \texttt{2}, we push \texttt{2} onto the stack. On line \texttt{3}, we push \texttt{3} onto the stack. On line \texttt{4}, we pop the two numbers off of the stack, adding them together, and pushing the result (\texttt{5}) back onto the stack. Therefore, after executing these two lines, our configuration looks like:
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try}{tt-6}}
+\end{center}
+
+\textit{Since we did not raise an exception}, we fall through to line \texttt{6}, and execute the \texttt{UNTRY} instruction. Since we do not raise an exception, we end up in a situation where a value that we want to use (\texttt{5}) sits on top of an exception frame. We whisk the exception frame from below the value, restore the exception pointer, and obtain the following program configuration:
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try}{tt-7}}
+\end{center}
+
+In this configuration, we can perform the \texttt{ADD}, obtaining \texttt{6}. 
+
+\subsection{Tracing try+raise}
+We shall now perform a similar trace on 
+\[ 1+ (\texttt{try} \, (2+\texttt{raise}\, \texttt{E}(5))\, \texttt{with} \, \texttt{E}(x) \to x+10)\]
+Once again, we compile this down into \texttt{JargonVM}. The stack and the heap begin in the same starting configuration.
+
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-1}}
+\end{center}
+
+We execute lines \texttt{0}-\texttt{3}, which are basically the same as lines \texttt{0}-\texttt{3} in the \textsf{try} trace (though we push \texttt{5} instead of \texttt{3}, and the code pointer in the exception frame points to line \texttt{8}, not line \texttt{7}). Hence, we end up with a very similar looking stack
+
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-5}}
+\end{center}
+
+On line \texttt{4}, we execute a \texttt{RAISE}. Following the specification we laid out in \Cref{fig:raise-specification}, we end up in a new program configuration:
+
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-6}}
+\end{center}
+
+We now begin to execute the handler on the raised value, 5. In order to execute our handler, we first need to create it. Recall that this is the role of \texttt{MK\_CLOSURE}, which takes the address of a function, and a number of free variables it needs to bind, and creates a re-usable function on the heap. After executing \texttt{MK\_CLOSURE}, we get
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-8}}
+\end{center}
+
+Having created the closure, we then execute the \texttt{APPLY} operation, which pushes a new stack frame onto the stack and the return address (\textbf{11}).  
+
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-9}}
+\end{center}
+
+We look up the argument to the function (\texttt{STACK\_LOCATION -2}), push \texttt{10} onto the stack, and perform the \texttt{ADD}
+
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-13}}
+\end{center}
+
+We execute the \texttt{RETURN}, updating the code pointer to the return address (\textbf{11}), and popping everything between the value to return (\textbf{15}) and the argument (\textbf{5}) off of the stack, inclusive of the argument.
+
+\begin{center}
+    \scalebox{0.7}{\import{figures/tracing-try-and-raise}{ttr-14}}
+\end{center}
+
+In our final step, we apply the \texttt{ADD}, obtaining \texttt{16}.
+
+\section{Exception Pragmatics}
+In this section, we will cover three interesting aspects of exceptions, that arise from the interaction of exceptions with the rest of the compiler or languge. 
+
+\subsection{Exceptions and Tail Calls}
+The first interesting aspect of exceptions is that handler frames use stack space. Hence, a call within a handler is \textbf{not} a tail call. 
+
+This means, practically, that \texttt{try} blocks \textit{block tail call optimisation}. As an example, \Cref{code:all-ocaml} is a tail-recursive function
+
+\begin{code}[A tail-recursive \texttt{all} function in \texttt{OCaml}]
+    \label{code:all-ocaml}
+\begin{minted}[linenos, bgcolor=backcolour]{OCaml}
+let rec all f = function 
+  | [] -> true
+  | x::xs -> f x && all xs
+\end{minted}
+\end{code}
+
+In contrast, \Cref{code:all-except-ocaml} is not, because the handler uses stack space,
+
+\begin{code}[A non-tail-recursive \texttt{all} function with a \texttt{try} block in \texttt{OCaml}]
+    \label{code:all-except-ocaml}
+\begin{minted}[linenos, bgcolor=backcolour]{OCaml}
+let rec all_except f = function 
+  | [] -> true
+  | x::xs -> try (f x && all_except f xs) with Not_found -> false
+\end{minted}
+\end{code}
+
+However, \Cref{code:all-except-ocaml} can be made tail-recursive by moving the recursive call outside the \texttt{try} block (\Cref{code:all-except-2-ocaml}
+
+\begin{code}[A tail-recursive \texttt{all} function with a \texttt{try} block in \texttt{OCaml}]
+    \label{code:all-except-2-ocaml}
+\begin{minted}[linenos, bgcolor=backcolour]{OCaml}
+let rec all_except_2 f = function 
+  | [] -> true
+  | x::xs -> try (f x with Not_found -> false) && all_except_2 f xs
+\end{minted}
+\end{code}
+
+\subsection{Exceptions and Destructors}
+The second interesting aspect of exceptions is that exceptions interact with destructors. 
+
+Some languages with manual memory management (\Cref{chapter:garbage-collection}) facilities, like \texttt{C++}, offer a language construct known as a destructor (this is covered in \textsf{Part IB C and C++}). This is a piece of code whenever an object is deallocated.
+
+For example, 
+\begin{minted}[bgcolor=backcolour]{C++}
+struct C {
+  // destructor
+  ~C() {
+    cout << "Goodbye\n";
+  }
+}
+\end{minted}
+Defines a destructor that, whenever an instance of \texttt{C} is de-allocated, prints ``Goodbye''.
+
+Further, as will have been taught in \textsf{Part IB C and C++}, \texttt{C++} allows objects to be allocated on the stack, for example
+
+\begin{minted}[bgcolor=backcolour]{C++}
+void f(){
+  C c; // creates an instance of C on the stack
+}
+\end{minted}
+
+Putting this together, when an exception unwinds the stack, it needs to call the destructors of all objects destroyed in the process. Some of these objects might be on the heap, with explicit \texttt{free}s, and some of these objects might be on the stack. Regardless, their destructors \textit{must} be called before the handling code is run. For example, consider \Cref{code:c-destructor-example}.
+
+\begin{code}[An example \texttt{C++} program that illustrates the interaction between exceptions and destructors]
+\label{code:c-destructor-example}
+\begin{minted}[linenos, bgcolor=backcolour]{C++}
+struct C {
+  // destructor
+  ~C() {
+    cout << "Goodbye\n";
+  }
+}
+
+void g() {
+  throw runtime_error("No resources\n")
+}
+
+void f() {
+  C c; g();
+}
+
+int main() {
+  try {f();}
+  catch (const runtime_error &e) {cout << e.what();}
+}
+\end{minted}
+\end{code}
+
+The code in \Cref{code:c-destructor-example} prints
+
+$\begin{array}{l}
+     \texttt{Goodbye}  \\
+     \texttt{No resources}& 
+\end{array}$
+
+This means that our implementation of exceptions \textbf{is wrong} if our language has destructors. Our implementation jumps directly to the handler if an exception is raised (the code pointer is updated from \textbf{cp} to \textbf{k}), but, should we have destructors, we need to call the destructor code before updating the code pointer to \textbf{k}.
+
+\subsection{Resumable Exceptions}
+As a final point, we should consider if \textit{throwing away the stack} is really what raising an exception should do. Let's first motivate why throwing away the stack might be unwise. 
+
+Consider \Cref{code:ocaml-tree-suite}, which defines find and insertion methods for functional dictionaries (\textsf{Part IA Foundations of Computer Science}). 
+
+\begin{code}[Find and insertion methods for a functional dictionary in \texttt{OCaml}]
+\label{code:ocaml-tree-suite}
+\begin{minted}[linenos, bgcolor=backcolour]{ocaml}
+exception Not_found;
+let rec find k = function
+  | Lf -> raise Not_found
+  | Br(l, k2, v, r) -> if k = k2 then v
+                   else if k < k2 then find k l
+                   else find k r
+                   
+let rec insert k v = function
+  | Lf          -> Br(Lf, k, v, Lf)
+  | Br(l, k2, _, r) -> if k = k2 then Br(l, k, v, r)
+                   else if k < k2 then let l2 = insert k v l in
+                   Br(l2, y, r)
+                   else let r2 = insert k v r in
+                   Br(l, y, r)
+\end{minted}
+\end{code}
+
+Consider now how we might define a function that first tries to find a value in a dictionary, and, if it does not exist, adds it to the dictionary with an initial value of \texttt{0}. You might want to do this, for example, when trying to track the counts associated with each key.
+
+One way of doing it is detailed in \Cref{code:ocaml-inefficient-update}
+
+\begin{code}[Defining a function that both finds or instantiates in \texttt{OCaml}]
+\label{code:ocaml-inefficient-update}
+\begin{minted}[linenos, bgcolor=backcolour]{ocaml}
+let rec find_or_instantiate k d =
+  try (find k d, d) with Not_found -> (0, insert k 0 d)
+\end{minted}
+\end{code}
+
+This is \textit{inefficient}! We first traverse the tree for where the key \textit{should be}, and if it is not found, we traverse it again, finding the same leaf we did in the first traversal, and then perform the insertion. This has a complexity of $O(2h)$ where $h$ is the height of the dictionary.
+
+What if we could 
+\section{Delimited Control\optional}

@@ -503,6 +503,19 @@ Given $G_3'$, we can therefore generate $M$. Running the algorithm looks like
 
 Which is exactly what we promised to produce at the start.
 
+\section{Recap}
+In this chapter, we first took a closer look at the assumption made by our recursive descent parser: that a single token was sufficient to predict what to do next and eliminate non-determinism. We saw that a single-token look-ahead resolves non-determinism for some grammars but not others.
+
+This allowed us to create a taxonomy of grammars, indexed by how many lookahead tokens it needs to resolve non-determinism: LL(1) grammars require only one, LL(2) grammars require only two, etcetera. We saw that, by building a table of possible expansions for each non-terminal and lookahead, we could check if a grammar was in LL(1). 
+
+Further, we realised that this table was effectively telling us what to do at each step of an LL parse. It could thus be easily transformed into an LL parser. We realised that, if we could build this table automatically from a grammar, then it could serve as the basis of an LL parser generator. The generator would take a grammar, and automatically produce a parser.
+
+The most challenging step was automating the construction of the table. We saw that, once we had the \textsf{FIRST} and \textsf{FOLLOW} sets, constructing the table was easy. Constructing \textsf{FIRST} and \textsf{FOLLOW} was slightly tricky, but, as an optional section, we showed how you can see them as instances of least fixed-point computations. 
+
+Finally, once we had the table, we turned our intuition, that the table could be used as the basis of a parsing algorithm, into an actual algorithm.
+
+
+
 \section{Linear Time Parser Combinators$^*$}\label{section:linear-parser-combinators}
 \textit{This optional section is based on \href{https://www.cl.cam.ac.uk/~jdy22/papers/a-typed-algebraic-approach-to-parsing.pdf}{A Typed, Algebraic Approach to Parsing} by} \citet{krishnaswami-2019}, \textit{and a continuation of} \Cref{section:parser-combinator}.
 
@@ -514,7 +527,7 @@ Alternatively, we can pass a grammar to an LL($1$) parser to a parser generator,
 
 Parser generators therefore, seem superior. Not only do they build the parser for you, but they also check that it is correct!
 
-However, recall that parser combinators, too, have their benefits --- namely, they let you easily build high-level abstractions.
+However, recall that parser combinators, too, have their benefits -- namely, they let you easily build high-level abstractions.
 
 Can we have our cake and eat it too? Can we build parser combinator libraries that \textit{guarantee} our language is in LL($1$), and therefore guarantee that the parser runs in linear time?
 
@@ -524,7 +537,7 @@ Of course there is: the type system. The key idea, therefore, is that we can use
 
 To do this, we think about the \textit{type} of a parser as a \textit{characterisation} of the language it can parse. What sort of characterisation would help us determine that our language is in LL($1$)? We know this: it is the \textsf{FIRST}, \textsf{FOLLOW}, and \textsf{NULLABLE} sets!
 
-Therefore, the type of a parser is a 3-tuple, recording the \textsf{FIRST} and \textsf{FLAST} sets, as well as the \textsf{NULLABLE} predicate. There are a couple of important deviations. The \textsf{FIRST} set does \textbf{not} contain $\epsilon$ --- this becomes entirely the responsibility of \textsf{NULLABLE}. The \textsf{FLAST} set is basically the \textsf{FOLLOW} set for languages (the \textsf{FOLLOW} set is defined in terms of the \textit{grammar}).
+Therefore, the type of a parser is a 3-tuple, recording the \textsf{FIRST} and \textsf{FLAST} sets, as well as the \textsf{NULLABLE} predicate. There are a couple of important deviations. The \textsf{FIRST} set does \textbf{not} contain $\epsilon$ -- this becomes entirely the responsibility of \textsf{NULLABLE}. The \textsf{FLAST} set is basically the \textsf{FOLLOW} set for languages (the \textsf{FOLLOW} set is defined in terms of the \textit{grammar}).
 
 Hence, given a type $T$, we can access its properties as follows
 \[
@@ -532,7 +545,6 @@ Hence, given a type $T$, we can access its properties as follows
      T.\textsc{First} & T.\textsc{Flast} & T.\textsc{Null}  \\ 
 \end{array}
 \]
-
 Using this, we can design \textit{typing rules} that only allow languages to be combined together if the resulting language is in LL($1$). This involves eliminating \textit{alternating} and \textit{sequential} non-determinism. To eliminate alternating non-determinism, consider when the following grammar is in LL($1$)
 \[\begin{array}{rcl}
      A&\to&B  \\

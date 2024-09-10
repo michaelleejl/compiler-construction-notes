@@ -1,0 +1,68 @@
+\begin{tikzpicture}
+
+
+\node[] (stack) at ($(0,0)$) { };
+
+
+%% 1: STACK_RA 0
+%% 0: STACK_FP 0
+  \node[draw=darkest,fill=darkred!0.5!yellow,fill opacity=0.1,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (zero) at (stack.south west) { };
+  \node[draw=darkest,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (one) at (zero.north west) {  };
+  %% \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp-zero) at (zero) { \scriptsize 0 };
+    \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] at (one) { \scriptsize  };
+  \draw[->] ($(zero.south west) + (1.5pt,1.5pt)$) to[out=180,loop left,distance=3ex,in=-120] ($(zero.south) + (-3ex,0)$);
+
+
+%% 2: STACK_HI 0
+  \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (two) at (one.north west) {  };
+
+%% 3: STACK_HI 2
+  \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (three) at (two.north west) {  };
+
+%% 5: STACK_RA 3
+%% 4: STACK_FP 0
+  \node[draw=darkest,fill=darkred!0.5!yellow,fill opacity=0.1,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (four) at (three.north west) {  };
+  \node[draw=darkest,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (five) at (four.north west) {  };
+  %% \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp-four) at (four) { \scriptsize 0 };
+  \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] at (five) { \scriptsize  };
+  \draw[rounded corners,->] ($(four.south west) + (1.5pt,1.5pt)$) -- ++(-2ex,-1.5ex) -- ($(zero.north west) + (-2ex,1.5ex)$) -- ($(zero.north west) + (1.5pt,-1.5pt)$);
+
+%% 6: STACK_HI 4
+  \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (six) at (five.north west) {  };
+
+%% 7: STACK_HI 0
+  \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (seven) at (six.north west) {  };
+
+%% 9: STACK_RA 10
+%% 8: STACK_FP 4
+  \node[draw=darkest,fill=darkred!0.5!yellow,fill opacity=0.1,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (eight) at (seven.north west) {   };
+  \node[draw=darkest,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (nine) at (eight.north west) {  };
+  %% \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp-eight) at (eight) { \scriptsize 4 };
+  \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] at (nine) { \scriptsize  };
+  \draw[rounded corners,->] ($(eight.south west) + (1.5pt,1.5pt)$) -- ++(-2ex,-1.5ex) -- ($(four.north west) + (-2ex,1.5ex)$) -- ($(four.north west) + (1.5pt,-1.5pt)$);
+  \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (ten) at (nine.north west) {  };
+  \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (eleven) at (ten.north west) {  };
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% fp
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% fp = 8
+\node[anchor=east,circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp) at ($(eight.west) + (-3ex,0)$) { \tiny fp };
+\draw[->] (fp) -- (eight);
+
+\node[yscale=1.7] (handler-brace) at ($(two.east) + (2ex, -1.2ex)$) {\Huge \}};
+
+\node[anchor=west] (handler-text) at ($(handler-brace.east) + (1ex, 0ex)$) {\texttt{try} $-$ \texttt{with} $x \to e_2$};
+
+\node[yscale=1.7] (c-brace) at ($(six.east) + (2ex, -1.2ex)$) {\Huge \}};
+
+\node[anchor=west] (c-text) at ($(c-brace.east) + (1ex, 0ex)$) {$C_2$};
+
+\node[yscale=1.7] (raise-brace) at ($(ten.east) + (2ex, -1.2ex)$) {\Huge \}};
+
+\node[anchor=west] (raise-text) at ($(raise-brace.east) + (1ex, 0ex)$) {\texttt{raise} $v$};
+
+\end{tikzpicture}

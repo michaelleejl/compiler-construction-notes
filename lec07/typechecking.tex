@@ -51,11 +51,11 @@ The role of the type checker is threefold.
 \begin{figure}[H]
     \centering
     \import{figures}{type-checking}
-    \caption{The role of the type checker is threefold: checking, tagging, and resolution}
+    \caption{The role of the type checker is threefold: checking, resolution, and elaboration}
     \label{fig:type-inference}
 \end{figure}
 
-The first is \textbf{checking} --- making sure all sub-expressions can be typed. That is, to make sure you don't have expressions like
+The first is \textbf{checking} -- making sure all sub-expressions can be typed. That is, to make sure you don't have expressions like
 \[\texttt{true}+3\]
 Where one part of the expression ($+3$) tells you that \texttt{true} must be of type \texttt{int}, and the other part of the expression (\texttt{true}) tells you that \texttt{true} must be of type \texttt{bool}.
 
@@ -85,7 +85,7 @@ Bridging this gap is why we use \textit{syntactic sugar}. For example, in \texts
 The role of the translator is therefore to get rid of syntactic sugar. 
 
 \section{Hindley-Milner Type-Checking\optional}\label{section:hm-type-checking}
-\textit{This section is based on \href{https://steshaw.org/hm/hindley-milner.pdf}{this paper} by} Grant.
+\textit{This section is based on \href{https://steshaw.org/hm/hindley-milner.pdf}{Hindley-Milner Type Checking} by} Grant.
 
 Hindley-Milner Type Checking is a standard algorithm for performing type-checking. 
 
@@ -155,7 +155,7 @@ The right type for this is
 The point, in other words, is that the right type only \textit{commits} to a specific type when it is absolutely necessary to do so, and retains as much polymorphism otherwise. 
 
 \subsection{Type Inference as Constraint Generation and Solving}
-\textit{This section is bassed on \href{http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf}{this paper} by} \citet{pottier-2014}.
+\textit{This section is based on \href{http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf}{Hindley-Milner Elaboration in Applicative Style} by} \citet{pottier-2014}.
 
 We have motivated the need for a type inference algorithm (polymorphism), and clarified the goal of a type inference algorithm (to type check a program by inferring its most general type). We shall now consider how to implement type inference.
 
@@ -219,7 +219,7 @@ The key idea / analogy is that of type inference as \textit{constraint-solving}.
     \end{enumerate}
 \end{enumerate}
 
-Even though we have not considered polymorphism, the principle remains clear: type inference is the process of \textit{generating} a set of constraints, and then solving them by finding some type that satisfies all of them at once. This idea --- of constraint generation and constraint solving --- is the basis of many program analyses and compiler optimisations, and you will see more examples in \textsf{Part II Optimising Compilers}.
+Even though we have not considered polymorphism, the principle remains clear: type inference is the process of \textit{generating} a set of constraints, and then solving them by finding some type that satisfies all of them at once. This idea -- of constraint generation and constraint solving -- is the basis of many program analyses and compiler optimisations, and you will see more examples in \textsf{Part II Optimising Compilers}.
 
 This section will thus focus on how we \textit{generate} constraints.
 
@@ -426,19 +426,19 @@ There are only a couple of tricky aspects worth mentioning.
 
 \begin{enumerate}
     \item Fresh variables $\beta$. Whenever you see a $\beta$, this means a new, fresh variable (i.e. one that we have not used before). We typically use $\beta$ to mean ``its type is \textit{something}, but we're not sure what'', and let unification sort it out for us. As an example, we use $T_2 \to \beta$ to mean ``this is a function from $T_2$ to something, figure out what''. 
-    \item The instantiation function \texttt{instantiate}. Whenever we encounter a variable \texttt{x}, we look up its type. If its type is of the form $\forall \alpha_1, \alpha_2, \ldots, \alpha_n . T$, then we know that, based on the context, each of the $\alpha_i$ is actually some concrete type, but we're not sure what. We thus replace each $\alpha_i$ with $\beta_i$: $\texttt{instantiate}(\forall \alpha_i T) = T[\beta_i / \alpha_i]$. Importantly, the $\beta_i$ are \textbf{not} quantified over --- they are variables, because we do not know what they are, but they must be instantiated to a single concrete type. They are no longer allowed to range over all types.
+    \item The instantiation function \texttt{instantiate}. Whenever we encounter a variable \texttt{x}, we look up its type. If its type is of the form $\forall \alpha_1, \alpha_2, \ldots, \alpha_n . T$, then we know that, based on the context, each of the $\alpha_i$ is actually some concrete type, but we're not sure what. We thus replace each $\alpha_i$ with $\beta_i$: $\texttt{instantiate}(\forall \alpha_i T) = T[\beta_i / \alpha_i]$. Importantly, the $\beta_i$ are \textbf{not} quantified over -- they are variables, because we do not know what they are, but they must be instantiated to a single concrete type. They are no longer allowed to range over all types.
     \item The close function \texttt{close} is in some sense the opposite of the instantiation function. \texttt{close} takes a context $\Gamma$, and a type $T$, and finds all type variables $\beta_i$ in $T$ that are \textit{not} in the domain of $\Gamma$, and are not quantified over. These $\beta_i$ are the result of instantiation, but unification has not assigned these a concrete type. This implies that they are not used in a way that constrains their type -- we can set $\beta_i$ to be any type, and everything will still work out. Hence, unification is implicitly telling us to assign each of these $\beta_i$ a universal quantifier. This is exactly what the \texttt{close} function does. $\texttt{close}(\Gamma, T) = \forall \beta_i . T$. As an alternative interpretation, recall that we discussed the need to \textit{explicitly} instantiate polymorphic functions with polymorphic variables (our definition of polymorphic append). This is what \texttt{close} infers for us.
 \end{enumerate}
 
 
 \subsection{Hindley-Milner for Elaboration}
-\textit{This section is bassed on \href{http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf}{this paper} by} \citet{pottier-2014}.
+\textit{This section is bassed on \href{http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf}{Hindley-Milner Elaboration in Applicative Style} by} \citet{pottier-2014}.
 
 We have seen how Hindley-Milner can be used for type inference. We know that it can take an expression and tell us what its type is. We have \textit{not} yet seen how it can be used for elaboration: annotating each of the sub-expressions with types. 
 
 At first glance, this may seem simple: in the process of type inference, we \textit{must} infer the types of each sub-expression. Can we leverage this to perform elaboration?
 
-The answer is yes, but it requires a little work. Currently, our type inference algorithm is only producing a single type $T$ for the whole expression. What we want it to do is produce a \textit{witness} $W$, whose shape is dictated by the constraint $C$, and therefore has the same structure as our abstract-syntax tree. At a high level, you can think of $W$ as a tree, with \textit{exactly} the same shape as our the abstract syntax tree $e$. Each node in the abstract syntax tree $e$ thus has a counterpart in $W$ --- its counterpart is exactly its type! We then define a function, \texttt{elaborate}, that ``fuses'' the two trees together.
+The answer is yes, but it requires a little work. Currently, our type inference algorithm is only producing a single type $T$ for the whole expression. What we want it to do is produce a \textit{witness} $W$, whose shape is dictated by the constraint $C$, and therefore has the same structure as our abstract-syntax tree. At a high level, you can think of $W$ as a tree, with \textit{exactly} the same shape as our the abstract syntax tree $e$. Each node in the abstract syntax tree $e$ thus has a counterpart in $W$ -- its counterpart is exactly its type! We then define a function, \texttt{elaborate}, that ``fuses'' the two trees together.
 
 This is a feasible idea, and some implementations of elaboration are indeed based on this! However, it has two unsavoury aspects:
 \begin{enumerate}
@@ -531,7 +531,7 @@ Shape s = Circle(radius:2.0)
 \end{minted}
 To be well-typed (also note that values do not have to be explicitly annotated with types).
 
-Languages like \texttt{C++} and \texttt{Java} use neither a type checking nor a type inference algorithm --- they use an algorithm that, depending on the expression being checked, \textit{either} performs type-checking \textit{or} performs type-inference. In the literature, we say that the algorithm has two modes, checking and inference/synthesis. The typing rules of the language thus have to explicitly indicate if the checking or the inference mode have to be used for a particular expression.
+Languages like \texttt{C++} and \texttt{Java} use neither a type checking nor a type inference algorithm -- they use an algorithm that, depending on the expression being checked, \textit{either} performs type-checking \textit{or} performs type-inference. In the literature, we say that the algorithm has two modes, checking and inference/synthesis. The typing rules of the language thus have to explicitly indicate if the checking or the inference mode have to be used for a particular expression.
 
 Such an algorithm is known as Bi-directional Type Checking.
 

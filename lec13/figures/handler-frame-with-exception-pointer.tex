@@ -1,0 +1,41 @@
+\begin{tikzpicture}
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05] (rstack)
+     { };
+  \node (rstackdots) at (rstack) { \ldots };
+
+  \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rv) at (rstack.north west)
+      {  };
+    \node[circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (saved-ep) at (rv) { \scriptsize ep  };
+
+  \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rcl)
+     at (rv.north west) {  };
+
+    \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp) at (rcl) { \scriptsize fp  };
+
+  \node[draw,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rj)
+     at (rcl.north west) {  };
+  \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] at (rj) { \scriptsize cp };
+
+\node[yscale=3.8,anchor=north west] (brace) at ($(rj.north east) + (0,2.8ex)$) { \} };
+\node[anchor=west] at ($(brace.east) + (-0.5ex,0)$) { handler frame };
+
+
+\node[circle,draw,darkest,fill=darkred!0.5!blue,fill opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex]
+  (cp-key) at ($(rstack.south) + (-15ex,-3ex)$) {  };
+\node at (cp-key) { \tiny cp };
+\node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex]
+   (fp-key) at ($(cp-key) + (0,-3ex)$) {  };
+\node at (fp-key) { \tiny fp };
+\node[circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex]
+   (ep-key) at ($(fp-key) + (0,-3ex)$) {  };
+\node at (ep-key) { \tiny ep };
+\node[circle,inner sep=0pt,minimum width=2.5ex]
+   (sp-key) at ($(ep-key) + (0,-3ex)$) {  };
+
+
+\node[anchor=west] at (cp-key.east) { \footnotesize code address for the handler body};
+\node[anchor=west] at (fp-key.east) { \footnotesize saved frame pointer to restore};
+\node[anchor=west] at (ep-key.east) { \footnotesize saved exception pointer to restore  };
+
+\end{tikzpicture}

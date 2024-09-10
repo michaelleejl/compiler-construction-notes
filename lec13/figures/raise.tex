@@ -1,0 +1,56 @@
+\begin{tikzpicture}
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05] (lstack) { };
+  \node (lstackdots) at (lstack) { \ldots };
+  \node[anchor=north,yshift=-1ex,circle,draw,minimum width=4ex,fill=darkred,fill opacity=0.1] (lcp) at (lstack.south) { };
+  \node (lcptext) at (lcp) { \scriptsize cp };
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05] (rstack)
+    at ($(lstack) + (36ex,0)$) { };
+  \node (rstackdots) at (rstack) { \ldots };
+  \node[anchor=north,yshift=-1ex,circle,draw,minimum width=4ex,fill=darkred!0.5!blue,opacity=0.1,draw opacity=1.0] (rcp) at (rstack.south) { };
+  \node (rcptext) at (rcp) { \scriptsize k };
+
+
+  \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rv)
+     at (lstack.north west) {  };
+    \node[circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (saved-ep) at (rv) { \scriptsize e2  };
+
+  \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rcl)
+     at (rv.north west) {  };
+
+    \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp) at (rcl) { \scriptsize j  };
+
+  \node[draw,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rj)
+     at (rcl.north west) {  };
+  \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (ri) at (rj) { \scriptsize k };
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05,anchor=south] (lstack2) at (rj.north) { };
+  \node (lstackdots) at (lstack2) { \ldots };
+
+
+  \node[draw,fill=darkred!0.5!green,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=3ex,anchor=south] (v)
+     at (lstack2.north) { \footnotesize v };
+
+
+
+  \node[draw,fill=darkred!0.5!green,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=3ex,anchor=south] (rv2)
+     at (rstack.north) { \footnotesize v };
+
+
+\node[anchor=east,circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp) at ($(lstack2.west) + (-3ex,0)$) { \scriptsize  i };
+\draw[->](fp) -- (lstack2.west);
+
+\node[anchor=east,circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (rfp) at ($(rstack.west) + (-3ex,0)$) { \scriptsize j  };
+\draw[->](rfp) -- (rstack.west);
+
+
+\node[anchor=west,circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (epl) at ($(rstack.east) + (3ex,-1ex)$) { \scriptsize e2 };
+\draw[->](epl) -- ($(rstack.east) + (0,-1ex)$);
+
+\node[anchor=west,circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (epr) at ($(rv.east) + (3ex,0)$) { \scriptsize e1};
+\draw[->](epr) -- (rv.east);
+
+  \draw[->] ($(lstack.north east) + (1ex,-1ex)$) -- node[midway, fill=white] { \small\texttt{RAISE} } ($(rstack.north west) + (-1ex,-1ex)$);
+
+
+\end{tikzpicture}

@@ -27,7 +27,7 @@ It is possible to combine a sequence of valid tokens in an un-grammatical way. C
 \begin{minted}[bgcolor=backcolour]{ocaml}
 then b else c
 \end{minted}
-Clearly this should not be a valid expression in any sane programming language --- it is an \texttt{if} statement without a conditional! But it could tokenize just fine, as [\textsc{then}, \textsc{ident} "b", \textsc{else} \textsc{ident} "c"].
+Clearly this should not be a valid expression in any sane programming language -- it is an \texttt{if} statement without a conditional! But it could tokenize just fine, as [\textsc{then}, \textsc{ident} "b", \textsc{else} \textsc{ident} "c"].
 
 What this tells us is that to be a program, it is not enough to be able to produce a sequence of tokens. The tokens must have the right form, or structure. Recovering this structure is \textit{exactly} the job of the parser.
 
@@ -37,7 +37,7 @@ A parser checks that programs have the right sort of structure, and makes that s
     e ::= & \, n \mid b \mid e_1 \, \text{op} \, e_2 \mid \textbf{\textsf{if}} \, e_1 \, \textbf{\textsf{then}} \, e_2 \, \textbf{\textsf{else}} \, e_3 \mid \\
     & \, l := e \mid \, !l \mid \textbf{\textsf{skip}} \mid e_1 ; e_2 \mid \textbf{\textsf{while}} \, e_1 \, \textbf{\textsf{do}} \, e_2
 \end{align*}
-Note that such a specification would immediately eliminate the aforementioned invalid program from consideration --- there is no rule that matches \texttt{then b else c}.
+Note that such a specification would immediately eliminate the aforementioned invalid program from consideration -- there is no rule that matches \texttt{then b else c}.
 
 When a specification is written this way, it is known as \textit{Backus-Naur Form} or BNF. It is the standard way to specify the syntactic structure of valid programs, not just for toy languages. For example, \Cref{figures:c-syntax} shows a small fragment of the \texttt{C} specification,
 
@@ -48,7 +48,7 @@ When a specification is written this way, it is known as \textit{Backus-Naur For
     \label{figures:c-syntax}
 \end{figure}
 
-Recall, additionally, that in \textsf{Part IB Semantics of Programming Languages}, we defined a notion of a \textit{value}, or an \textit{irreducible} term. Examples of irreducible terms in \textit{L1} are $n$, $b$, and $l$. By irreducible, we mean that they are atomic in some sense --- they cannot stand for / represent anything but themselves. Hence, you'd never write a specification that looks like
+Recall, additionally, that in \textsf{Part IB Semantics of Programming Languages}, we defined a notion of a \textit{value}, or an \textit{irreducible} term. Examples of irreducible terms in \textit{L1} are $n$, $b$, and $l$. By irreducible, we mean that they are atomic in some sense -- they cannot stand for / represent anything but themselves. Hence, you'd never write a specification that looks like
 \[ n ::= \ldots \]
 Just like how you can create a lexer by simply specifying it, you can create a parser by declaring its specification. \Cref{listing:parser-spec-l1} is a fragment of a parser specification for \textit{L1}
 
@@ -81,7 +81,7 @@ At the beginning of the chapter, we emphasised that there is no corresponding se
     \textbf{The language designer \textit{typically} uses \textit{something like an unambiguous, deterministic context-free grammar} to specify the parser}
 \end{center}
 
-This section will therefore smoothen over the differences temporarily, focusing on a universal view of a parser specification. Even then, we won't go all the way --- we will show that the \textit{unambiguous} context-free grammar is \textit{almost} what we want, leaving a discussion of \textit{determinism} to a later section.
+This section will therefore smoothen over the differences temporarily, focusing on a universal view of a parser specification. Even then, we won't go all the way -- we will show that the \textit{unambiguous} context-free grammar is \textit{almost} what we want, leaving a discussion of \textit{determinism} to a later section.
 
 To do this, we will define the context-free grammar, without any qualifiers (\Cref{section:cfg-defn}). By performing a quick sanity check, we will re-assure ourselves that it is a sensible starting point (\Cref{section:cfg-and-pl}). 
 
@@ -123,7 +123,7 @@ Using this example, we can give intuitive meaning to the role played by $N$, $T$
 % \end{minipage}%
 % \begin{minipage}[t]{0.75\textwidth}
 \subsubsection{Non-terminals $N$}
-Non-terminals represent \textit{placeholders} for valid strings in the language. They should \textbf{not} appear in the final string. Their presence implies that the string is \textit{not yet valid}, and needs to be expanded further. Hence the name --- non-terminal (meaning don't stop here!). 
+Non-terminals represent \textit{placeholders} for valid strings in the language. They should \textbf{not} appear in the final string. Their presence implies that the string is \textit{not yet valid}, and needs to be expanded further. Hence the name -- non-terminal (meaning don't stop here!). 
     
 For example, when we specify \textit{L1}, and write $e_1 + e_2$, we do not mean that the $e_1 + e_2$ is a valid expression, but rather we use $e_1$ and $e_2$ as \textit{placeholders} for valid expressions.
 
@@ -140,7 +140,7 @@ Second, as you will see next year in \textsf{Part II Types}, it can be useful to
 This may seem like just a syntactic difference that isn't particularly meaningful. Recall that the entire point of specifying semantics in this manner, rather than in natural language, is to be \textit{really precise} about every bit of the language. Being able to explicitly separate effectful terms from pure expressions is therefore useful in being precise, and CFGs give us the power to do this.
 
 \subsubsection{Terminals $T$}
-Terminals can be thought of as characters that appear in the final string --- tokens, or words, in the vocabulary of the language. They should not be expanded further.
+Terminals can be thought of as characters that appear in the final string -- tokens, or words, in the vocabulary of the language. They should not be expanded further.
 
 In a programming language, \textit{values are terminals}. For example, in \textit{L1}, values like $0, 1$ are terminals. 
 
@@ -163,7 +163,7 @@ This tells us that a production rule \textit{must} only expand non-terminals. Im
 
 Perhaps more subtly, it means that you cannot write a rule that looks like 
 \[*e ::= \ldots\]
-Where $e$ is a non-terminal and $*$ is a terminal or non-terminal. This means that the \textit{context} in which $e$ appears --- which you may remember from \textbf\textsf{Part IB Semantics of Programming Languages} as written $C[e]$ --- \textbf{cannot} affect what $e$ is allowed to expand to. That's where this class of languages/grammars gets its name from. It is \textit{context free}. 
+Where $e$ is a non-terminal and $*$ is a terminal or non-terminal. This means that the \textit{context} in which $e$ appears -- which you may remember from \textbf\textsf{Part IB Semantics of Programming Languages} as written $C[e]$ -- \textbf{cannot} affect what $e$ is allowed to expand to. That's where this class of languages/grammars gets its name from. It is \textit{context free}. 
 
 If the context $C$ \textit{is} allowed to affect what $e$ expands to, the language is called context-sensitive. 
 
@@ -216,7 +216,7 @@ First, the syntax for almost all languages can \textbf{mostly} be described usin
 
 It is thus feasible to build a parser for a language that is context sensitive requires \textit{extending} a context-free parser (for example, one generated using a parser generator) with some additional facilities for processing context sensitivity. 
 
-Second, while we \textit{can} build parsers that accept context sensitive specifications, the best known parser generators are in \textsf{P-SPACE} (which, when you do \textsf{Part IB Complexity Theory}, you'll learn is formal-speak for ``probably extremely difficult''). Further, they mostly are not needed --- and not just because only select language features require context sensitivity! Context sensitive grammars are \textit{incredibly} expressive: as a reference point, and as you'll learn in \textsf{Part IB Formal Models of Language}, most natural languages, like English, are only \textit{mildly} context sensitive.
+Second, while we \textit{can} build parsers that accept context sensitive specifications, the best known parser generators are in \textsf{P-SPACE} (which, when you do \textsf{Part IB Complexity Theory}, you'll learn is formal-speak for ``probably extremely difficult''). Further, they mostly are not needed -- and not just because only select language features require context sensitivity! Context sensitive grammars are \textit{incredibly} expressive: as a reference point, and as you'll learn in \textsf{Part IB Formal Models of Language}, most natural languages, like English, are only \textit{mildly} context sensitive.
 
 Therefore, we can be convinced that context-free grammars are a good starting point. The context sensitive syntactic constructs in these other languages are myriad and interesting, but they are outside the scope of this course.
 
@@ -280,7 +280,7 @@ These definitions are collated in \Cref{tab:par-collated-notation}.
     \label{tab:par-collated-notation}
 \end{table}
 
-% In doing so, it makes explicit the structure of the program --- how tokens are organised together. It is possible to write a program that passes the lexer but fails the parser, for example
+% In doing so, it makes explicit the structure of the program -- how tokens are organised together. It is possible to write a program that passes the lexer but fails the parser, for example
 
 % For example, consider a programming language that lets you write arithmetic statements. Consider the two expressions, which are clearly semantically different
 % \begin{align*}
@@ -292,7 +292,7 @@ These definitions are collated in \Cref{tab:par-collated-notation}.
 \newcommand{\selectedNonTerminal}[1]{{\tcbox{\textbf{\textsf{\textcolor{white}{#1}}}}}}
 \newcommand{\nonterminal}[1]{{\textbf{\textsf{\textcolor{nonterminal}{#1}}}}}
 
-Recall our goal for this section --- to formalise the notion of a context-free grammar as a \textit{producer} of words in a language. 
+Recall our goal for this section -- to formalise the notion of a context-free grammar as a \textit{producer} of words in a language. 
 
 The \textit{derivation} of a word $w$ refers to the \textit{means of production}. It is a sequence of one or more derivation steps that go from our start symbol to the word $w$. For example, recalling our context-free grammar $G_1$, defined on \Cpageref{cfg-g1}, we can produce a derivation for the word $(x + y) * (z + x)$. 
 
@@ -483,7 +483,7 @@ Ambiguous CFGs do exist. For example, consider the word $x + y * z$. This has tw
 
 \import{figures}{ambiguous-parse}
 
-Ambiguity is a huge practical problem --- a sensible interpreter will treat these two parse-trees differently! For example, letting $x = 1$, $y = 2$, and $z = 3$, the first parse-tree will evaluate to $9$ and the second to $7$. If we allow ambiguous CFGs, then we will allow some compilers to compile $1 + 2 * 3$ to $9$, and others to $7$. Clearly, we do \textbf{not} want this, so we will enforce that the specification must be an \textit{unambiguous CFG}.
+Ambiguity is a huge practical problem -- a sensible interpreter will treat these two parse-trees differently! For example, letting $x = 1$, $y = 2$, and $z = 3$, the first parse-tree will evaluate to $9$ and the second to $7$. If we allow ambiguous CFGs, then we will allow some compilers to compile $1 + 2 * 3$ to $9$, and others to $7$. Clearly, we do \textbf{not} want this, so we will enforce that the specification must be an \textit{unambiguous CFG}.
 
 \subsubsection{Eliminating Ambiguity}\label{section:ambiguity-elim}
 It is often possible to eliminate ambiguity. For example, consider
@@ -511,7 +511,7 @@ Effectively, we have encoded the operator precedence rule ($*$ before $+$). \Cre
 
 Generally, ambiguity is eliminated through a combination of \textit{precedence} and \textit{associativity} rules. 
 
-\textit{Precedence} is a technique for resolving an ambiguous order between two different operators. It helps us answer the question --- between $*$ and $+$, which should I do first?
+\textit{Precedence} is a technique for resolving an ambiguous order between two different operators. It helps us answer the question -- between $*$ and $+$, which should I do first?
 
 \textit{Associativity} is a technique for resolving an ambiguous order between two of the same operator. Some operators are left-associative, meaning you do the one on the left first. For example
 \[a + b + c \cong (a + b) + c\]
@@ -538,7 +538,7 @@ Unfortunately, the answer to both of these questions is no, and for several reas
 In this section, we have introduced the context-free grammar. We have shown how CFGs generate words via derivations. These words have a structure, the derivation tree, that reconciles different derivations. The collection of words forms a language, which is more expressive than the set of regular languages. Finally, we have considered the notion of an \textit{unambiguous} context-free grammar, and illustrated its importance to parsing.
 
 \section{Pushdown Automata}\label{section:pushdownautomata}
-At the beginning of this chapter, we promised to introduce two concepts --- the unambiguous, deterministic Context-Free Grammar as \textit{more or less} the right tool to give to language designers, and the deterministic Push-Down Automaton as \textit{more or less} the right tool for describing parsers.
+At the beginning of this chapter, we promised to introduce two concepts -- the unambiguous, deterministic Context-Free Grammar as \textit{more or less} the right tool to give to language designers, and the deterministic Push-Down Automaton as \textit{more or less} the right tool for describing parsers.
 
 We have so far described the unambiguous Context-Free Grammar, which generate unambiguous trees, and (as a consequence) unambiguous languages. 
 
@@ -560,7 +560,7 @@ Formally, a PDA is a 7-tuple
     \import{figures}{pda}
 \end{center}
 
-You should already be familiar with $Q$, $\Sigma$, and $q_0$ --- these are exactly the same as that of a finite automaton.
+You should already be familiar with $Q$, $\Sigma$, and $q_0$ -- these are exactly the same as that of a finite automaton.
 
 $\Gamma$ and $Z$ are new. $\Gamma$ describes the space of stack symbols, and $Z$ the initial stack symbol (think of it as the stack's initial state).
 
@@ -579,7 +579,7 @@ Which means that when we are in state q$_1$, we see the character `a' in the inp
 You should also note that, by definition, PDAs are non-deterministic. For finite automata, this does not matter too much, since non-deterministic finite automata and deterministic finite automata are in some sense equivalent. Hopefully, this is also the case for PDAs, since non-deterministic PDAs are not very feasible to construct, and thus not very useful. \footnote{Given that we will consider \textit{deterministic} PDAs, you might suspect that we will not be so lucky.}
 
 \subsection{Instantaneous Description}
-We have defined --- both informally and formally --- the pushdown automaton. Our notation leaves a little to be desired, though. We'd like to consider the pushdown automaton as a \textit{dynamic} machine, but our description so far is \textit{static}. We want some way to describe a \textit{snapshot} of a pushdown automaton in motion. 
+We have defined -- both informally and formally -- the pushdown automaton. Our notation leaves a little to be desired, though. We'd like to consider the pushdown automaton as a \textit{dynamic} machine, but our description so far is \textit{static}. We want some way to describe a \textit{snapshot} of a pushdown automaton in motion. 
 
 \begin{figure}[H]
     \centering
@@ -698,7 +698,7 @@ The key idea is to make this correspond to the transition
 In this sense, you can see the stack as storing the result of the latest derivation step, with transitions corresponding to derivations that also check that the terminal sequence match up with the given character sequence.
 
 \subsection{Deterministic PDAs}
-We currently have constructed non-determinstic PDAs that accept Context-Free Languages. This is quite unsatisfactory. We \textit{really} want our PDAs to be deterministic --- though, unlike ambiguity, this is not \textit{technically} necessary.
+We currently have constructed non-determinstic PDAs that accept Context-Free Languages. This is quite unsatisfactory. We \textit{really} want our PDAs to be deterministic -- though, unlike ambiguity, this is not \textit{technically} necessary.
 
 For regular languages, we had a way of converting a non-deterministic finite automaton into an equivalent deterministic finite automaton. Is this possible, and if so, how?
 
@@ -758,7 +758,7 @@ Can be arranged into two parse trees, one where cotton is a noun (which has the 
 
 This example thus illustrates that unambiguousness does not imply determinism.
 
-However, all deterministic CFGs are unambiguous. We also leave this as an exercise --- but remember that the source of ambiguity \textit{is} non-determinism, so this should not be surprising.
+However, all deterministic CFGs are unambiguous. We also leave this as an exercise -- but remember that the source of ambiguity \textit{is} non-determinism, so this should not be surprising.
 
 \section{Top-Down and Bottom Up Parsing}
 We have so far taken a universal view of what parser specifications are, and what parsers are. \textbf{Any universal view of parsing is an over-simplification}. As we outlined at the start of this chapter, in practice, different types of parsers are specified, and built, using different mathematical tools.
@@ -808,6 +808,6 @@ For now, we will simply give a brief overview. The four different approaches are
 \end{tabular}
 \end{center}
 
-What do we mean by ``backwards''? Recall that the key goal of parsing is to construct a parse tree. There are two ways of doing this. You can either start from the root (the starting non-terminal), and expand the tree downwards towards the leaves --- this is the forwards / top-down approach. Alternatively, you can start from the leaves (the terminals) and construct upwards towards the root, unifying sub-trees --- this is the backwards / bottom-up approach.
+What do we mean by ``backwards''? Recall that the key goal of parsing is to construct a parse tree. There are two ways of doing this. You can either start from the root (the starting non-terminal), and expand the tree downwards towards the leaves -- this is the forwards / top-down approach. Alternatively, you can start from the leaves (the terminals) and construct upwards towards the root, unifying sub-trees -- this is the backwards / bottom-up approach.
 
 As we will see, bottom-up techniques are slightly more difficult, and struggle with error checking, but can parse a larger subset of deterministic CFGs than top-down techniques.

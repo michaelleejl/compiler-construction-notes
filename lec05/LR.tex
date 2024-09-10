@@ -89,7 +89,7 @@ If you stare at the mechanism of our bottom-up parser, and the right-most deriva
 To draw attention to the backwards flow of a left-to-right parse, such a parse is also known as a \textit{replay} parse, so called because it \textit{replays} the derivation in reverse order.
 
 \subsection{LR Parsers Look Like Stack Machines}\label{section:lr-stack-machine}
-We have seen what an LR($k$) parser \textit{does} (``finds a rightmost derivation''), but how does it work? In this section, we seek to convince you that you can view the operation of an LR($k$) parser through the lens of a stack machine --- albeit a slightly different one than the one in an LL($k$) parser!
+We have seen what an LR($k$) parser \textit{does} (``finds a rightmost derivation''), but how does it work? In this section, we seek to convince you that you can view the operation of an LR($k$) parser through the lens of a stack machine -- albeit a slightly different one than the one in an LL($k$) parser!
 
 \begin{center}
     \import{figures}{lr-stack-machine}
@@ -123,7 +123,7 @@ Resolving these questions is the goal of this chapter. We will first build a sim
 \section{Non-Deterministic LR Parsing}\label{section:lr-basics}
 We have established, at a high level, what an LR parser is. It is a \textit{deterministic} stack machine that builds derivation trees from the bottom-up. We have not yet defined it in a way that makes it easy to build. The goal of this section is precisely to fill in the gaps in this definition, and then use it to develop algorithms that generate parsers. We will take things slowly: we will not build \textit{deterministic} parsers just yet. Once we have built a non-deterministic parser, we will, in the next section, turn our attention to eliminating non-determinism. 
 
-In the first part of this section, we will come up with a \textit{precise} description of an LR parser. We will describe the LR parser as existing in some configuration (\Cref{section:lr-parser-configurations}), and parsing as a series of transitions from a starting to an accepting configuration (\Cref{section:lr-goals}). Further, we will describe the two types of transition actions --- reduce and shift --- an LR parser can perform to move from one configuration to another (\Cref{section:lr-shift-reduce}).
+In the first part of this section, we will come up with a \textit{precise} description of an LR parser. We will describe the LR parser as existing in some configuration (\Cref{section:lr-parser-configurations}), and parsing as a series of transitions from a starting to an accepting configuration (\Cref{section:lr-goals}). Further, we will describe the two types of transition actions -- reduce and shift -- an LR parser can perform to move from one configuration to another (\Cref{section:lr-shift-reduce}).
 
 With this precise description, an algorithm for generating parsers is simply an algorithm that decides, in a given configuration, which of the two transitions to take at any point. We will describe this in \Cref{section:lr-lr0-items}. Finally, we will describe a simple optimisation that makes things much more efficient (\Cref{section:lr-stack-state}).
 
@@ -143,7 +143,7 @@ But, perhaps surprisingly, so is this!
 \[\begin{array}{lr}
      \$(F++*EF** & +y)\$  \\
 \end{array}\]
-The first two configurations are ``sensible'' --- you would expect to see an LR parser in that configuration. The last is ``nonsensical''. Any LR parser in that configuration is broken. We want a way to say some configurations make sense, and others don't. We define a notion of \textbf{validity}.
+The first two configurations are ``sensible'' -- you would expect to see an LR parser in that configuration. The last is ``nonsensical''. Any LR parser in that configuration is broken. We want a way to say some configurations make sense, and others don't. We define a notion of \textbf{validity}.
 
 An LR parser configuration $\$\alpha, w\$$ is \textit{valid} if it is possible to derive $\alpha w$ via some right-most derivation starting at the start-symbol $S$. Formally,
 \[S \Rightarrow^*_{\text{rm}} \alpha w\]
@@ -225,7 +225,7 @@ If we have a way to answer these two questions, we have an algorithm for buildin
 
 In order to answer these two questions, let us consider a concrete example. Let's assume our current configuration is
 \[\$E+, y\$\]
-Take a minute to think --- would you shift, or would you reduce?
+Take a minute to think -- would you shift, or would you reduce?
 
 Hopefully, your answer was ``we should shift!''. Further, hopefully, your thought process looked something like this:
 
@@ -350,14 +350,16 @@ The correctness of this construction is given by the LR Parsing Theorem, which w
     For all $\phi\beta$, $A \to \beta\bullet\gamma \in \delta_G(\phi\beta)$ if and only if $A \to \beta\bullet\gamma$ is valid for $\phi\beta$ 
 \end{theorem}
 
-As an aside, note that this means that $\phi\beta$, the language that describes possible stack combinations, is \textbf{regular}! Don't be confused --- we can use a regular language to describe the stack, but we cannot use a regular language to describe the language that the stack is used to parse. 
+As an aside, note that this means that $\phi\beta$, the language that describes possible stack combinations, is \textbf{regular}! Don't be confused -- we can use a regular language to describe the stack, but we cannot use a regular language to describe the language that the stack is used to parse. 
+
+Put another way, the NFA is only going to be a sub-component of our parser, not our actual parser. In the process of parsing, we will need to determine what the set of valid items is, given our stack. We will use the NFA for this. Using the output of the NFA, we will then make a decision and update our configuration. The NFA is not involved in this decision making our update. 
 
 We can, of course, convert the NFA into a DFA via the power-set construction. 
 
 \begin{figure}[H]
     \centering
     \import{figures}{dfa-lr0}
-    \caption{The DFA for the $G_2'$ parser}
+    \caption{The DFA used by the $G_2'$ parser to find valid items}
     \label{fig:dfa-lr0}
 \end{figure}
 
@@ -390,7 +392,7 @@ We now have an algorithm for determining if we should shift or reduce (and which
     \import{figures}{valid-item-stack}
 \end{center}
 
-First, we have already alluded to this, but each set corresponds to a state in the DFA (\Cref{fig:dfa-lr0}) --- the first to $I_0$, the second to $I_1$, and the third to $I_6$. It is far more space and time efficient to construct the DFA, and then point at states in the DFA. Our algorithm thus looks like
+First, we have already alluded to this, but each set corresponds to a state in the DFA (\Cref{fig:dfa-lr0}) -- the first to $I_0$, the second to $I_1$, and the third to $I_6$. It is far more space and time efficient to construct the DFA, and then point at states in the DFA. Our algorithm thus looks like
 
 \begin{center}
     \import{figures}{valid-state-stack}
@@ -472,13 +474,13 @@ The high-level idea is almost exactly the same as LL($k$) table-driven parsers. 
 
 Each cell of the table tells you what to do next. For example, if you are in state 1 and the next terminal on the input is $+$, the cell reads ``$s\;+$'', meaning you should shift $+$ onto the stack. If you are in state 2 and you see $+$, then the cell reads ``$r \; E \to T$'', which means reduce using the rule $E \to T$. 
 
-If there is \textbf{nothing} in the cell, for example, if you are in state 0 and you see $+$ as the next token, then the word is not in the grammar, and you throw an exception. Remember that the parser has error detection and reporting capabilities --- and this is one of them. In fact, it is common to \textit{fill the empty cells} with errors to report!
+If there is \textbf{nothing} in the cell, for example, if you are in state 0 and you see $+$ as the next token, then the word is not in the grammar, and you throw an exception. Remember that the parser has error detection and reporting capabilities -- and this is one of them. In fact, it is common to \textit{fill the empty cells} with errors to report!
 
 If there are two or more items in the cell, then we will have a \textbf{conflict}. Deterministic SLR(1) parsers will throw an exception here, though, if we are using a parser generator, we won't get that far! The parser generator, after constructing the table for us, can warn us that our grammar is not in SLR(1).
 
 Importantly, the table above tends \textbf{not} to be the table as actually constructed. We will gradually transform the table above into the tables we commonly see in practice.
 
-First, let's note that the command $s \; +$ is a little redundant --- we shift on the next token, which is $+$. So it is sufficient to record $s$. However, we know we are in some state (say $0$). It \textit{would} be useful to know which state we transition to when we see a $+$. We pre-compute this and store it in the table. So $s \; +$ becomes $s5$. This produces the following table
+First, let's note that the command $s \; +$ is a little redundant -- we shift on the next token, which is $+$. So it is sufficient to record $s$. However, we know we are in some state (say $0$). It \textit{would} be useful to know which state we transition to when we see a $+$. We pre-compute this and store it in the table. So $s \; +$ becomes $s5$. This produces the following table
 
 \begin{center}
     \import{figures}{pseudo-table-1}
@@ -586,7 +588,7 @@ Applying the techniques we have introduced, we get the following DFA
 \begin{figure}[H]
     \centering
     \import{figures}{dfa-g4}
-    \caption{The SLR(1) DFA for the $G_2'$ Parser}
+    \caption{The SLR(1) DFA used by the $G_2'$ Parser to find valid items}
     \label{fig:dfa-g4}
 \end{figure}
 
@@ -608,7 +610,7 @@ Let's say it's a weekend, and you have a bunch of errands to run: visit the doct
     \item What did I enter the room \textit{for}?
 \end{enumerate}
 
-The answer to the first question perhaps has a range of answers: meet friends, go to Sainsbury's, etcetera. The second question (``change into gym clothes'') carries more context: it does not \textit{just} rely on the fact that you left your room, but \textit{also} the purpose for going into your room in the first instance. This added context is more informative at narrowing down the range of possibilities --- you probably wanted to go to the gym. 
+The answer to the first question perhaps has a range of answers: meet friends, go to Sainsbury's, etcetera. The second question (``change into gym clothes'') carries more context: it does not \textit{just} rely on the fact that you left your room, but \textit{also} the purpose for going into your room in the first instance. This added context is more informative at narrowing down the range of possibilities -- you probably wanted to go to the gym. 
 
 Now let's look at SLR(1)'s answer to ``given look-ahead token $a$, when should I reduce via rule $A \to \alpha$?''. Its answer is
 \begin{center}
@@ -670,7 +672,7 @@ This means that the only case where we should reduce is if the look-ahead is $\$
 \begin{figure}
     \centering
     \import{figures}{dfa-g4-lr1}
-    \caption{The LR(1) DFA for $G_4$}
+    \caption{The LR(1) DFA used by the $G_4$ parser to find valid items}
     \label{fig:dfa-g4-lr1}
 \end{figure}
 
@@ -734,7 +736,7 @@ for each DFA state !$I_i$! and each non-terminal !$A$!
 \end{code}
 
 \section{Recap}
-We've done a lot in this chapter. Let's re-cap what we've done. 
+We've done a lot in this chapter. Let's recap what we've done. 
 
 \begin{figure}[H]
     \centering
@@ -835,7 +837,7 @@ $\begin{array}{l}
 \end{center}
 Which has two reduce-reduce conflicts (which rule do you pick if you see an $a$)?
 
-If we see this, then the grammar is not in LALR(1). This means that an LR(1) parser generator is more powerful than an LALR(1) parser generator --- it can accept more grammars, but it is also less efficient, because it produces a DFA with more states. This is one of the trade-offs that we talked about at the start, that makes the space of parsers a rich tapestry rather than a homogeneous landscape!
+If we see this, then the grammar is not in LALR(1). This means that an LR(1) parser generator is more powerful than an LALR(1) parser generator -- it can accept more grammars, but it is also less efficient, because it produces a DFA with more states. This is one of the trade-offs that we talked about at the start, that makes the space of parsers a rich tapestry rather than a homogeneous landscape!
 
 How do we build an LALR parser? There are two basic techniques. The \textit{naive} technique is to build the LR(1) parser and then merge states. The smarter, \textit{step-by-step} technique involves checking, every time you produce an LR(1) state, if there are any states it can be merged with. 
 
@@ -909,13 +911,13 @@ let generate_action (t, n, p, s) (start, states, delta) =
   ) in
   action
 \end{minted}
-Basically, this code takes the grammar \texttt{t, n, p, s} and the dfa \texttt{start, states, delta}, and creates an action function. The action function will take in the current set of items and the current lookahead, and will look through each of the items to filter out the possible actions. When we have only one action, then we will just return it. 
+Basically, this code takes the grammar \texttt{t, n, p, s} and the DFA \texttt{start, states, delta}, and creates an action function. The action function will take in the current set of items and the current lookahead, and will look through each of the items to filter out the possible actions. When we have only one action, then we will just return it. 
 
 Note that this code works for \textit{any} grammar, since we have written it in a general, abstract way. Note that the cost of that is that our action function re-computes the ACTION table every time it is called. In contrast, our ACTION table is \textbf{not} abstract (it looks a lot like low level code), but it is much more efficient. 
 
 In fact, this is why the linear time parser combinator we produced previously is 4.5 to 125 times slower than the parser generator, \texttt{ocamlyacc}. 
 
-A question is therefore --- can we have our cake and eat it too? Can we write code that we prefer to write: the abstract, general code of \texttt{generate\_action} above, but, once the grammar is specified, is turned into code that the computer prefers to run: the concrete, specific ACTION table. That is, can we define some function \texttt{f} such that the result of
+A question is therefore -- can we have our cake and eat it too? Can we write code that we prefer to write: the abstract, general code of \texttt{generate\_action} above, but, once the grammar is specified, is turned into code that the computer prefers to run: the concrete, specific ACTION table. That is, can we define some function \texttt{f} such that the result of
 \begin{minted}[bgcolor = backcolour]{ocaml}
 f (parser_generator grammar)
 \end{minted}
@@ -925,6 +927,8 @@ The answer is \textit{yes, by partial evaluation}. \texttt{f} is known as a part
 
 \subsection{Partial Evaluation}
 Partial evaluation is a way of transforming inefficient, but abstract code, to efficient, specialised code. It is a type of \textit{optimisation} that evaluates code as much as possible, in order to eliminate the inefficiency that results from abstraction. 
+
+The key idea was mentioned in \textsf{Part IB Introduction to Computer Architecture}. Abstraction comes at a cost, which can be eliminated via specialisation. The more you specialise something, the more you can optimise it.
 
 For example, consider the following \texttt{pow} function, that takes in two numbers \texttt{exponent} and \texttt{x}, and raises \texttt{x} to the power of \texttt{exponent}. 
 \begin{minted}[bgcolor = backcolour]{ocaml}
@@ -1130,7 +1134,7 @@ The partial evaluator cannot automatically detect that evaluating this function 
 \subsubsection{Multi-Stage Programming}
 \textit{This section is based on \href{https://link.springer.com/chapter/10.1007/978-3-540-25935-0_3}{A Gentle Introduction to Multi-Stage Programming}, by} \citet{taha-2004}.
 
-The feeling we hope you are getting is that Partial Evaluation seems to have a small number of universal transformations that are worth exploring (\textbf{The Trick}) and a large number of very domain specific transformations, which don't seem to be very re-usable. It also hinders automation --- it is hard for a partial evaluator to be very useful, since so much of what it should or should not do depends on very domain specific properties.
+The feeling we hope you are getting is that Partial Evaluation seems to have a small number of universal transformations that are worth exploring (\textbf{The Trick}) and a large number of very domain specific transformations, which don't seem to be very re-usable. It also hinders automation -- it is hard for a partial evaluator to be very useful, since so much of what it should or should not do depends on very domain specific properties.
 
 Perhaps this was a contributing factor to the decline of Partial Evaluation as a research field. It has since been re-born, however, in the form of \textit{Multi-Stage Programming}. The idea is that you give the programmer language tools that allow them to control \textit{precisely} what is evaluated, and when. This allows for much more fine grained control, and thus better results than partial evaluators that claim to be able to perform the best sort of partial evaluation automatically. 
 

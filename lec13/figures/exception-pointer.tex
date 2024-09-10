@@ -1,0 +1,89 @@
+\begin{tikzpicture}
+\node[anchor=north west,minimum height=2.0ex,inner sep=0pt] (code-0) {\scriptsize\texttt{INSTRUCTION}};
+\node[anchor=north west,minimum height=2.0ex,inner sep=0pt] (code-1) at (code-0.south west) {\scriptsize\texttt{INSTRUCTION}};
+\node[anchor=north west,minimum height=2.0ex,inner sep=0pt] (code-2) at (code-1.south west) {\scriptsize\texttt{INSTRUCTION}};
+\node[anchor=north west,minimum height=2.0ex,inner sep=0pt] (code-3) at (code-2.south west) {\scriptsize\texttt{INSTRUCTION}};
+\node[anchor=north west,minimum height=2.0ex,inner sep=0pt] (code-4) at (code-3.south west) {\scriptsize\texttt{INSTRUCTION}};
+
+\node[anchor=east] (num-0) at (code-0.west) { \color{darkred}\scriptsize 0 };
+\node[anchor=east] (num-1) at (code-1.west) { \color{darkred}\scriptsize 1 };
+\node[anchor=east] (num-2) at (code-2.west) { \color{darkred}\scriptsize 2 };
+\node[anchor=east] (num-3) at (code-3.west) { \color{darkred}\scriptsize 3 };
+\node[anchor=east] (num-4) at (code-4.west) { \color{darkred}\scriptsize 4 };
+
+\node[anchor=east,circle,draw,minimum width=2ex,fill=darkred!0.5!blue,fill opacity=0.1] (cp) at ($(num-4.west) + (-3ex,0)$) { };
+\draw[->] (cp) -- (num-4);
+\node at (cp) { \tiny cp };
+
+\node[anchor=south west,minimum height=0.13\textheight, minimum width=0.24\textwidth] (stack) at ($(code-4.south east) + (0.05\textwidth,0)$) { };
+\node[anchor=south west,minimum width=0.24\textwidth] (heap) at ($(stack.east)  + (0.05\textwidth,0)$) { };
+
+%% first closure
+\node[draw=darkred,fill=darkest,fill opacity=0.05,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=north west]
+ (heap-closure-1-header) at ($(heap.north) + (-2ex,-10ex)$) {
+
+};
+\node[draw=darkred,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=north west]
+ (heap-closure-1) at (heap-closure-1-header.south west) {
+};
+
+%% second closure
+\node[draw=darkred,fill=darkest,fill opacity=0.05,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west]
+ (heap-closure-2-header) at ($(heap-closure-1-header.north west) + (0,5ex)$) {
+
+};
+\node[draw=darkred,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=north west]
+ (heap-closure-2) at (heap-closure-2-header.south west) { };
+
+  \node[dotted,draw,minimum width=10ex,minimum height=5ex,fill=darkest,fill opacity=0.05] (one) at (stack.south) { };
+  \node (rstackdots) at (one) { \ldots };
+
+\node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (two) at (one.north west) {  };
+\draw[darkred,->] (two) to[out=0,in=-150] (heap-closure-1-header.west);
+\node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (three) at (two.north west) {  };
+ \draw[darkred,->] (three) to[out=0,in=-160] (heap-closure-2-header.west);
+
+\node[anchor=west,circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (ep) at ($(one.east) + (3ex,0)$) { \tiny ep };
+\draw[->] (ep) -- (one);
+
+
+\node[draw=darkest,fill=darkred!0.5!yellow,fill opacity=0.1,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (four) at (three.north west) {  };
+
+\node[anchor=east,circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp) at ($(four.west) + (-3ex,0)$) { \tiny fp };
+\draw[->] (fp) -- (four);
+
+\draw[darkest,opacity=0.5] (cp.west|-heap.north)
+                        -- ++(0,1.5ex)
+                        -- node[midway,fill=background,fill opacity=1.0,text opacity=1.0] {\color{darkred}\footnotesize code}
+                           ($(code-0.east|-heap.north) +(0,1.5ex)$)
+                        -- ++(0,-1.5ex);
+
+\draw[darkest,opacity=0.5] (fp.west|-heap.north)
+                        -- ++(0,1.5ex)
+                        -- node[midway,fill=background,fill opacity=1.0,text opacity=1.0] {\color{darkred}\footnotesize stack}
+                           ($(stack.east|-heap.north) + (0,1.5ex)$)
+                        -- ++(0,-1.5ex);
+
+\draw[darkest,opacity=0.5] (heap.west|-heap.north)
+                        -- ++(0,1.5ex)
+                        -- node[midway,fill=background,fill opacity=1.0,text opacity=1.0] {\color{darkred}\footnotesize heap}
+                           ($(heap.east|-heap.north) + (0,1.5ex)$)
+                        -- ++(0,-1.5ex);
+
+\node[circle,draw,minimum width=2ex,fill=darkred!0.5!blue,fill opacity=0.1]  (cp-key) at ($(code-4.south east) + (2ex,-10ex)$) {  };
+\node at (cp-key) { \tiny cp };
+\node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex]
+   (fp-key) at ($(cp-key) + (0,-3.5ex)$) {  };
+\node at (fp-key) { \tiny fp };
+\node[circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex]
+   (ep-key) at ($(fp-key) + (0,-3.5ex)$) {  };
+\node at (ep-key) { \tiny ep };
+\node[circle,inner sep=0pt,minimum width=2.5ex]
+   (sp-key) at ($(ep-key) + (0,-3.5ex)$) {  };
+
+
+\node[anchor=west] at (cp-key.east) { \footnotesize code pointer (to next instruction) };
+\node[anchor=west] at (fp-key.east) { \footnotesize frame pointer (to current activation frame) };
+\node[anchor=west] at (ep-key.east) { \footnotesize exception pointer (to current handler frame) };
+\node[anchor=west] at (sp-key.east) { \footnotesize not shown: stack pointer, heap limit };
+\end{tikzpicture}

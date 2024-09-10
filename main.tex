@@ -266,7 +266,7 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
   backgroundcolor=\color{backcolour}
 }
 
-\newcommand{\optional}{\texorpdfstring{$^*$}{(Optional)}}
+\newcommand{\optional}{\texorpdfstring{$^*$ \textcolor{highlight}{(Optional)}}{(Optional)}}
 
 \makeatletter
 \newcommand\incircbin
@@ -320,16 +320,31 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
 
 \maketitle
 
+\frontmatter
+{
+\hypersetup{linkcolor=black, linkbordercolor=white}
+\tableofcontents
+}
+
+\mainmatter
+
 \import{lec01}{introduction}
+
+\part{The Front-End}
 \import{lec02}{lexing}
 \import{lec03}{context-free-grammars}
 \import{lec03}{parser-combinators}
 \import{lec04}{LL(k)}
 \import{lec05}{LR}
 \import{lec07}{typechecking}
+
+\part{The Middle-End}
 \import{lec07}{interpreter0}
 \import{lec08}{cps}
+
+\part{Advanced Topics}
 \import{lec12}{garbage-collection}
+\import{lec13}{exceptions}
 \bibliography{library}
 
 \end{document}

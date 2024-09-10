@@ -19,13 +19,13 @@ In this section, we'll specify the role of the lexer: first at a high level, to 
 \label{fig:lex-specification}
 \end{figure}
 
-In the example in \Cref{fig:lex-specification}, the lexer transforms the \emph{character sequence} \texttt{[i;f]} into the \textsc{if} token. It transforms the sequence \texttt{[a]} into the \textsc{ident} (for \emph{identifier}) token. You might remember \emph{tokenization} from {\sffamily Part IA Machine Learning and Real World Data} --- it's exactly the same principle, except that we're tokenizing \textit{code}, not \textit{natural language}. 
+In the example in \Cref{fig:lex-specification}, the lexer transforms the \emph{character sequence} \texttt{[i;f]} into the \textsc{if} token. It transforms the sequence \texttt{[a]} into the \textsc{ident} (for \emph{identifier}) token. You might remember \emph{tokenization} from {\sffamily Part IA Machine Learning and Real World Data} -- it's exactly the same principle, except that we're tokenizing \textit{code}, not \textit{natural language}. 
 
 Holding this high level picture in your head, let's draw out three important characteristics of this lexer: it needs to respect priority, look for the longest match, and ignore whitespace.
 
-First, \emph{the lexer needs to respect priority}. In this toy language, users can choose any alphabetic string to be an identifier (that is, \texttt{zoo} and \texttt{xtor} are valid identifiers, \texttt{xtor3} is \textbf{not} a valid identifier). But there's a subtlety --- by this definition, the character sequence \texttt{[i;f]} could either be classified as an identifier (since it is an alphabetic string) or the \textsc{if} keyword. As creators of the language, we'll need to express that \textsc{if} has a higher priority than \textsc{ident}. The lexer then needs to respect this priority: a character sequence should be classified as the \textit{highest priority} token whose pattern it matches. Concretely, \texttt{if} should always be lexed as \textsc{if} and never \textsc{ident}. 
+First, \emph{the lexer needs to respect priority}. In this toy language, users can choose any alphabetic string to be an identifier (that is, \texttt{zoo} and \texttt{xtor} are valid identifiers, \texttt{xtor3} is \textbf{not} a valid identifier). But there's a subtlety -- by this definition, the character sequence \texttt{[i;f]} could either be classified as an identifier (since it is an alphabetic string) or the \textsc{if} keyword. As creators of the language, we'll need to express that \textsc{if} has a higher priority than \textsc{ident}. The lexer then needs to respect this priority: a character sequence should be classified as the \textit{highest priority} token whose pattern it matches. Concretely, \texttt{if} should always be lexed as \textsc{if} and never \textsc{ident}. 
 
-Second, \emph{the lexer looks for the longest match}. We have established that \texttt{if} will be lexed as \textsc{if} and never \textsc{ident}. This means that the user cannot use \texttt{if} as a variable name. However, the user \emph{can} use \texttt{ifx}, \texttt{ifeven}, and \texttt{ifif} as variable names. This is an important detail! It means the lexer has to look for the \emph{longest match} --- it can't just see \texttt{if} and report that it's seen \textsc{if}, it has to check what comes after too! In particular, \texttt{ifif} should be classified as \textsc{ident}, not \textsc{if} $\times 2$.
+Second, \emph{the lexer looks for the longest match}. We have established that \texttt{if} will be lexed as \textsc{if} and never \textsc{ident}. This means that the user cannot use \texttt{if} as a variable name. However, the user \emph{can} use \texttt{ifx}, \texttt{ifeven}, and \texttt{ifif} as variable names. This is an important detail! It means the lexer has to look for the \emph{longest match} -- it can't just see \texttt{if} and report that it's seen \textsc{if}, it has to check what comes after too! In particular, \texttt{ifif} should be classified as \textsc{ident}, not \textsc{if} $\times 2$.
 
 Third, \emph{the lexer ignores whitespace}. Respecting priority and looking for the longest match are traits that \textbf{all} lexers need to share. This particular toy language is not whitespace-sensitive. Hence, whitespace characters like \verb|\n| are not transformed into tokens. We'll introduce a special ``token'', \emph{skip}, to indicate that we've seen whitespace, but this token will be special (specially useless), in that we'll filter it out of our final token sequence. 
 
@@ -182,7 +182,7 @@ Regular expressions stand for potentially infinite sets, and they're not very fe
     \label{fig:nfa-example}
 \end{figure}
 
-At a high level, given a word $w$, the finite-state automaton has to decide whether to accept, or reject, the word. Note that every edge has a label (either $\epsilon$ or some character). In addition, note that there are two special types of states: the start state (\textit{1}), and the accepting state (in this case, \textit{11}, but you can have more than one). You can think of the NFA as a weird keyboard, where you have to start from the start state, and then ``type'' by tracing a path in the graph . Building the idea that tracing paths form words, we have a simple strategy for determining if a word is in the given language --- begin in the start state, trace out your desired word, and see if you end up in an accepting state. 
+At a high level, given a word $w$, the finite-state automaton has to decide whether to accept, or reject, the word. Note that every edge has a label (either $\epsilon$ or some character). In addition, note that there are two special types of states: the start state (\textit{1}), and the accepting state (in this case, \textit{11}, but you can have more than one). You can think of the NFA as a weird keyboard, where you have to start from the start state, and then ``type'' by tracing a path in the graph . Building the idea that tracing paths form words, we have a simple strategy for determining if a word is in the given language -- begin in the start state, trace out your desired word, and see if you end up in an accepting state. 
 
 For example, here's how we may use the automaton in \Cref{fig:nfa-example} to decide that ``abb'' is in the language:\par
 
@@ -207,7 +207,7 @@ The first difference is that for a DFA, $\delta$ is a transition \emph{function}
 
 The second difference is the $\epsilon$-transition. An $\epsilon$-transition allows us to move from one state to another ``for free'', that is, without consuming any characters in the input word. An NFA permits $\epsilon$-transitions, whereas a DFA does not. 
 
-Note that \emph{both} these differences inject non-determinism. First, by specifying a transition \emph{relation} rather than a \emph{function}, an NFA would allow multiple possible transition \emph{for the same input}. For example, in \Cref{fig:nfa-example}, state \textit{1} allows for transitions to \textit{2} or \textit{8}. Second, by allowing $\epsilon$-transitions, an NFA would allow two choices on receiving no input --- either stay where you are, or take the epsilon transition. For example, when in state \textit{4}, on seeing no input, we can either remain in state \textit{4} or transition to state \textit{7}. These two sources of non-determinism are \textit{independent} of each other.
+Note that \emph{both} these differences inject non-determinism. First, by specifying a transition \emph{relation} rather than a \emph{function}, an NFA would allow multiple possible transition \emph{for the same input}. For example, in \Cref{fig:nfa-example}, state \textit{1} allows for transitions to \textit{2} or \textit{8}. Second, by allowing $\epsilon$-transitions, an NFA would allow two choices on receiving no input -- either stay where you are, or take the epsilon transition. For example, when in state \textit{4}, on seeing no input, we can either remain in state \textit{4} or transition to state \textit{7}. These two sources of non-determinism are \textit{independent} of each other.
 
 \textbf{Non-determinism is bad}. Non-determinism makes our lives more difficult, because it forces us to make (potentially \emph{incorrect}) decisions. Considering \Cref{fig:nfa-decision}, how do we know that we should transition from state \textit{1} to state \textit{8}, when we could have just as easily stayed in state \textit{1}, or transitioned to state \textit{2}?
 
@@ -230,7 +230,7 @@ A word $w$ in $\mathcal{L}$ is then a valid way of travelling from one city to a
 is a valid word in $\mathcal{L}$.
 But there's no Great Western train that you can take from Cambridge, so 
 \[(\text{Great Western})(\text{Ryanair})\]
-is \textit{not} a valid word in $\mathcal{L}$. Note that the words correspond to \emph{edges} (like Great Western) rather than \emph{nodes} (which you can think of as being \emph{like} locations, but should be cautious to not attach too much physical meaning to them --- as we'll see in a moment!).
+is \textit{not} a valid word in $\mathcal{L}$. Note that the words correspond to \emph{edges} (like Great Western) rather than \emph{nodes} (which you can think of as being \emph{like} locations, but should be cautious to not attach too much physical meaning to them -- as we'll see in a moment!).
 
 Assume we have generated some regular expression $e$ for this language. We'll see how $N$ uncovers a very natural structure! Let's first consider $N(\emptyset)$. Recall that there are no words in $L(\emptyset)$, so $N(\emptyset)$ looks like:
 
@@ -240,7 +240,7 @@ Assume we have generated some regular expression $e$ for this language. We'll se
 
 This is useful for describing a situation where there is absolutely no way to travel from Cambridge to Lisbon, and not really useful otherwise.
 
-$L(\epsilon)$ accepts the single empty string. Once again, is not immediately useful --- but we'll see it come in handy in a moment.
+$L(\epsilon)$ accepts the single empty string. Once again, is not immediately useful -- but we'll see it come in handy in a moment.
 
 \begin{center}
 \import{figures/regex-to-nfa}{empty}
@@ -277,7 +277,7 @@ Assuming we have $N(e)$ we create $N(e\*)$ as follows: add a new start state and
 
 We then add an $\epsilon$-transition from the new start state to the start state of $N(e)$: this signals an intention to travel to London and back at least once. We also add an $\epsilon$-transition from the new start state to the new accepting state: this signals the logical path, the intention to never travel to London and back. 
 
-Symmetrically, we add an $\epsilon$-transition from each accepting state in $N(e)$ --- that are no longer accepting states in $N(e\*)$ --- back to the start state of $N(e)$. This signals returning to Stansted from London with an intention to make another round trip to London. Finally, we add an $\epsilon$-transition from each accepting state in $N(e)$ to the new accepting state in $N(e\*)$, representing returning to Stansted from London with no intention of making another round trip.
+Symmetrically, we add an $\epsilon$-transition from each accepting state in $N(e)$ -- that are no longer accepting states in $N(e\*)$ -- back to the start state of $N(e)$. This signals returning to Stansted from London with an intention to make another round trip to London. Finally, we add an $\epsilon$-transition from each accepting state in $N(e)$ to the new accepting state in $N(e\*)$, representing returning to Stansted from London with no intention of making another round trip.
 
 \subsubsection{Glushkov's Construction Algorithm}
 An important point is that $N$ is not \emph{unique}, that is, it is not the only function for converting regular expressions to NFAs. \href{https://en.wikipedia.org/wiki/Glushkov\%27s\_construction_algorithm}{\textbf{Glushkov's algorithm} (1961)} produces an equivalent automaton without the $\epsilon$-transitions.
@@ -291,7 +291,7 @@ Hence, the power-set construction eliminates non-determinism due to $\epsilon$-t
 
 Further, the power-set construction eliminates non-determinism due to multiple transitions. Consider state \textit{1}. We could transition to state \textit{2} or state \textit{8}. (Further, these are $\epsilon$-transitions). The current state is not known. However, the set of possible states is known: $\{ \textit{1}, \textit{2}, \textit{8} \}$.
 
-Referring back to our Lisbon example, non-determinism comes because when someone arrives at Stansted, you cannot determine their intentions and history --- do they intend to make a round trip to London? Have they made a round trip to London? Have they taken a coach or a train to Stansted? You group all these non-deterministic possibilities into the deterministic ``they are currently at Stansted, no matter where they're going, or where they've been''. That's exactly what the power-set construction does.
+Referring back to our Lisbon example, non-determinism comes because when someone arrives at Stansted, you cannot determine their intentions and history -- do they intend to make a round trip to London? Have they made a round trip to London? Have they taken a coach or a train to Stansted? You group all these non-deterministic possibilities into the deterministic ``they are currently at Stansted, no matter where they're going, or where they've been''. That's exactly what the power-set construction does.
 
 Concretely, \Cref{fig:powerset-construction} illustrates the result of applying the power-set construction to the NFA in \Cref{fig:nfa-example}. Note how this automaton is deterministic, and each state refers to a \textit{set} of states in the original NFA.
 
@@ -398,15 +398,15 @@ To produce a tagged DFA, for each \emph{accepting} state in the result of the po
 \end{minipage}
 
 \section{Lexers}
-At this point, we have built a tagged DFA that functions as a \emph{classifier} --- it can take a single word, and tell you both if it is a token, and which token it is. We want a \emph{lexer} --- one that can take a sequence of words and produce a sequence of tokens. 
+At this point, we have built a tagged DFA that functions as a \emph{classifier} -- it can take a single word, and tell you both if it is a token, and which token it is. We want a \emph{lexer} -- one that can take a sequence of words and produce a sequence of tokens. 
 
 \begin{center}
 \import{figures}{lex-specification}
 \end{center}
 
-The key insight is that \emph{if} we can identify token boundaries --- that is, when one token ends and another begins --- then constructing the lexer is simply a matter of running the classifier at each of the token boundaries.
+The key insight is that \emph{if} we can identify token boundaries -- that is, when one token ends and another begins -- then constructing the lexer is simply a matter of running the classifier at each of the token boundaries.
 
-How do we identify token boundaries? Recall that we want \emph{longest match semantics} --- concretely, if we have a series of characters \texttt{ifx}, this should match as a \emph{single} token (\textsc{ident}), rather than two tokens (\textsf{if} and \textsc{ident}). Longest match semantics identifies a \emph{unique} set of token boundaries, given a character sequence. 
+How do we identify token boundaries? Recall that we want \emph{longest match semantics} -- concretely, if we have a series of characters \texttt{ifx}, this should match as a \emph{single} token (\textsc{ident}), rather than two tokens (\textsf{if} and \textsc{ident}). Longest match semantics identifies a \emph{unique} set of token boundaries, given a character sequence. 
 
 \begin{center}
 \vspace{5mm}
@@ -432,7 +432,7 @@ while position < len(input):
 \end{code}
 
 
-\textbf{Error-Checking.} What happens if there are \textbf{no} matches between start and end? Recall that the lexer additionally handles error checking --- this is an error of lexing (for example, an unclosed string), and should be reported to the user.
+\textbf{Error-Checking.} What happens if there are \textbf{no} matches between start and end? Recall that the lexer additionally handles error checking -- this is an error of lexing (for example, an unclosed string), and should be reported to the user.
 
 We now have a \emph{lexer}, that will produce a stream of tokens. The final step is to collate these tokens into a list, noting that if the token is \textit{skip}, then it may be ignored. 
 
@@ -540,7 +540,7 @@ The proof for this is simple: if $\mathcal{L}$ is regular, then there is a DFA $
 \subsubsection{Derivatives of regular expressions}
 Since every regular expression corresponds to some regular language (and vice versa), this implies that we can differentiate regular expressions to get more regular expressions. A second key insight is that the derivative of a regular expression can be formulated inductively. To be explicit will use $\cdot$ as the concatenation operator. 
 
-If you squint a little, you might be able to see that this looks a lot like differentiation (see $\lor$ as $+$ and $\cdot$ as $\times$) --- hence why it is called a ``derivative''.
+If you squint a little, you might be able to see that this looks a lot like differentiation (see $\lor$ as $+$ and $\cdot$ as $\times$) -- hence why it is called a ``derivative''.
 
 \[\begin{aligned}
 \partial_a \emptyset & = \emptyset&&\\ 

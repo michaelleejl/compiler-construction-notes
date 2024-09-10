@@ -1,0 +1,18 @@
+\begin{tikzpicture}
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05] (rstack) { };
+  \node (rstackdots) at (rstack) { \ldots };
+  \node[anchor=north,yshift=-1ex,circle,draw,minimum width=4ex,fill=darkred,opacity=0.1,draw opacity=1.0] (rcp) at (rstack.south) { };
+  \node (rcptext) at (rcp) { \scriptsize cp };
+
+  \node[draw,fill=darkred!0.5!green,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=3ex,anchor=south] (rv2)
+     at (rstack.north) { \footnotesize v };
+
+\node[anchor=east,circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (rfp) at ($(rstack.west) + (-3ex,0)$) { \scriptsize j  };
+\draw[->](rfp) -- (rstack.west);
+
+\node[anchor=west,circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (epl) at ($(rstack.east) + (3ex,-1ex)$) { \scriptsize e2 };
+\draw[->](epl) -- ($(rstack.east) + (0,-1ex)$);
+
+
+\end{tikzpicture}
