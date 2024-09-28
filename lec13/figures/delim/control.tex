@@ -1,0 +1,76 @@
+\begin{tikzpicture}
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05] (lstack) { };
+  \node (lstackdots) at (lstack) { \ldots };
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.05] (rstack)
+    at ($(lstack) + (36ex,0)$) { };
+  \node (rstackdots) at (rstack) { \ldots };
+
+\node[draw,text opacity=1.0,fill=darkred!0.5!red,fill opacity=0.1,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rm)
+     at (rstack.north west) { \footnotesize \textsf{marker} };
+
+  \node[draw,text opacity=1.0,fill=darkred!0.5!red,fill opacity=0.1,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rv)
+     at (lstack.north west) { \footnotesize \textsf{marker} };
+    % \node[circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (saved-ep) at (rv) { \scriptsize ep  };
+
+  % \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rcl)
+  %    at (rv.north west) {  };
+
+  %   \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (fp) at (rcl) { \scriptsize j  };
+
+  % \node[draw,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (rj)
+  %    at (rcl.north west) {  };
+  % \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (ri) at (rj) { \scriptsize cp };
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.15,anchor=south] (lstack2) at (rv.north) { };
+  \node (lstackdots) at (lstack2) { \ldots };
+
+
+  % \node[draw,fill=darkred!0.5!green,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=3ex,anchor=south] (v)
+  %    at (lstack2.north) { \footnotesize v };
+
+
+  % \node[draw,fill=darkred!0.5!red,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=3ex,anchor=south] (rv2)
+  %    at (rstack.north) { \footnotesize \textsf{marker} };
+
+
+%%% heap bit
+  % \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (heap-rv)
+  %    at ($(rstack.north east) + (8ex,-1ex)$) {  };
+  %   \node[circle,draw,darkest,fill=green!30!background,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (heap-saved-ep) at (heap-rv) { \scriptsize ep  };
+
+  % \node[draw,text opacity=1.0,rounded corners,anchor=south west,minimum width=10ex,minimum height=3ex] (heap-rcl)
+  %    at (heap-rv.north west) {  };
+
+  %   \node[circle,draw,darkest,fill=darkred!0.5!yellow,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (heap-fp) at (heap-rcl) { \scriptsize j  };
+
+  % \node[draw,rounded corners,anchor=south west,fill=darkred!0.5!red,fill opacity=0.1,text opacity=1.0,minimum width=10ex,minimum height=3ex] (heap-rm)
+  %    at ($(rstack.north east) + (8ex,-1ex)$) { \footnotesize\textsf{marker} };
+  % \node[circle,draw,darkest,fill=darkred!0.5!blue,opacity=0.1,text opacity=1.0,draw opacity=1.0,inner sep=0pt,minimum width=2.5ex] (heap-ri) at (heap-rm) { \scriptsize cp };
+
+  \node[dotted,draw,minimum width=10ex,minimum height=8ex,fill=darkest,fill opacity=0.15,anchor=south] (heap-lstack2) at ($(rstack.north east) + (8ex,-1ex)$) { };
+  \node (lstackdots) at (heap-lstack2) { \ldots };
+
+  \node[dotted,draw,rounded corners,,minimum width=10ex,fill=darkest!50!darkred,fill opacity=0.15,anchor=south,text opacity=1.0] (continuation-header) at (heap-lstack2.north) { \tiny Continuation };
+
+  \node (lstackdots) at (lstack) { \ldots };
+\node[anchor=north,yshift=-1ex,circle,draw,minimum width=4ex,fill=darkred,fill opacity=0.1] (lcp) at (lstack.south) { };
+\node (lcptext) at (lcp) { \scriptsize cp };
+
+\node (lstackdots) at (lstack) { \ldots };
+\node[anchor=north,yshift=-1ex,circle,draw,minimum width=4ex,fill=darkred!0.5!blue,fill opacity=0.1] (rcp) at (rstack.south) { };
+\node (rcptext) at (rcp) { \scriptsize i };
+
+%%%
+
+
+%%% continuation pointer
+   \node[draw=darkest,fill=darkred,fill opacity=0.1,text opacity=1.0,rounded corners,minimum width=10ex,minimum height=2.5ex,anchor=south west] (four) at (rm.north west) { k };
+  \draw[darkred,->] (four) to[out=0,in=170] (continuation-header);
+%%%
+
+
+\draw[->] ($(lstack.north east) + (1ex,-1ex)$) -- node[midway,fill=white] { \small\texttt{take\_subcont} i } ($(rstack.north west) + (-1ex,-1ex)$);
+
+
+\end{tikzpicture}

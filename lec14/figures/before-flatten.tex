@@ -1,0 +1,21 @@
+\begin{tikzpicture}
+    \node[fill=darkest!50!background,fill opacity=0.05,draw=darkest,draw opacity=0.5,text opacity=1.0] (before) {
+\begin{lstlisting}[style=ocaml]
+int * (float * bool)
+\end{lstlisting}
+};
+
+\node[draw,fill=darkest,fill opacity=0.05,minimum width=1.2cm,minimum height=0.5cm,anchor=south] 
+  (nested-1) at ($(before.north) + (0,0.25cm)$) { };
+\draw ($(nested-1.north west) + (0.1cm,0)$) -- ++ (0,-0.5cm);
+\draw ($(nested-1.north west) + (0.6cm,0)$) -- ++ (0,-0.5cm);
+
+\node[draw,fill=darkest,fill opacity=0.05,minimum width=1.2cm,minimum height=0.5cm] 
+  (nested-2) at ($(nested-1.north east) + (0.8cm,0.8cm)$) { };
+\draw ($(nested-2.north west) + (0.1cm,0)$) -- ++ (0,-0.5cm);
+\draw ($(nested-2.north west) + (0.6cm,0)$) -- ++ (0,-0.5cm);
+
+\node[darkred,inner sep=0pt] (pointer) at ($(nested-1.east) + (-0.3cm,0)$) { $\bullet$ };\
+\draw[darkred,->] (pointer) -- (nested-2.south west);
+
+\end{tikzpicture}

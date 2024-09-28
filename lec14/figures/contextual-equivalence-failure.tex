@@ -1,0 +1,24 @@
+\begin{tikzpicture}
+
+\node[fill=darkest!50!background,fill opacity=0.05,draw=darkest,draw opacity=0.5,text opacity=1.0] (program-1) {
+\begin{lstlisting}[style=ocaml]
+let rec repeat_say msg =
+  print_endline msg;
+  repeat_say ()
+
+let () = say "Hello"
+\end{lstlisting}
+};
+
+\node[fill=darkest!50!background,fill opacity=0.05,draw=darkest,draw opacity=0.5,text opacity=1.0,anchor=west] (program-2)
+   at ($(program-1.east) + (5ex,0)$)  {
+\begin{lstlisting}[style=ocaml]
+let rec repeat_say msg =
+  print_endline msg;
+  repeat_say ()
+
+let () = say "Goodbye"
+\end{lstlisting}
+};
+
+\end{tikzpicture}

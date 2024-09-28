@@ -1,0 +1,842 @@
+\chapter{Optimisation}
+
+\section{Overview}
+Most compilers do more than just take code in some high level syntax and convert it down to low-level assembly. They also take this opportunity to \textit{optimise} (informally, make better) the code that they are given.
+
+It is likely that you will have seen specific instances of optimisation before. For example, in \textsf{Part IA Foundations of Computer Science}, you were introduced to tail call optimisation. 
+
+This chapter will aim to do more than introduce one or two specific examples of optimisation. Instead, we will aim to answer a few key questions:
+\begin{enumerate}
+    \item What do we \textit{mean} by optimisation?
+    \item What makes optimisation \textit{hard}?
+    \item What is the general \textit{structure} of an optimiser?
+    \item What are \textit{categories} of optimisations?
+\end{enumerate}
+
+However, we will not go very far. Optimisation is a rich field that is deserving of an entire course (\textsf{Part II Optimising Compilers}). We will therefore aim to sketch a picture, and leave that course to fill in the details. 
+
+\section{Defining Optimisation}
+Informally, the aim of optimisation is to improve a program without changing its meaning. In other words, we want to \textit{improve} program pragmatics while \textit{retaining} program semantics. 
+
+There are two parts to this statement: first, improving program pragmatics. Second, maintaining program semantics. We will investigate each in turn. 
+
+\subsection{Improving Program Pragmatics}
+There are multiple ways we can improve program pragmatics. Our goals can range from broad to narrow. For example, we might wish to:
+\begin{enumerate}
+    \item Improve performance, by:
+    \begin{enumerate}
+        \item Reducing latency,
+        \item Increasing throughput,
+        \item Increasing parallelism,
+        \item Improving locality (recall \textit{cache-oriented programming}, \textsf{Part IB \texttt{C} and \texttt{C++}}) 
+        \item Reducing stack usage in favour of register usage
+    \end{enumerate}
+    \item Improve space usage, by
+    \begin{enumerate}
+        \item Reducing binary size,
+        \item Reducing heap allocation,
+    \end{enumerate}
+    \item Reduce energy usage, either
+    \begin{enumerate}
+        \item \textit{absolute} energy usage (sacrificing performance), or
+        \item \textit{relative} energy usage (performance per watt)
+    \end{enumerate}
+\end{enumerate}
+Our goals will often be shaped by the use case: what is the program we are compiling, and what are we compiling to?
+
+As an example, if we are compiling a program to run on an Field Programmable Gate Array (\textsf{Part IA Introduction to Computer Architecture}), these FPGAs often have very small amount of memory, so our aim is often to improve space usage. We need our compiled binary to be small, since there is a small amount of read only memory. We also need our memory footprint to be small, since we have a small stack and heap. 
+
+As another example, perhaps we are compiling an interactive or real-time program: for example, a program for video decoding. Perhaps the focus there is more on reducing single-threaded latency, rather than space or energy usage. 
+
+The point of this illustration is that there is no single, shared definition of optimisation. In some cases, it is insufficient to give the compiler a program and ask it to ``optimise'' it. One also needs to provide the compiler an understanding of the higher-level \textit{goals} of the program, as well as the lower-level \textit{architectural} details of the compilation target.
+
+This is why, for example, the \texttt{GCC} compiler exposes different optimisation flags, like \texttt{-o1}, \texttt{-o2}, and \texttt{-o3}. Each level is allowed to increase memory usage in exchange for improvements to latency and throughput. 
+
+Further, we hope you can see the difficulties of optimisation in \textit{formulating the correct objectives} and \textit{managing trade-offs}. In the following optional section, we will illustrate a concrete example of such a trade-off. 
+
+\subsubsection{The Trade-Offs Involved in Program Pragmatics\optional}
+In this section, we aim to illustrate a concrete example of the trade-offs involved in program pragmatics. Our claim is that increasing parallelism can result in increased stack usage, whereas reduced stack usage can reduce parallelism. This will be a sneak preview of \textsf{Part II Optimising Compilers}. 
+
+We shall first set the scene: what do we mean by ``increasing parallelism''? We will assume a single processor, but a super-scalar processor (\textsf{Part II Advanced Computer Architecture}). The details are not important, but the key idea is that a super-scalar processor has multiple (for concreteness, 8) pipelines. It can therefore execute 8 instructions in parallel. In order to execute instructions \texttt{I1} and \texttt{I2} in parallel, there cannot be a dependency between instructions \texttt{I1} and \texttt{I2}. A dependency occurs when one of the following occurs:
+\begin{enumerate}
+    \item \texttt{I1} reads from a register that \texttt{I2} writes to
+    \item \texttt{I2} reads from a register that \texttt{I1} writes to
+    \texttt{I1} and \texttt{I2} both write to the same register
+\end{enumerate}
+In order to increase parallelism, we therefore need to reduce the number of dependencies. How are these dependencies created?
+
+During compilation, we have an infinite number of logical variables $x, y, z, \ldots$, but a finite number of registers. Therefore, some logical variables might need to \textit{share} registers. That is, register \texttt{r1} might hold different logical variables $x, y, z, \ldots$ at various points. When logical variables \textit{share} registers, this can create dependencies that reduce the amount of parallelism. As an example, the following instructions can be executed in parallel
+\begin{minted}[bgcolor=backcolour]{ocaml}
+x = 1 + 1;
+y = 2 + 1
+\end{minted}
+Whereas, if we get \texttt{x} and \texttt{y} to share a register \texttt{r1}, then the following cannot be executed in parallel
+\begin{minted}[bgcolor=backcolour]{ocaml}
+r1 = 1 + 1;
+r1 = 2 + 1
+\end{minted}
+In order to increase parallelism, we therefore try to \textit{reduce sharing of registers}. This increases the number of registers we use. However, if we use \textit{more} registers than we have, then we need to \textit{spill} registers onto the stack, using \texttt{LOAD} and \texttt{STORE}. This increases stack utilisation. 
+
+In contrast, to reduce stack utilisation, we try and share registers as much as we can. This reduces the number of instructions that can be executed in parallel.
+
+
+\subsection{Preserving Program Semantics}
+The second part of our statement is that we want to preserve program semantics. We say an optimisation is \textit{valid} if it preserves program semantics. 
+
+\subsubsection{Defining Preservation of Semantics is Hard}
+What does it mean to preserve program semantics? Defining a notion of ``equivalence'' is non-trivial. For example, we might wish to use the definition of equivalence from \textsf{Part IB Semantics of Programming Languages} (slide 256). Informally, it says two programs $e_1$ and $e_2$ are the same if they are impossible to distinguish in terms of their termination behaviour -- whenever $e_1$ terminates, so will $e_2$. Formally, 
+
+\begin{center}
+    \import{figures}{contextual-equivalence}
+\end{center}
+
+Except that this is not sufficient for larger languages, for example, ones that include I/O. Specifically, this definition of contextual equivalence makes all non-terminating programs equal, regardless of effects. This might not be what we want. Consider the following programs
+
+\begin{center}
+    \import{figures}{contextual-equivalence-failure}
+\end{center}
+
+According to the definition of contextual equivalence, these two programs are equivalent. However, one will repeatedly print ``Hello'' and the other will print ``Goodbye''. 
+
+We will therefore use the following (informal) definition. Two programs are equal if they share the same: 
+\begin{enumerate}
+    \item Termination behaviour,
+    \item Return value, and
+    \item Effects
+\end{enumerate}
+
+We have designed this definition for you to use. This is \textit{not}, however, a definition that a computer can use. For example, are the following two programs equal?
+
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\lambda x. \texttt{skip}; x$
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+$\lambda x. x$
+\end{minipage}
+
+Your answer might be ``yes!'', but in a language where functions are values, these are two different functions (because they are syntactically different, have different abstract syntax trees). 
+
+Hence, we have an informal definition that is sufficient for a human to use, but perhaps not quite a computer. 
+
+\subsubsection{Using a Definition of Equivalence is Hard}
+We now have a more-or-less operational definition of equivalence. However, \textit{having} this definition and being able to \textit{use} it are two completely different things. Even with an operational definition, it can be hard to determine if two programs are equal.
+
+\newcommand{\questioneq}{\overset{?}{=}}
+As an example, consider if the following programs are equal:
+\[\begin{array}{rcl}
+    \texttt{let \_ = g 2 in f 3} & \questioneq & \texttt{f 3} \\
+    \texttt{let x = g 2 in (f 3) + x} & \questioneq & \texttt{(f 3) + (g 2)} \\
+    \texttt{map f (map g l)} & \questioneq & \texttt{map (fun x -> f (g x)) l} \\
+    \texttt{if true then $e_1$ else $e_2$} & \questioneq & e_1 \\
+    \texttt{loop\_forever(); print ``Done''} & \questioneq & \texttt{loop\_forever(); print ``Not Done''} \\
+    \texttt{fold_right f l u} & \questioneq & \texttt{fold_left (fun x y -> f y x) u (rev l)}
+\end{array}\]
+The first three are potentially invalid, whereas the last three are always valid. 
+
+The first three are potentially invalid for the following reasons:
+\begin{enumerate}
+    \item \texttt{f 3} may perform side effects
+    \item The order of evaluation may have been changed
+    \item \texttt{f} and \texttt{g} may perform (non-commuting) effects
+\end{enumerate}
+
+\subsubsection{Preserving Semantics Involves Answering Undecidable Questions\optional}
+It turns out that preserving semantics is not just hard, but frequently undecidable. Let us take the most ``obvious'' equality from the previous section
+\[\texttt{if true then $e_1$ else $e_2$} & \cong & e_1 \\\]
+Is it possible to develop an optimiser that always performs this optimisation? The answer, unfortunately, is no. For example, consider the program
+\[\texttt{if $(x+1)\times(x+1) = x^2 + 2x + 1$ then $e_1$ else $e_2$} & \cong & e_1 \\\]
+The predicate, $(x+1)\times(x+1) = x^2 + 2x + 1$ is obviously true, but we want to develop an optimiser that can detect all such tautologies. In other words, we want to \textit{decide} the equality of arithmetic statements. However, arithmetic is undecidable (c.f. the Halting Problem, \textsf{Part IB Computation Theory}). Hence, any optimiser that we come up with will either miss some opportunities for optimisation, or will perform non-valid optimisations.
+
+Clearly, we prefer the latter to the former. We want to prove that our optimiser only performs valid optimisations -- we say such an optimiser is \textit{safe}. 
+
+Hence, even with a clear understanding of what we want to optimise, and a clear definition of equivalence, optimisation is still a hard problem: specifically, optimisation will have to \textit{safely approximate solutions to undecidable problems}.  
+
+\section{Specialisation}
+We have defined \textit{what} optimisation needs to do: it should improve program pragmatics while preserving program semantics. It is completely unclear, at this stage, \textit{how} to go about doing this. 
+
+We will argue that optimisation involves three steps: find the right way to \textbf{represent} the program, \textbf{analyse} the program for safe optimisations, and \textbf{transform} the program in a safe way. 
+
+To illustrate this process, we will consider a specific class of optimisations: \textit{specialisation}. 
+
+Let us assume our goal is to reduce latency. We will invoke a formula for latency (CPU Time) from \textsf{Part IB Introduction to Computer Architecture}
+\[\textsf{CPU Time} = \textsf{Clocks per Instruction} \times \textsf{Instruction Count} \times \textsf{Clock Period}\]
+The \textsf{Clock Period} is out of our purview -- we leave that to the computer architects. We should either decrease the \textsf{Clocks per Instruction} (by choosing less expensive instructions, like $+$ instead of $\times$, reducing the number of loads and stores, etc), or reducing the \textsf{Instruction Count}.  
+
+Specialisation is a class of optimisations that focuses on reducing the \textsf{Instruction Count} -- doing \textit{less} work at runtime. The key idea is that at run-time, work can be divided into two types. We might either be figuring out what to do (for example, figuring out if we should exit a loop or stay in it), or actually doing work.  Generalisation, or abstraction, makes our code more re-usable and thus useful. It does this by delaying the process of figuring out what to do to runtime. 
+
+For example, consider the following two functions: a power function, and a squaring function
+
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let rec pow exponent x = 
+  if exponent = 0 then 1
+  else x * pow (exponent - 1) x
+
+let square x = x * x
+\end{minted}
+
+Note that \texttt{pow} is more general, more reusable, than \texttt{square}, which is more specialised. Concretely, we can define an alternative square function that \textit{specialises} the power function
+
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let square2 x = pow 2 x
+\end{minted}
+
+However, \texttt{square2} is noticeably slower than \texttt{square}, because \texttt{square} hard-codes information (that you only need to do one multiplication) that \texttt{square2} has to do work to recover at runtime. 
+
+Hence, if we can \textit{analyse} the program for specialisation opportunities, and \textit{transform} the code using specialisation, we can get faster programs.
+
+We shall now consider specific examples of specialisation optimisations.
+
+\subsection{Inlining}
+Inlining involves replacing a variable with its definition (typically functions). As an example, consider 
+
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let succ x = x + 1
+let f = map (fun y -> succ y) [1;2;3]
+\end{minted}
+
+By inlining \texttt{succ}, we get
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let succ x = x + 1
+let f = map (fun y -> (fun x -> x + 1) y) [1;2;3]
+\end{minted}
+We often follow inlining with $\beta$-reduction (\textsf{Part IB Computation Theory}), which you can think of as compile-time function application or evaluation. In this case, we will apply \texttt{y} to the inlined function, to get 
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let succ x = x + 1
+let f = map (fun y -> y + 1) [1;2;3]
+\end{minted}
+While inlining alone does \textit{not} include $\beta$-reduction, most people use ``inlining'' to refer to inlining followed by $\beta$-reduction. 
+
+By using inlining and $\beta$-reduction, we figure out, at compile time, what function we should be calling, and ``hard code'' it into our program. If we did not do this, then at run time, we would have to follow a pointer to figure out which function to use, and then apply it. 
+
+In order to delete the now-unused variable, \texttt{succ}, we need to perform a separate optimisation, known as \textit{dead code elimination} (\textsf{Part II Optimising Compilers})
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let f = map (fun y -> y + 1) [1;2;3]
+\end{minted}
+The deletion of this variable \textbf{cannot} be done by inlining. Hence, inlining is often followed by dead code elimination. 
+
+Inlining seems fairly simple. However, we want to point out several complexities.
+
+\subsubsection{The Validity of Inlining}
+First, we will consider the correctness/safety/validity of inlining as an optimisation. Importantly, \textbf{inlining is not always valid}. Inlining is always valid in a purely functional language. However, it is \textit{not} valid in a language that permits side-effects. For example, 
+\[\texttt{let x = print ``Hello''; 3 in x + x} \not\cong \texttt{(print ``Hello''; 3) + (print ``Hello''; 3)}  \]
+
+In addition, \textbf{we need to be careful about name capture}. While the \textbf{analysis} for inlining is trivial, because inlining is always safe, the \textbf{transformation} for inlining requires care. We need to re-name free variables to avoid \textit{name capture} and preserve program semantics. For example, consider the program
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let f y =
+  let addy x = x + y in
+  map ( fun y -> addy y ) [1;2;3]
+\end{minted}
+Assume we wish to inline \texttt{addy}. The \textit{wrong} thing to do is to just copy-and-paste the body of \texttt{addy}
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let f y =
+  let addy x = x + y in
+  map ( fun y -> y + y ) [1;2;3]
+\end{minted}
+Instead, we need to first rename one of the \texttt{y}s to \texttt{z}
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let f z =
+  let addy x = x + z in
+  map ( fun y -> addy y ) [1;2;3]
+\end{minted}
+Then perform the inlining
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let f z =
+  let addy x = x + z in
+  map ( fun y -> z + y ) [1;2;3]
+\end{minted}
+
+\subsubsection{The Utility of Inlining}
+Just because inlining is \textit{correct} does not mean it is \textit{useful}. We now consider the factors affecting whether we wish to perform inlining. 
+
+One reason we might wish to perform inlining is that \textbf{inlining is an enabling transformation}. We have presented inlining as having an \textit{immediate} benefit. However, it also can have a \textit{delayed} benefit, by exposing, or enabling, more optimisations. For example, consider
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let x = 2
+let f = map (fun y -> pow x y) [1;2;3]
+\end{minted}
+Inlining \texttt{x}, we get
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let x = 2
+let f = map (fun y -> pow 2 y) [1;2;3]
+\end{minted}
+If a future optimisation phase is able to optimise \texttt{pow 2 y} to \texttt{y * y} (see: partial evaluation, \Cref{section:partial-evaluation}), then inlining has \textit{enabled} a future optimisation. 
+
+In fact, it is this indirect effect that makes inlining such a powerful optimisation. \citet{peyton-jones-2002} writes ``Inlining is not an optimisation by itself The direct effects of careful inlining are small: it ... usually saves a call or jump (albeit not invariably [...]). It is the indirect effects that we are really after: the main reason for inlining is that it often exposes new transformations, by bringing together two code fragments that were previously separate.''
+
+One reason why we might not wish to perform inlining is that it might duplicate code. For example, consider a terribly long function, perhaps like \texttt{quicksort}. Now imagining inlininq \texttt{quicksort} in a function like
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let f xs ys =
+  let sortedxs = quicksort xs in
+  let sortedys = quicksort ys in
+  ...
+\end{minted}
+This can make your program very large. This is clearly bad if we have a limited amount of memory. Further, since program code needs to be brought into the caches, it can reduce locality of reference, impacting performance.
+
+Another reason we might \textbf{not} wish to perform inlining is that inlining can duplicate work. For example, consider a function which, given two nodes and a graph, finds the shortest path from \texttt{x} to \texttt{y} and back 
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let round_trip x y g =
+  let path = find_shortest_path x y g in
+  if undirected(g) then path @ (rev path)
+  else ...
+\end{minted}
+Where \texttt{find\_shortest\_path} is an expensive operation! Now consider inlining \texttt{path}
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let round_trip x y g =
+  let path = find_shortest_path x y g in
+  if undirected(g) 
+    then (find_shortest_path x y g) @ (rev (find_shortest_path x y g))
+    else ...
+\end{minted}
+This duplicates the work we have to do.
+
+
+\subsubsection{Termination of the Inliner}
+Whenever you are performing some optimisation, it is always important to ask if you are certain that your optimiser terminates. Are we \textit{certain} that the inliner always terminates? The answer is no, if there are recursive definitions. This is easy to see. Consider the (recursive) definition
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let rec factorial n =
+  if n = 0 then 1
+  else n * (factorial (n-1))
+\end{minted}
+If we inline the definition of factorial, we get
+\begin{minted}[bgcolor = backcolour, linenos]{ocaml}
+let rec factorial n =
+  if n = 0 then 1
+  else n * (if (n-1)=0 then 1 else (n-1)*factorial(n-2))
+\end{minted}
+Which exposes another factorial to inline. If we instruct our inliner to ``inline \texttt{factorial} until there are no more occurrences'', then our inliner will get stuck in an infinite loop.
+
+\subsubsection{More on Inlining\optional}
+\textit{This section is based on \href{https://www.microsoft.com/en-us/research/wp-content/uploads/2002/07/inline.pdf}{Secrets of the Glasgow Haskell Compiler Inliner} by } \citet{peyton-jones-2002}
+It is useful to consider how a real compiler, in this case, the Glasgow Haskell Compiler (\texttt{GHC}) handles inlining. 
+
+To resolve the problem of name capture, one clearly requires some form of renaming policy. The simplest policy is to re-name every bound variable when performing inlining, just in case. This turns out to significantly decrease \textit{compile-time performance}, and make writing compilers much harder. The reason for this is twofold. First, name capture is not the common case. Empirically, in most cases, we do not run into the problem of name capture. Second, re-naming is more costly than it looks. In a compiler a variable is a structure containing many pieces of information: a name, a type, etcetera. Re-naming involves copying this structure. Additionally, to produce human readable errors, the compiler has to maintain a mapping between the original names chosen by the programmer and the new names generated by the compiler. Otherwise, you would see ``variable \texttt{s2187fa} is of type \texttt{int} but expected type \texttt{bool}'' instead of ``variable \texttt{x} \ldots''. The more you perform renaming, the more this mapping grows. Finally, the compiler often leverages empty substitutions as a way to cut down on the work it has to do -- but if all variables are renamed, then the substitution is never empty. 
+
+If re-naming everything is too costly, perhaps it is better to re-name only what is needed. If we inline \texttt{x}, with body \texttt{e}, we are effectively performing a substitution
+\[\texttt{t}[\texttt{e}/\texttt{x}]\]
+Recalling our substitution rules, specifically when \texttt{t} is a function (\textsf{Part IB Computation Theory, Part IB Semantics of Programming Languages}), we have
+\[\begin{array}{rcll}
+    (\lambda \texttt{x}. \texttt{t})[\texttt{e}/\texttt{x}] & = & (\lambda \texttt{x}. \texttt{t})&\\
+    (\lambda \texttt{x}. \texttt{t})[\texttt{e}/\texttt{y}] & = & (\lambda \texttt{x}. \texttt{t} [\texttt{e}/\texttt{y}]) & \texttt{If \texttt{x} not free in \texttt{e}. Otherwise, rename \texttt{x}}\\
+\end{array}\]
+Hence, to do the minimal amount re-naming, we can choose to only rename a bound variable if it occurs in the free variables of \texttt{e}, \textsf{FV}(\texttt{e}). However, \textsf{FV}(\texttt{e}) is costly to compute. 
+
+Hence, we settle on a middle-ground. We rename a bound variable if it \textit{is in-scope} when \texttt{e} is defined. This, obviously, will include all free variables in \texttt{e}. However, it may also include some bound variables in \texttt{e}. This approximation of \textsf{FV}(\texttt{e}) is safe, in that if a variable is free it must be in-scope. Further, it is easy to keep track of the variables in scope. 
+
+Second, we resolve the problem of code duplication, \texttt{GHC} ``uses a number of heuristics to determine
+whether an expression is small enough to duplicate''. The heuristic begins with the size of the expression to be inlined. However, we have to factor in some savings.
+\begin{enumerate}
+    \item Function calls take space. When inlining, we perform the call at compile time, so we can subtract this space.
+    \item Inlining is an enabling transformation. If we inline a function, we can get future size reductions via now-enabled further specialisation. In order for further specialisation to be enabled, we need to (a) have information about the function arguments (for example, we know its value or its type), and (b) the inlined function body needs to ``scrutinise'' it (for example, via pattern matching). Hence, for each argument for which some information is known and is appropriately scrutinised by the body, we apply a discount. This is known as an argument discount. 
+    \item If the function returns another function, or a constructor, then this might lead to even more specialisation opportunities. This is known as a result discount.
+\end{enumerate}
+
+Third, we resolve the problem of work duplication. \texttt{GHC} uses a policy to determine when inlining a variable \texttt{x} will lead to an ``acceptable'' amount of work duplication. Specifically, we look at the expression \texttt{e} on the right hand side of the definition of \texttt{x}
+\[\texttt{let x = e}\]
+If \texttt{e} is:
+\begin{enumerate}
+    \item A variable (\texttt{y})
+    \item A function ($\lambda \texttt{y. e}$)
+    \item A constructor application that obeys the trivial constructor argument invariant (\texttt{Br}(\ldots))
+    \item A divergent/exceptional computation (\texttt{assert false})
+\end{enumerate}
+Then inlining will lead to an ``acceptable'' amount of work duplication. First, note that inlining an expression \texttt{e} only increases the amount of work done if \texttt{e} is not a value (but evaluates to a value). Inlining $2$ will never lead to more work being done, but inlining \texttt{find\_shortest\_path x y g} might. For this reason, inlining functions and variables (which are values) will never increase the amount of work. 
+
+The case for constructor application is more subtle. Constructor application can involve doing work, for example, 
+\[\texttt{let x = Br(f u, g y, h z)}\]
+Applying the branch constructor \texttt{Br} involves evaluating the arguments \texttt{f u}, \texttt{g y}, and \texttt{h z}. Hence, this constructor application is \textit{not} safe to inline. However, if the constructors arguments can be duplicated at no run-time cost (values, variables, and type application), then it is safe to inline. Such arguments are called trivial expressions, and this is known as the trivial constructor argument invariant. 
+
+Might it be better to just rule all constructor applications as not safe? To try and inline constructor applications that satisfy the trivial constructor argument invariant seems a bit of a waste: it requires us to check \textbf{all} constructor applications, only a small fraction of which will satisfy the invariant. The reason why this is included by \texttt{GHC} is that even though the invariant is not frequently satisfied, when it is, the specialisation opportunities are \textit{tremendous}, because it can eliminate pattern matching. 
+
+For example, if we have 
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let x = Br(Lf, 1, Lf) in
+let f = match x with
+  | Lf -> ...
+  | Br(l, y, r) -> ...
+\end{minted}
+Then inlining \texttt{x} allows us to eliminate the pattern matching, which is expensive. 
+
+Divergent / exceptional computations are those that, if evaluated, cause the program to fail in some way (like \texttt{assert false} or \texttt{loop forever}). It is ok to inline these computations because as long as \textit{one} is called, then the entire program will fail, and so there is no work duplication problem: the computation will only be evaluated once, no matter how many times it is inlined. 
+
+Finally, we resolve the problem of inlining recursive definitions. \texttt{GHC} used to ``solve'' the problem of inlining recursive definitions by simply \textit{not inlining any recursive definitions}. 
+
+Importantly, this policy made clear the difference between \textit{syntactic} or nominally recursive definitions, and \textit{semantic} or actually recursive definitions. This is important, because a naïve analysis will classify anything a programmer declares using \texttt{let rec} as recursive, even if it is not actually recursive. To detect genuine recursion, \texttt{GHC} uses dependency graphs: if \texttt{x} refers to \texttt{y} in its definition, then we add an edge from \texttt{x} to \texttt{y}. Recursion then manifests as loops (if \texttt{x} refers to itself, this is a self-loop).
+
+However, this policy was later changed. It turns out that \texttt{GHC} generates a lot of unnecessarily recursive definitions, that can be eliminated by inlining recursive definitions. For example, for each datatype, \texttt{GHC} generates \texttt{eq} and \texttt{neq} methods, useful for pattern matching, that it wraps up into a dictionary \texttt{d}. \texttt{eq}, \texttt{neq}, and \texttt{d} are automatically generated, but with a strange artefact: \texttt{neq} and \texttt{d} are defined in terms of each other!
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec d = (eq, neq)
+and     neq = let (x, _) = d in not x
+\end{minted}
+\texttt{neq} is defined as the function that looks at the dictionary \texttt{d}, takes its first component, and negates it. Obviously, this is awkward, roundabout, and not code that one would actually write! It is, however, code produced by the compiler. By inlining these recursive definitions, we can eliminate the unnecessary recursion, resulting in performance gains.
+
+This illustrates an important point: optimisation is not always just used to speed up code. Sometimes, it is useful to use optimisation as a ``clean-up'' process. You might wonder -- would it not be easier to just generate normal looking code directly? \citet{peyton-jones-2002} write ``We originally went to great lengths in the front end to avoid generating unnecessary dictionary recursion but, no matter how hard we tried, some unnecessary [recursion] \textit{still} showed up.'' ``It was much easier to allow the front end to generate naive code, and let the simplifier take care of the rest.''. 
+
+The key insight with inlining recursive definitions is that you have to break the recursion by choosing \textbf{not} to inline some definitions. For example, considering the mutually recursive definitions of \texttt{d} and \texttt{neq}, our inliner will terminate if we choose only to inline \texttt{d} \textit{or} \texttt{neq}, but crucially, not both. We therefore have to pick one of them to not inline: we call this \textit{the loop breaker}. 
+
+We indicate the effect of the loop breaker by deleting all arrows into the loop breaker in the dependency graph. This has the effect of breaking cycles.
+
+Therefore, to ensure inlining of recursive definition terminates, we need to pick one or more loop breakers and ensure that all cycles are broken. For the former, \texttt{GHC} uses a heuristic that ranks variables by how useful they might be to inline, and picks the least useful. For the latter, \textsf{Part IB Algorithms II} introduced a topological sort algorithm that is exactly what we need. 
+
+Once all cycles are broken, the inliner can simply inline all non-loop-breaker variables, both recursively and non-recursively defined, to its hearts content. 
+
+\subsection{Monomorphisation}
+A second type of specialisation is monomorphisation. Monomorphisation replaces parameterised types with unparameterised types. For example, 
+\[\texttt{'a list} \mapsto \texttt{int list}\]
+Further, it replaces polymorphic functions with monomorphic functions. For example
+\[\texttt{eq: 'a -> 'a -> bool} \mapsto \texttt{eqi: int -> int -> bool}\]
+Monomorphisation is an enabling transformation. 
+
+Imagine one had a type \texttt{T of int * 'a}. Because \texttt{'a} is polymorphic, not only do not know how large it is, it can also be of variable size. Hence, if we are to allocate objects of type \texttt{T}, we need to allocate a value of type \texttt{int} and a pointer to an object of variable size. 
+
+When we monomorphise \texttt{T}, we get a new type \texttt{T1}, say \texttt{T1 of int * (float * bool)}. Now, when we allocate objects of \texttt{T1}, we still have a pointer, but now a pointer to an object of fixed size. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{before-flatten}
+    \caption{An object of type \texttt{T1}}
+    \label{fig:before-flatten}
+\end{figure}
+
+Hence, we can \textit{flatten} \texttt{T1}, creating a new type \texttt{T2 of int * float * bool}, whose objects now no longer need to rely on pointer indirection. This results in a speedup. 
+
+\begin{figure}[H]
+    \centering
+    \import{figures}{after-flatten}
+    \caption{An object of type \texttt{T2}}
+    \label{fig:after-flatten}
+\end{figure}
+
+Examples of compilers that use monomorphisation as an optimisation include the \href{http://www.mlton.org/References.attachments/060916-mlton.pdf}{\texttt{MLton}} compiler, and the \href{https://rustc-dev-guide.rust-lang.org/backend/monomorph.html}{\texttt{Rust}} compiler.
+
+\subsection{Contification}
+\textit{This section is based on \href{https://dl.acm.org/doi/abs/10.1145/507635.507639}{Contification Using Dominators} by } \citet{fluet-weeks-2001}.
+
+Contification is an optimisation that transforms a function into a continuation, thereby turning inter-procedural control flow into intra-procedural control flow. 
+
+Contification is an enabling optimisation that tries to \textit{find the right representation}. There are a lot of optimisations for imperative languages, like \texttt{C} or \texttt{Java}. These optimisations are designed around \textit{intra-procedural} constructs -- expressions that you can call within a function -- like for loops or if statements. 
+
+As an example, loop-invariant code motion is an optimisation that lifts expressions out of loops. This turns
+\begin{minted}[bgcolor=backcolour, linenos]{c}
+for(i=0; i<10; i++){
+  int b = 3;
+  a[i] += b;
+}
+\end{minted}
+Into
+\begin{minted}[bgcolor=backcolour, linenos]{c}
+int b = 3;
+for(i=0; i<10; i++){
+  a[i] += b;
+}
+\end{minted}
+
+You will learn about such imperative optimisations in \textsf{Part II Optimising Compilers}. 
+
+Unfortunately, in a functional language, control flow constructs are represented using functions. For example, we might build a loop using \texttt{map}, a recursive function. Therefore, all control flow is inter-procedural (involves calling another function) rather than intra-procedural. 
+
+In order to take advantage of optimisations for imperative languages, then, we need to automatically transform inter-procedural control flow into intra-procedural control flow. We can do this using the CPS conversion shown in \Cref{chapter:cps}. The key idea is that the CPS conversion allows us to convert recursive functions into tail-recursive ones, for example, the following is a CPS-converted tail-recursive function for summing the elements of a list
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec sum_cps xs k = match xs with
+  | []    -> k 0
+  | x::xs -> sum_cps xs (fun y -> k (x+y))
+\end{minted}
+Once the function is in CPS form, the loop structure is apparent, and there exists a standard transformation \cite{kelsey-1995}. In effect, we will turn each recursive call into an iteration of a loop. We will do this by turning each argument to \texttt{sum\_cps} into a reference, and each recursive call into an iteration that updates those references. We will use the base cases to determine when to break out of the loop. 
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let sum_iter xs = 
+  let xs = ref xs          in  (*convert the arguments into references*)
+  let k = ref (fun y -> y) in  (*convert the arguments into references*)
+  while !xs <> [] do           (*convert the base case(s) into loop condition*)
+    let y::ys = !xs in
+    xs := ys;
+    k  := fun z -> (!k) (y+z)
+  done;;
+  (!k) 0
+\end{minted}
+\texttt{k} is now a reference to a very high-order function, which we can \textit{defunctionalize} (\Cref{chapter:cps}) and then use \textit{inlining} to simplify.
+
+This automatic conversion is not always easy or possible. Importantly, \textbf{not all inter-procedural control flow can be automatically converted to intra-procedural control flow}. The problem is that recursive calls are transformed into loop iterations. However, loop iterations are a lot more regular and a lot less flexible than recursive calls. For example, recursive calls can return to different places. In the following example, the recursive call to \texttt{mergesort} can return either to the left branch (\texttt{mergesort left}) or the right branch (\texttt{mergesort right})
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec mergesort xs = 
+  let left, right = split xs in
+  merge (mergesort left) (mergesort right)
+\end{minted}
+Loops are far more regular, and less flexible, and it is much harder to express such constructs. 
+
+We can view this a different way. When converted to CPS, the notion of ``returning to different places'' will be transformed into ``being passed different continuations''
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec mergesort_cps xs k = 
+  split_cps xs (fun (left, right) -> 
+    mergesort_cps left (fun sorted_left ->
+      mergesort_cps right (fun sorted_right ->
+        merge_cps sorted_left sorted_right k)
+        )
+    )
+\end{minted}
+Here, the two calls to \texttt{mergesort\_cps} are passed different continuations (one which just merges, and one which sorts the right branch and then merges).  
+
+Hence, we can state that \textit{if all calls to a function \texttt{f} are passed the same continuation \texttt{k}}, then this regularity indicates intra-procedural control flow, which allows us to leverage a large class of existing optimisations. 
+
+The problem is that sometimes, \textit{continuations masquerade as functions}. This means that, even though to us, we know that a function is being passed the same continuation on each call (and therefore the control flow is intra-procedural), to the program, the function is being passed the same \textbf{function} on each call (and therefore the control flow is inter-procedural). Take this simple example
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let g y = y - 1
+let f b = (if b then g 13 else g 15) + 1
+\end{minted}
+Which we \texttt{CPS} convert to
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let g y k = k (y - 1) in
+let f b k = 
+  let k' = fun x -> k (x+1) in
+  if b then g 13 k' else g 15 k'
+\end{minted}
+Here, \texttt{g} is a continuation masquerading as a function. The control flow is nominally/syntactically inter-procedural (since \texttt{f} calls \texttt{g}). Our analyser will look at this program and conclude that it cannot convert the control flow to intra-procedural (because \texttt{g} is a function, not a continuation).
+
+However, we know that the control flow is actually intra-procedural. Specifically, we can think of a function applied to a continuation as itself a continuation. You might already be doing this in your head. Because \texttt{g} is called with the same continuation each time, each invocation of \texttt{g} is \textbf{the same} continuation. 
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let g_cont = fun y -> k' (y - 1) in
+let f b k = 
+  let k' = fun x -> k (x+1) in
+  if b then g_cont 13 else g_cont 15
+\end{minted}
+The control flow is now very obviously \textit{intra-procedural}.
+
+\section{Arithmetic Simplification}
+We shall now consider arithmetic simplification as a specific example of a more general optimisation technique. The key idea is that we have spent many centuries developing a theory of arithmetic. This theory gives us many theorems, for example \footnote{Note that all of these are properties of the integer semi-ring (\textsf{Part IA Discrete Mathematics})}
+\[\begin{array}{llr}
+    \forall n \in \mathbb{Z}. \, & 0 \times n = 0 & (\text{Left annihiliation}) \\
+    \forall n \in \mathbb{Z}. \, & 1 \times n = 1 & (\text{Left identity}) \\
+     \forall n, m, p \in \mathbb{Z}. & \, (m + n) + p = m + (n + p) & (\text{Associativity}) \\
+\end{array}\]
+We can leverage this theory to, once again, move evaluation from run-time to compile-time. 
+\[\begin{array}{rcl}
+    \texttt{e * 0} & \to & \texttt{0} \\
+    \texttt{e * 1} & \to & \texttt{1} \\
+    \texttt{x + (y + z)} & \to & \texttt{(x + y) + z}
+\end{array}\]
+We can also perform simplification such as
+\[\begin{array}{rcl}
+    \texttt{2 + 3} & \to & \texttt{5}
+\end{array}\]
+And combine arithmetic simplification, so for example
+\[\begin{array}{rcl}
+    \texttt{3 + ((x * 1) + 2)} & \to & \texttt{3 + (2 + (x * 1))} \\
+                               & \to & \texttt{(3 + 2) + (x * 1)}\\
+                               & \to & \texttt{5 + (x * 1)}\\
+                               & \to & \texttt{5 + x}\\
+\end{array}\]
+Beyond shifting evaluation to compile-time, we can additionally leverage this theory to replace expensive operators (like $\times$) with cheaper operators (like $+$) at run-time. For example,
+\[\begin{array}{rcl}
+    \texttt{2 * n} & \to & \texttt{n + n}
+\end{array}\]
+This is known as strength reduction, and will be covered in \textsf{Part II Optimising Compilers}. 
+
+In both cases, our strategy involves taking some program fragment (\texttt{3 + ((x * 1) + 2)}), and interpreting it in the theory of arithmetic. That is, we interpret \texttt{+} as the same $+$ we use in school. This allows us to apply the mathematical machinery of arithmetic to find possible optimisations. It might be tricky because you might subconsciously be performing a very similar analysis when interpreting the meaning of code. We are simply making that interpretation explicit.
+
+Making this interpretation explicit is important, because it exposes subtleties and corner cases. This interpretation is not as trivial as it might look! For example, an arithmetic $+$ does not have to deal with overflow, but a \texttt{+} might. We need to make sure our interpretation is correct, in some sense. This is the focus of \textsf{Part II Denotational Semantics}. 
+
+We shall consider other ways our interpretation may not be ``correct''. For example, consider once again the arithmetic simplification
+\[\texttt{e * 0} \to \texttt{0}\]
+Implicitly, we are interpreting \texttt{e} as an arithmetic expression, which is not {necessarily correct} (at least, not correct according to our definition of equivalence). While the return value of both programs will always remain the same, \texttt{e} may perform an effect, or \texttt{e} may not terminate!
+
+More generally, there are some notions, like effects (read/store, input/output) and non-termination, that are first and foremost \textit{computational} notions, rather than a mathematical ones. This limits optimisation opportunities, and explains why certain programming languages, like \texttt{Haskell}, go to great extent to tag effectful computations (using monads, see \textsf{Part II Types}).
+
+Similarly, floating point computation is hard to optimise using this technique. Very few arithmetic laws apply to floating point computation.
+
+\subsection{E-Graphs and Equality Saturation \optional}
+\textit{This section is based on \href{https://dl.acm.org/doi/pdf/10.1145/3434304}{\texttt{egg}: Fast and Extensible Equality Saturation} by} \citet{willsey-2021}
+
+Let us re-consider our earlier optimisation. 
+\[\begin{array}{rcl}
+    \texttt{3 + ((x * 1) + 2)} & \to & \texttt{3 + (2 + (x * 1))} \\
+                               & \to & \texttt{(3 + 2) + (x * 1)}\\
+                               & \to & \texttt{5 + (x * 1)}\\
+                               & \to & \texttt{5 + x}\\
+\end{array}\]
+We will ask a simple question: how did we know which rule to apply at each point? When we build an optimiser to automatically perform arithmetic simplification, we need to \textit{mechanise} these choices. How can we do this? Importantly, how can we do this \textit{efficiently}?
+
+We shall take our first step towards answering this question by imagining each step of the optimisation process as \textit{either} the application of a syntactic re-write rule, \textit{or} a semantic computation.
+
+Examples of re-write rules are
+\[\begin{array}{llr}
+    \forall e \in \texttt{int}. \, & \texttt{0 * } e \to \texttt{0} & (\text{Left annihiliation}) \\
+    \forall \texttt{e} \in \texttt{int}. \, & \texttt{1 * } e \to e & (\text{Left identity}) \\
+     \forall e_1, e_2, e_3 \in \texttt{int}. & \, (e_1 + e_2) + e_3 \to e_1 + (e_2 + e_3) & (\text{Associativity}) \\
+\end{array}\]
+Whereas a computation captures transformations like
+\[\begin{array}{l}
+    \texttt{2 + 3} \to \texttt{5} \\
+\end{array}\]
+To understand the difference between a re-write rule and a computation rule, think back to \textsf{Part IA Mathematics for Natural Sciences} or your A-level mathematics. When given a problem to solve, sometimes your steps involved manipulating the shape of expressions, for example
+\[3^2 + (2\times 3 \times 5) + 5^2 \to (3+5)^2\]
+Where you did not really care that it was a $2$ or $3$ in the expression, only that the shape was right. Another example would be computing the scalar product of two vectors
+\[\begin{pmatrix}1\\2\\3\end{pmatrix} \cdot \begin{pmatrix}1\\2\\3\end{pmatrix} \to (1 \times 1) + (2 \times 2) + (3 \times 3)\]
+Where once again, you did not really care about the numbers. Your brain can simply perform the transformation mechanically. These are ``purely syntactic'' \textit{re-write rules} that manipulate the syntax, or shape, of the expression. 
+
+In contrast, sometimes you cared about the numbers. As an example, to simplify 
+\[(1 \times 1) + (2 \times 2) + (3 \times 3) \to 14\]
+You do actually have to do some ``mental arithmetic''. This is a \textit{computation rule}. 
+
+Conceptually, given an expression, we can think of optimisation as finding the ``best'' sequence of re-writes and computations to apply. For simplicity, we will focus on optimisations that only consider syntactic re-writes. At every stage, more than one re-write rule might apply. 
+
+Assume you are given an expression, like
+\[\texttt{(a * 2) / 2} \]
+Given this expression, we will find that multiple re-write rules apply. These include
+\[\begin{array}{rcl}
+     \texttt{(x * y) / z} & \to & \texttt{x * (y / z)}  \\
+     % \texttt{x / x} & \to & \texttt{1}  \\ 
+     % \texttt{x * 1} & \to & \texttt{x}  \\ 
+     \texttt{x * 2} & \to & \texttt{x << 1}  \\ 
+     \texttt{x} & \to & \texttt{x * 1}  \\ 
+\end{array}\]
+Some of these rules are bad, or unproductive, in that they block future re-writes. For example, if we choose to apply the rule $\texttt{x * 2} \to \texttt{x << 1}$, we will obtain \texttt{(a << 1) / 2}, and be stuck. 
+
+We can visualise our expression as a node in a graph. A re-write rule transitions between expressions, and is thus an edge in the graph. The entire graph represents all possible terms that we can produce, given the original expression, and the set of re-write rules. Since these re-write rules are semantics preserving, we can substitute the original expression with \textit{any} of them. 
+
+\begin{center}
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
+    \node (start) {\texttt{(a * 2) / 2}};
+    \node[anchor=west] (one) at ($(start.east) + (5ex, 5ex)$) {\texttt{a * (2/2)}};
+    \node[anchor=west] (two) at ($(one.west) + (0ex, -5ex)$) {\texttt{(a << 1) / 2}};
+    \node[anchor=west] (three) at ($(two.west) + (0ex, -5ex)$) {\texttt{(a * 1) * 2) / 2}};
+
+    \draw[->] (start.east) to (one.west);
+    \draw[->] (start.east) to (two.west);
+    \draw[->] (start.east) to (three.west);
+    
+\end{tikzpicture}
+\end{center}
+
+To pick an expression, we can define a cost function $f$ for each expression in the graph. Our goal is to search the graph for the expression with the lowest cost. This is then, at least conceptually, a standard graph search problem, of the form you will see in \textsf{Part IB Artificial Intelligence}. Indeed, it can be solved as such. 
+
+The problem, as with graphs in \textsf{Part IB Artifical Intelligence}, is that they are big and thus inefficient. In fact, it is not just that these graphs are big, they can be \textit{infinite}. Note, for example, that we can easily end up in an infinite series of re-writes, simply by repeatedly applying the $\texttt{x} \to \texttt{x * 1}$ rule. 
+
+There are two main ways to efficiently search a very big / infinite graph. The first is to only search some finite sub-graph. Such methods include iterative deepening (depth-first search up to some limit), or beam search. You will learn more about this in \textsf{Part II Artificial Intelligence}.
+
+The second, which we will present here, is to try to come up with a \textit{finite}, and small, representation of a possibly \textit{infinite} graph -- in the same sense that a circle is a finite representation of an infinite set of points. We can then perform ``search'' over this finite representation. Our finite representation, known as an \textit{equivalence graph}, will significantly resemble Binary Decision Diagrams (\textsf{Part IB Logic and Proof}). 
+
+We will build up the notion of an equivalence graph incrementally, followed by a formal definition. The first key idea is \textbf{sharing}. We note that in the same expression, you might have many sub-expressions. To save space, we do not want to duplicate these sub-expressions, but rather share them. 
+
+For example, in the expression \texttt{(a * 2)/2}, we only want to use \textbf{one} object for \texttt{2}. This leads to a graph that looks as such
+
+\tikzset{e node/.style={rectangular, draw, rounded corners=0.5cm, minimum width = 2cm, minimum height = 2cm}}
+
+\begin{center}
+    \import{figures/e-graphs}{eg-1}
+\end{center}
+
+For our purposes, a finite representation 
+
+\section{Tail Recursion Modulo Cons}
+Our final concrete optimisation is tail recursion modulo cons. 
+
+We motivate this optimisation by illustrating that there is no nice way to implement a \texttt{map} function in a functional language like \texttt{OCaml}. 
+
+A naïve implementation is not tail recursive, and can therefore run into stack overflow errors.
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec map f xs = match xs with
+  | []    -> []
+  | x::xs -> (f x)::(map f xs)
+\end{minted}
+We can make it tail recursive by using an accummulator argument, but then we have to reverse the list and traverse it twice. 
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec map_acc f xs acc =
+  | []    -> rev acc
+  | x::xs -> map_acc f xs ((f x)::acc)
+\end{minted}
+We can use the CPS translation, but this allocates $n$ intermediate continuations on the heap, where $n$ is the length of the list
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec map_cps f xs k =
+  | []    -> k []
+  | x::xs -> map_cps f xs (fun ys -> (f x)::ys)
+\end{minted}
+
+In contrast, consider how a map function looks in an imperative language,
+\begin{minted}[bgcolor=backcolour, linenos]{c}
+Cons* xs = ...;
+if xs = NULL {return NULL}
+Cons* ys = malloc(sizeof(Cons));
+while (xs != NULL){
+  ys -> hd = f(x -> hd)
+  ys -> tl = malloc(sizeof(Cons))
+  ys = ys -> tl
+  xs = xs -> tl
+}
+ys -> tl = NULL
+return ys
+\end{minted}
+This uses constant stack space, only traverses the input linked list \texttt{xs}, once, and does not allocate any intermediate continuations on the heap. 
+
+So, in theory, it is possible to do better. We shall try to improve our \texttt{CPS} variant of \texttt{map}, since it is the closest to the optimal implementation. The only problem is the allocation of intermediate continuations, as closures, on the heap. 
+
+In order to eliminate these intermediate closures, we need to recall why we need to create closures in the first place. When we compile a function, the closure records (a) a code pointer pointing to the compiled body of the function, and (b) values of free variables that the function body might reference. This is general, since we can have any function, and any number of free variables. Now, consider the continuation argument in \texttt{map\_cps} (we re-write \texttt{x::xs} as \texttt{Cons(x, xs)} to make the constructor application explicit)
+\[\texttt{fun ys -> Cons(f x, ys)}\]
+Our closure will thus store (a) a pointer to an instruction that allocates a cons cell on the heap, and (b) the value of \texttt{x}. This is indirect, and wasteful. If we simply allocate a cons cell on the heap, whose \texttt{hd} is \texttt{x} and whose \texttt{tl} is \texttt{<HOLE>}, where \texttt{<HOLE>} indicates a \textit{destination} for an as-yet-unknown value, we can store the same information directly. 
+
+In other words, \texttt{map\_cps} is inefficient because we do not want the full generality/power of a continuation, which can store any arbitrary instruction and any arbitrary number of free variables. We only really want the destination, the pointer to the \texttt{tl} component that should be filled in. We thus incur a lot of unnecessary baggage that we do not need, or use.
+
+Hence, let us extend our language with syntax for indicating this special case. This will not give us any more power than continuation passing style, but rather an explicit indication to the compiler that we only need to fill in some ``destinations'' or ``holes'' in a constructor. 
+
+We will introduce a \texttt{<HOLE>} keyword, that indicates a destination for an as-yet-unknown value. We can use it as such
+\[\texttt{let d = Cons(1, <HOLE>)}\]
+Meaning ``we don't know the tail'', or ``allocate a \texttt{Cons} cell and save a pointer to the tail so we can fill it''
+
+Further, we will add syntax for ``filling in the whole''. We index the arguments of the constructor like we do an array: \texttt{0} indicates the first argument, \texttt{1} the second. Hence, to fill the tail, we write
+\[\texttt{d.[1] <- v}\]
+Then, with these new language constructs, we can re-write the map function in destination passing style
+\begin{minted}[bgcolor=backcolour, linenos]{ocaml}
+let rec map f = function
+  | []    -> []
+  | x::xs -> let y = f x in
+             let dst = y :: <Hole> in
+             map_dps dst 1 f xs ;
+             dst
+and map_dps dst i f = function
+  | []    -> dst.[i] <- []
+  | x::xs -> let y = f x in
+             let dst' = y :: <Hole> in
+             dst.[i] <- dst';
+             map_dps dst' 1 f xs
+\end{minted}
+This traverses the list only once, does not allocate any intermediate objects on the heap, and uses constant stack space. 
+
+\section{More on Optimisation}
+Specialisation, Arithmetic Simplification, and Tail Recursion Modulo Cons are \textit{by no means} the only class of optimisation. You will encounter many more in \textsf{Part II Optimising Compilers}. For example:
+\begin{enumerate}
+    \item Data Flow Analysis
+    \item Control Flow Analysis
+    \item Inference Based Analysis
+    \item Constraint Based Analysis
+    \item Abstract Interpretation
+\end{enumerate}
+
+\section{Optimisation and Undefined Behaviour}
+We said an optimisation is valid (safe, or correct) if it preserves program semantics. 
+
+What happens if a program has no semantics? That is, its semantics is undefined?
+
+For example, in \textsf{Part IB Semantics of Programming Languages}, when defining the semantics of \textit{L1}, you wrote down two rules for function application
+\begin{prooftree}
+        \AxiomC{}
+        \UnaryInfC{$(\lambda x. e) v \leadsto e[v/x]$}
+        \DisplayProof
+\end{prooftree}
+You did not write down any rule that can handle, for example applying an integer to another integer
+\[3 \; 5\]
+The behaviour of this program is said to be \textit{undefined}.
+
+We work on the principle that there are no constraints on the behaviour of programs with undefined behaviour. Hence, a compiler can therefore assume that programs do not have undefined behaviour. Consequently, a compiler can therefore assume that programs do not have undefined behaviour.
+
+We shall illustrate this through several examples.
+
+\subsubsection{Example 1: Integer Overflow}
+Our first example is adapted from \href{https://softwarebits.substack.com/p/impact-of-undefined-behavior-on-performance}{Taras Tsugrii}. It illustrates how optimisations assume no integer overflow, and therefore can change program behaviour in the presence of overflow. 
+
+\begin{code}[\texttt{sum\_range} sums the integers from \texttt{start} to \texttt{start+len}]
+\label{code:optimisation-ub-overflow}
+\begin{minted}[bgcolor=backcolour, linenos]{c}
+#include <stdio.h>
+#include <limits.h>
+int sum_range (int start, int len) {
+  int total = 0;
+  for ( int i = start; i <= start + len ; i += 1) {
+    total += i;
+  }
+  return total;
+}
+
+int main() {
+  printf ( "%d%d\n " , 
+           sum_range (10, 10) ,         // no overflow
+           sum_range (INT_MAX -1 , 2)); // overflow
+}
+\end{minted}
+\end{code}
+
+\Cref{code:optimisation-ub-overflow} lists a program, \texttt{sum\_range}, that sums up the integers from \texttt{start} to \texttt{start + len} (inclusive). It is run twice: first, it sums up \texttt{10} to \texttt{20}. Next, it sums up \texttt{INT\_MAX - 1} to \texttt{INT\_MAX + 1}.
+
+Running the program \textit{without} optimisation, we get
+\[\begin{array}{ll}
+    \$ & \texttt{clang -O0 -o sum sum.c} \\
+    \$ & \texttt{./sum} \\
+       & \texttt{\textbf{165 0}}
+\end{array}\]
+Running the program \textit{with} optimisation, we get
+\[\begin{array}{ll}
+    \$ & \texttt{clang -O3 -o sum sum.c} \\
+    \$ & \texttt{./sum} \\
+       & \texttt{\textbf{165 2147483646}}
+\end{array}\]
+The reason for this difference in behaviour is that we're employing an algebraic simplification. Specifically, we can argue that \texttt{sum\_range(start, len)} can be interpreted as the arithmetic expression
+\[\textsf{start} + (\textsf{start}+1) + \ldots + (\textsf{start}+\textsf{len})\]
+This is just the sum of an arithmetic progression, which we can compute using a formula 
+\[\texttt{start} \times (\texttt{len} + 1) + (\frac{\texttt{len}\times(\texttt{len}+1)}{2})\]
+This formula assumes that overflow does not occur.
+
+\subsubsection{Example 2: Null Pointers}
+Our second example is adapted from \href{https://kristerw.blogspot.com/2017/09/why-undefined-behavior-may-call-never.html}{Krister Walfridsson}. It illustrates how optimisations assume a dereferenced pointer is never null, and therefore can change program behaviour in the presence of null pointers. 
+
+\begin{code}[\texttt{action} is a pointer to a function, initialised to \texttt{NULL}]
+\label{code:optimisation-np-overflow}
+\begin{minted}[bgcolor=backcolour, linenos]{c}
+#include <stdio.h>
+static void (*action)(void) = NULL;
+int main (void) { action (); }
+static void erase_all_files ( void ) { puts ( "Deleting all files..." ); }
+void never_called ( void ) { action = erase_all_files ; }
+\end{minted}
+\end{code}
+
+\Cref{code:optimisation-np-overflow} features a pointer, \texttt{action}, that points to a function that accepts no arguments and returns nothing. \texttt{action}, initially, points to \texttt{NULL}. A function, \texttt{never\_called}, that is never called, sets \texttt{action} to point at a function which prints \texttt{Deleting all files...}. \texttt{main} attempts to dereference \texttt{action}, which is a null pointer.
+
+Running the program \textit{without} optimisation, we get
+\[\begin{array}{ll}
+    \$ & \texttt{clang -O0 -o null null.c} \\
+    \$ & \texttt{./null} \\
+       & \texttt{\textbf{Segmentation fault}}
+\end{array}\]
+Running the program \textit{with} optimisation, we get
+\[\begin{array}{ll}
+    \$ & \texttt{clang -O3 -o null null.c} \\
+    \$ & \texttt{./null} \\
+       & \texttt{\textbf{Deleting all files...}}
+\end{array}\]
+The reason for this is that when a static optimiser looks at the program, it performs a static (compile-time), rather than dynamic (run-time) analysis. That is, it looks at the syntactic body of the program, rather than what functions actually call what. It reasons that when \texttt{main} calls \texttt{action}, either it is \texttt{null} (if \texttt{never\_called} was not called), or it points to \texttt{erase\_all\_files} (if \texttt{never\_called} was called). In the former case, we are dereferencing a \texttt{NULL} pointer, and so the program has undefined behaviour. This does not place any constraints on the optimiser. Hence, we can assume that \texttt{action} is set to \texttt{erase\_all\_files} for future optimisation, for example, inlining. 
+
+\subsubsection{Example 3: Aliasing}
+Our third example illustrates how undefined behaviour that arises through improper aliasing. 
+
+\begin{code}[\texttt{read\_write} writes to the same object through both \texttt{long*} and \texttt{int*}]
+\label{code:optimisation-al-overflow}
+\begin{minted}[bgcolor=backcolour, linenos]{c}
+#include <stdio.h>
+long read_write (long *p , int *q) {
+  *p = 3;
+  *q = 4;
+  return *p;
+}
+int main (void) {
+  long x;
+  printf ("%ld \n" , read_write (&x, (int*)&x ));
+}
+\end{minted}
+\end{code}
+
+\Cref{code:optimisation-al-overflow} features a function, \texttt{read\_write}, that accepts two pointers, \texttt{p} and \texttt{q}. \texttt{p} points to a \texttt{long}, and \texttt{q} to an integer. \texttt{read\_write} writes \texttt{3} into \texttt{p} and \texttt{4} into \texttt{q}, and returns the value of \texttt{p}.
+
+In \texttt{main}, we pass \texttt{read\_write} the same address, \texttt{\&x} for both \texttt{p} and \texttt{q}. 
+
+Running the program \textit{without} optimisation, we get
+\[\begin{array}{ll}
+    \$ & \texttt{clang -O0 -o alias alias.c} \\
+    \$ & \texttt{./alias} \\
+       & \texttt{\textbf{4}}
+\end{array}\]
+Running the program \textit{with} optimisation, we get
+\[\begin{array}{ll}
+    \$ & \texttt{clang -O3 -o alias alias.c} \\
+    \$ & \texttt{./alias} \\
+       & \texttt{\textbf{3}}
+\end{array}\]
+The reason for this is that \textit{technically}, writing to the same object using \texttt{long*} and \texttt{int*} results in undefined behaviour in \texttt{C}. Note, however, that when we run the program without optimisation, the compiler seems to ``let us'' do this. This is because undefined behaviour does not mean ``throw an exception'', it means the compiler can do whatever it wants. However, when we turn on optimisation, the optimiser is allowed to assume that \texttt{p} and \texttt{q} do \textbf{not} alias, i.e. point to different memory locations. This means that the optimiser can assume that writing to \texttt{*q} can never affect the value of \texttt{*p}, and, for example re-order the writes, or execute them in parallel. This changes the behaviour of the program. 
+
+% \section{The Importance of Representation\optional}

@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+\node[fill=darkest!50!background,fill opacity=0.05,draw=darkest,draw opacity=0.5,text opacity=1.0,anchor=west] (after) at ($(before.east) + (20ex,0)$) {
+\begin{lstlisting}[style=ocaml]
+int * float * bool
+\end{lstlisting}
+};
+
+\node[draw,fill=darkest,fill opacity=0.05,minimum width=1.7cm,minimum height=0.5cm,anchor=south] 
+  (flattened) at ($(after.north) + (0,0.25cm)$) { };
+\draw ($(flattened.north west) + (0.1cm,0)$) -- ++ (0,-0.5cm);
+\draw ($(flattened.north west) + (0.6cm,0)$) -- ++ (0,-0.5cm);
+\draw ($(flattened.north west) + (1.1cm,0)$) -- ++ (0,-0.5cm);
+\end{tikzpicture}

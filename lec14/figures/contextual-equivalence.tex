@@ -1,0 +1,20 @@
+\scalebox{0.8}{
+\begin{tikzpicture}
+\node[draw=darkest,draw opacity=0.5]{\parbox{\textwidth}{
+We say that typed L3 programs \begin{tabular}{l}$\Gamma \vdash e_1 : T$\\
+                                             $\Gamma \vdash e_2 : T$\end{tabular} are \redbf{contextually equivalent} if
+
+for every context C such that \begin{tabular}{l}$\cdot \vdash C[e_1] : unit$\\
+                                                $\cdot \vdash C[e_2] : unit$\end{tabular}
+we have either
+
+\begin{enumerate}
+\item\color{darkest} \begin{tabular}{l}$\langle C[e_1], \{\}\rangle \longrightarrow^{\omega}$\\
+                         $\langle C[e_2], \{\}\rangle \longrightarrow^{\omega}$\end{tabular}
+\item\color{darkest} for some \begin{tabular}{l}$s_1$\\$s_2$\end{tabular} we have 
+\begin{tabular}{l}$\langle C[e_1], \{\}\rangle \rightarrow \langle\mathbf{skip},s_1\rangle$\\
+                         $\langle C[e_2], \{\}\rangle \rightarrow \langle\mathbf{skip},s_2\rangle$\end{tabular}
+
+\end{enumerate}
+}};
+\end{tikzpicture}}
