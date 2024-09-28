@@ -9,7 +9,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Colours
-
 \definecolor{mdgrey}{HTML}{8C8C8E}
 \definecolor{examplebg}{HTML}{FFFAF6}
 \definecolor{examplefg}{HTML}{8A3D45}
@@ -32,17 +31,19 @@
 \definecolor{highlight}{HTML}{8A0630}
 \definecolor{darkred}{HTML}{000000}
 \definecolor{darkest}{HTML}{000000}
+\definecolor{codegrey}{rgb}{0.6,0.6,0.6}
+\definecolor{codemagenta}{HTML}{ae2012}
+\definecolor{codeteal}{HTML}{ca6702}
+\definecolor{codepurple}{HTML}{005f73}
+\definecolor{backcolour}{HTML}{F8F8FB}
+\definecolor{background}{HTML}{F0F0F4}
+\definecolor{darkest}{gray}{0.3}
+\definecolor{nonterminal}{HTML}{006B71}
+\definecolor{selected}{HTML}{00AB97}
+\definecolor{grey}{gray}{0.5}
+\definecolor{lightgrey}{gray}{0.9}
+\definecolor{verylightgrey}{rgb}{0.96,0.96,0.965}
 
-\newcommand{\redbf}[1]{\textcolor{darkred}{\textbf{#1}}}
-
-% \AtBeginDocument{%
-%   \setlength{\abovedisplayskip}{0.25\abovedisplayskip}%
-%   \setlength{\belowdisplayskip}{0.4\belowdisplayskip}%
-%   \setlength{\abovedisplayshortskip}{0.25\abovedisplayshortskip}%
-%   \setlength{\belowdisplayshortskip}{0.4\belowdisplayshortskip}%
-% }
-
-\ifeuannoindent
 \mdfsetup{
     skipabove=0.8\baselineskip,
     skipbelow=0.3\baselineskip,
@@ -52,18 +53,6 @@
     innerrightmargin=12pt,
     hidealllines=true
 }
-\else
-\mdfsetup{
-    skipabove=0.5\baselineskip,
-    skipbelow=0.5\baselineskip,
-    innertopmargin=10pt,
-    innerbottommargin=14pt,
-    innerleftmargin=12pt,
-    innerrightmargin=12pt,
-    hidealllines=true
-}
-\fi
-
 
 % Proof
 \mdfdefinestyle{mdproofbox}{
@@ -339,7 +328,6 @@
 
 %\usepackage[tocindentauto]{tocbasic}
 %\usetocstyle{KOMAlike}
-
 
 \newenvironment{aside}[1]{
     \rule{\textwidth}{0.025cm}

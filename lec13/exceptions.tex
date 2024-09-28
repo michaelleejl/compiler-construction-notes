@@ -769,7 +769,7 @@ let x  = read() in
 let y  = read() in
 join x y
 \end{minted}
-More realistically, assuming we have a \texttt{buffer} that holds a list of characters, our \texttt{read} handler might (1) find the first line in the buffer -- that is, all characters up to but not including the first \texttt{\\n}, or the entire list if no element is \texttt{\n}, (2) drop the first line, including the \texttt{\\n}, from the buffer, and (3) pass the first line, excluding the newline, to the continuation
+More realistically, assuming we have a \texttt{buffer} that holds a list of characters, our \texttt{read} handler might (1) find the first line in the buffer -- that is, all characters up to but not including the first \texttt{\\n}, or the entire list if no element is \texttt{\\n}, (2) drop the first line, including the \texttt{\\n}, from the buffer, and (3) pass the first line, excluding the newline, to the continuation
 \begin{minted}[bgcolor = backcolour, linenos]{ocaml}
 let read2 = handler {read(_, k) -> let line = read_line(buffer) in 
                                    update_buffer(line);

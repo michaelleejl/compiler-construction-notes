@@ -3,14 +3,14 @@
 
 \gcblock{node-0}{(0,0)}
 
-\node[opacity=\arrowOpacity] (root) at ($(node-0) + (-3cm,-1cm)$) { \Large root };
+\node[] (root) at ($(node-0) + (-3cm,-1cm)$) { \Large root };
 
-\gcblock{node-1}{($(node-0) + (-0.5cm,2cm)$)}
-\gcblock{node-2}{($(node-0) + (3cm,2cm)$)}
-\gcblock{node-3}{($(node-1) + (-1cm,2cm)$)}
-\gcblock{node-5}{($(node-3) + (-1cm,2cm)$)}
+\gcblock{node-1}{($(node-0) + (-0.5cm,2cm)$)};
+\gcblock{node-2}{($(node-0) + (3cm,2cm)$)};
+\gcblock{node-3}{($(node-1) + (-1cm,2cm)$)};
+\gcblock{node-5}{($(node-3) + (-1cm,2cm)$)};
 
-\begin{scope}[opacity=\arrowOpacity]
+\begin{scope}
 \draw[->] (root) -- (node-0.south west);
 \draw<1-2>[->] \fieldOne{node-0} -- (node-1.south west);
 \draw<3->[->,darkred,line width=1.2pt] \fieldOne{node-0} -- (node-1.south west);

@@ -131,7 +131,7 @@ As an example, consider if the following programs are equal:
     \texttt{map f (map g l)} & \questioneq & \texttt{map (fun x -> f (g x)) l} \\
     \texttt{if true then $e_1$ else $e_2$} & \questioneq & e_1 \\
     \texttt{loop\_forever(); print ``Done''} & \questioneq & \texttt{loop\_forever(); print ``Not Done''} \\
-    \texttt{fold_right f l u} & \questioneq & \texttt{fold_left (fun x y -> f y x) u (rev l)}
+    \texttt{fold\_right f l u} & \questioneq & \texttt{fold\_left (fun x y -> f y x) u (rev l)}
 \end{array}\]
 The first three are potentially invalid, whereas the last three are always valid. 
 
@@ -144,9 +144,9 @@ The first three are potentially invalid for the following reasons:
 
 \subsubsection{Preserving Semantics Involves Answering Undecidable Questions\optional}
 It turns out that preserving semantics is not just hard, but frequently undecidable. Let us take the most ``obvious'' equality from the previous section
-\[\texttt{if true then $e_1$ else $e_2$} & \cong & e_1 \\\]
+\[\texttt{if true then $e_1$ else $e_2$} \cong e_1 \]
 Is it possible to develop an optimiser that always performs this optimisation? The answer, unfortunately, is no. For example, consider the program
-\[\texttt{if $(x+1)\times(x+1) = x^2 + 2x + 1$ then $e_1$ else $e_2$} & \cong & e_1 \\\]
+\[\texttt{if $(x+1)\times(x+1) = x^2 + 2x + 1$ then $e_1$ else $e_2$} \cong e_1 \]
 The predicate, $(x+1)\times(x+1) = x^2 + 2x + 1$ is obviously true, but we want to develop an optimiser that can detect all such tautologies. In other words, we want to \textit{decide} the equality of arithmetic statements. However, arithmetic is undecidable (c.f. the Halting Problem, \textsf{Part IB Computation Theory}). Hence, any optimiser that we come up with will either miss some opportunities for optimisation, or will perform non-valid optimisations.
 
 Clearly, we prefer the latter to the former. We want to prove that our optimiser only performs valid optimisations -- we say such an optimiser is \textit{safe}. 
@@ -618,7 +618,7 @@ We will build up the notion of an equivalence graph incrementally, followed by a
 
 For example, in the expression \texttt{(a * 2)/2}, we only want to use \textbf{one} object for \texttt{2}. This leads to a graph that looks as such
 
-\tikzset{e node/.style={rectangular, draw, rounded corners=0.5cm, minimum width = 2cm, minimum height = 2cm}}
+\tikzset{e node/.style={draw, rounded corners=0.5cm, minimum width = 2cm, minimum height = 2cm}}
 
 \begin{center}
     \import{figures/e-graphs}{eg-1}
@@ -715,11 +715,11 @@ We said an optimisation is valid (safe, or correct) if it preserves program sema
 What happens if a program has no semantics? That is, its semantics is undefined?
 
 For example, in \textsf{Part IB Semantics of Programming Languages}, when defining the semantics of \textit{L1}, you wrote down two rules for function application
-\begin{prooftree}
+\[
         \AxiomC{}
         \UnaryInfC{$(\lambda x. e) v \leadsto e[v/x]$}
         \DisplayProof
-\end{prooftree}
+\]
 You did not write down any rule that can handle, for example applying an integer to another integer
 \[3 \; 5\]
 The behaviour of this program is said to be \textit{undefined}.

@@ -1,58 +1,13 @@
 \documentclass[12pt,a4paper,twoside,openany, chapterprefix=on]{scrbook} 
+\usepackage{euan}
 
-\usepackage{url}
-\def\UrlBreaks{\do\/\do-}
-\usepackage{catchfile}
-\usepackage{epigraph}
-\usepackage[export]{adjustbox}
-\usepackage[normalem]{ulem}
-\usepackage{bold-extra}
-\usepackage{hhline}
-\usepackage{cprotect}
-\usepackage[square, numbers]{natbib}
-\usepackage{booktabs}
-\usepackage{multirow}
-% \usepackage{listings}
-\usepackage{tcolorbox}
-\usepackage{tabularx}
-\usepackage{tikz-qtree}
-\usepackage{tikz-qtree-compat}
-\usepackage{caption}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\usepackage{array}
-\usepackage{colortbl}
-\tcbuselibrary{skins}
-\usepackage[
-	fancytheorems, 
-	noindent, 
-	fancyproofs,
-	comments
-]{euan}
-\usepackage[textsize=tiny, textwidth=60,backgroundcolor=yellow, linecolor=yellow, tickmarkheight=10]{todonotes}
+\newcommand{\redbf}[1]{\textcolor{darkred}{\textbf{#1}}}
 
-\usepackage{float}
-\usepackage[margin=2cm]{geometry}
-\usepackage{ifthen}
-
-\definecolor{codegrey}{rgb}{0.6,0.6,0.6}
-\definecolor{codemagenta}{HTML}{ae2012}
-\definecolor{codeteal}{HTML}{ca6702}
-\definecolor{codepurple}{HTML}{005f73}
-\definecolor{backcolour}{HTML}{F8F8FB}
-\definecolor{background}{HTML}{F0F0F4}
-\definecolor{darkest}{gray}{0.3}
-\definecolor{nonterminal}{HTML}{006B71}
-\definecolor{selected}{HTML}{00AB97}
-
-
-\definecolor{grey}{gray}{0.5}
-\definecolor{lightgrey}{gray}{0.9}
-\definecolor{verylightgrey}{rgb}{0.96,0.96,0.965}
 \let\oldtabularx\tabularx
 \renewcommand*{\tabularx}{\rowcolors{1}{}{white}\oldtabularx}
 \colorlet{selected}{selected}
-\usepackage[most]{tcolorbox}
+\tcbuselibrary{skins}
+
 \newtcolorbox{tcbleftbar}[1][]{
 blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt}{0pt}{grey}, #1
 }
@@ -62,8 +17,6 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
         highlight math style={enhanced}
         }
         
-\usepackage{makecell}
-\usepackage{xcolor}
 \usetikzlibrary{intersections}
 \usetikzlibrary{bending,shapes,backgrounds,patterns,shapes.misc}
 \usetikzlibrary{positioning,arrows,automata,arrows.meta,calc}
@@ -91,70 +44,10 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
 \renewcommand*\dictumauthorformat[1]{--- #1}
 \renewcommand*\dictumrule{}
 
-\usepackage{import}
-
 \raggedbottom
 
 \pagestyle{plain}
 
-% \lstdefinestyle{mystyle}{
-%     backgroundcolor=\color{backcolour},   
-%     commentstyle=\color{codeteal},
-%     keywordstyle=\color{codepurple}\fontfamily{lmtt}\fontseries{b}\selectfont,
-%     numberstyle=\tiny\color{codegrey},
-%     stringstyle=\color{codemagenta},
-%     basicstyle=\ttfamily\footnotesize,
-%     breakatwhitespace=false,         
-%     breaklines=true,                 
-%     captionpos=b,                    
-%     keepspaces=true,                 
-%     numbers=left,                    
-%     numbersep=5pt,                  
-%     showspaces=false,                
-%     showstringspaces=false,
-%     showtabs=false,                  
-%     tabsize=2
-% }
-
-% % \usepackage{pxfonts}
-% \lstdefinelanguage{Python}{
-%   keywords={sum},
-%   % keywordstyle=\color{blue}\bfseries,
-%   % ndkeywords={class, export, boolean, throw, implements, import, this},
-%   % ndkeywordstyle=\color{darkgray}\bfseries,
-%   % identifierstyle=\color{black},
-%   % sensitive=false,
-%   comment=[l]{#},
-%   morecomment=[s]{/*}{*/},
-%   % commentstyle=\color{purple}\ttfamily,
-%   % stringstyle=\color{red}\ttfamily,
-%   morestring=[b]',
-%   morestring=[b]"
-% }
-
-% \lstdefinelanguage{R}{
-%   keywords={sum, <-, c},
-%   % keywordstyle=\color{blue}\bfseries,
-%   % ndkeywords={class, export, boolean, throw, implements, import, this},
-%   % ndkeywordstyle=\color{darkgray}\bfseries,
-%   % identifierstyle=\color{black},
-%   % sensitive=false,
-%   comment=[l]{#},
-%   morecomment=[s]{/*}{*/},
-%   % commentstyle=\color{purple}\ttfamily,
-%   % stringstyle=\color{red}\ttfamily,
-%   morestring=[b]',
-%   morestring=[b]"
-% }
-
-% \lstset{style=mystyle}
-
-\usepackage{caption}
-\usepackage{subcaption}
-
-\usepackage{longtable}
-
-\usepackage[hyperfootnotes=false]{hyperref}
 \makeatletter
 \Hy@AtBeginDocument{%
   \def\@pdfborder{0 0 1}% Overrides border definition set with colorlinks=true
@@ -172,7 +65,6 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
     urlbordercolor = linkcolor,
     citebordercolor = white!0
 }
-\usepackage[nameinlink]{cleveref}
 
 \newcommand\blfootnote[1]{%
   \begin{NoHyper}%
@@ -186,24 +78,13 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
 
 \setlength{\epigraphwidth}{0.6\textwidth}
 \setlength{\epigraphrule}{0pt}
+\makeatletter
+\newlength\epitextskip
+\pretocmd{\@epitext}{\em}{}{}
+\apptocmd{\@epitext}{\em}{}{}
+\patchcmd{\epigraph}{\@epitext{#1}\\}{\@epitext{#1}\\[\epitextskip]}{}{}
+\makeatother
 
-\usepackage{etoolbox}
-    \makeatletter
-    \newlength\epitextskip
-    \pretocmd{\@epitext}{\em}{}{}
-    \apptocmd{\@epitext}{\em}{}{}
-    \patchcmd{\epigraph}{\@epitext{#1}\\}{\@epitext{#1}\\[\epitextskip]}{}{}
-    \makeatother
-
-\usepackage{newfloat}
-\usepackage{inconsolata}
-% \newenvironment{code}{\captionsetup{type=listing}}{}
-\usepackage[section, newfloat]{minted}
-\usepackage{listings}
-\lstdefinestyle{manual}{
-  basicstyle=\linespread{0.88}\ttfamily,
-  escapeinside=!!
-}
 \lstdefinelanguage{OCaml}{
   keywords={
     and,as,assert,asr,begin,class,constraint,do,done,downto,effect,else,end,exception,
@@ -297,11 +178,10 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
 \crefname{codeCounter}{listing}{listings}
 \Crefname{codeCounter}{Listing}{Listings}
 
-%\usepackage{natbib}
-\bibliographystyle{abbrvnat}
+% \bibliographystyle{abbrvnat}
 
 \setkomafont{chapterprefix}{\Large}
-\setlength{\footnotemargin}{2mm}
+% \setlength{\footnotemargin}{2mm}
 
 \usetikzlibrary{arrows}
 \usetikzlibrary{positioning}
@@ -343,7 +223,7 @@ blanker, left=1em, colback=white, before=\par\noindent, borderline west = {0.5pt
 \import{lec08}{cps}
 
 \part{Advanced Topics}
-\import{lec12}{garbage-collection}
+% \import{lec12}{garbage-collection}
 \import{lec13}{exceptions}
 \import{lec14}{optimisation}
 

@@ -1,71 +1,116 @@
+\usepackage[top=2cm,
+            bottom=5cm,
+            left=2cm,
+            right=2cm]{geometry}
 \usepackage{xcolor}
 \usepackage{amsmath, amssymb, amsthm, amsfonts, mathtools, thmtools}
-
+\usepackage{bussproofs}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc} 
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-}
 \usepackage{stmaryrd}
+\usepackage{parskip}
+\usepackage{catchfile}
+\usepackage{epigraph}
+\usepackage[export]{adjustbox}
+\usepackage[normalem]{ulem}
+\usepackage{bold-extra}
+\usepackage{hhline}
+\usepackage{cprotect}
+\usepackage[square, numbers]{natbib}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{tikz-qtree}
+\usepackage{tikz-qtree-compat}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage[most]{tcolorbox}
+\usepackage[textsize=tiny, textwidth=60,backgroundcolor=yellow, linecolor=yellow, tickmarkheight=10]{todonotes}
+\usepackage{float}
+\usepackage{ifthen}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{import}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{longtable}
+\usepackage[hyperfootnotes=false]{hyperref}
+\usepackage{newfloat}
+\usepackage{inconsolata}
 
-% \usepackage[hyperfootnotes=false]{hyperref}
+\usepackage[section, newfloat]{minted}
+\usepackage{listings}
+\lstdefinestyle{manual}{
+  basicstyle=\linespread{0.88}\ttfamily,
+  escapeinside=!!
+}
+\usepackage{algpseudocode}
+\usepackage{etoolbox}
+\usepackage[nameinlink]{cleveref}
+% \usepackage{stmaryrd}
 
 % \usepackage{breakurl}
 
-\usepackage{graphicx}
-\usepackage{subcaption}
-\usepackage{caption}
-\usepackage{svg}
+% \usepackage{graphicx}
+% % \usepackage{subcaption}
+% % \usepackage{caption}
+% \usepackage{svg}
 
-\usepackage{booktabs}
-\usepackage{longtable}
+% % \usepackage{booktabs}
+% % \usepackage{longtable}
 
-\usepackage[separate-uncertainty, binary-units]{siunitx}
+% % \usepackage[separate-uncertainty, binary-units]{siunitx}
 
-\usepackage[square, numbers]{natbib}
-%\usepackage{natbib}
 \bibliographystyle{abbrvnat}
 
-\usepackage{tikz}
-\usetikzlibrary{automata, positioning, arrows}
-\usepackage{pgfplots, pgfplotstable}
+% % \usepackage{tikz}
+% % \usetikzlibrary{automata, positioning, arrows}
+% % \usepackage{pgfplots, pgfplotstable}
 
 \usepackage[framemethod=TikZ]{mdframed}
-\usepackage{textcomp}
-\usepackage{enumitem}
+% \usepackage{textcomp}
+% \usepackage{enumitem}
 
-\usepackage{moresize}
-\usepackage{anyfontsize}
+% \usepackage{moresize}
+% \usepackage{anyfontsize}
 
-\usepackage{alltt}
+% \usepackage{alltt}
 
-% \usepackage{listings}
+% % % \usepackage{listings}
 
-\usepackage{etoolbox}
+% \usepackage{etoolbox}
 
-\ifeuannoindent
-\usepackage{parskip}
-\fi
+% % \ifeuannoindent
+% % \fi
 
-\usepackage{scrhack}
+% \usepackage{scrhack}
 
-\ifdraft
-\usepackage[draft]{commenting}
-\else
-\usepackage[nompar]{commenting}
-\fi
+% % \ifdraft
+% % \usepackage[draft]{commenting}
+% % \else
+% % \usepackage[nompar]{commenting}
+% % \fi
 
-\usepackage{algpseudocode}
 
-\declareauthor{eo}{EO}{blue}
-\authorcommand{eo}{comment}
+% % \declareauthor{eo}{EO}{blue}
+% % \authorcommand{eo}{comment}
 
-\declareauthor{nt}{NOTES}{purple}
-\authorcommand{nt}{comment}
+% % \declareauthor{nt}{NOTES}{purple}
+% % \authorcommand{nt}{comment}
 
-\declareauthor{an}{ANSWERS}{green}
-\authorcommand{an}{comment}
+% % \declareauthor{an}{ANSWERS}{green}
+% % \authorcommand{an}{comment}
 
-\declareauthor{todo}{TODO}{orange}
-\authorcommand{todo}{comment}
+% % \declareauthor{todo}{TODO}{orange}
+% % \authorcommand{todo}{comment}
 
-\declareauthor{mh}{MH}{blue}
-\authorcommand{mh}{comment}
+% % \declareauthor{mh}{MH}{blue}
+% % \authorcommand{mh}{comment}
 
 % baskervald with swash: more ligatures, 
 % and osf: old style (tosf) in text, tlf in math, 
@@ -74,9 +119,9 @@
 % \usepackage[baskervaldx,cmintegrals,bigdelims,vvarbb]{newtxmath}
 % \usepackage[cal=boondoxo]{mathalfa} % mathcal from STIX, unslanted a bit
 
-\usepackage{bussproofs}
+% \usepackage{bussproofs}
 
-\usepackage{multirow}
-\usepackage{multicol}
+% \usepackage{multirow}
+% \usepackage{multicol}
 
-\usepackage{fancyhdr}
+% \usepackage{fancyhdr}
