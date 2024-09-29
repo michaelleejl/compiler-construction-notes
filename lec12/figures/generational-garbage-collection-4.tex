@@ -32,15 +32,15 @@
 
 %% \draw<2->[->,line width=1.2pt] (root) -- (rnode-0.south west);
 
-\only{\gcblock{promoted-node-0}{($(major.south west) + (1.6cm,1cm)$)}}
-\only{\gcblock{promoted-node-1}{($(promoted-node-0) + (3.2cm,0cm)$)}}
+{\gcblock{promoted-node-0}{($(major.south west) + (1.6cm,1cm)$)}}
+{\gcblock{promoted-node-1}{($(promoted-node-0) + (3.2cm,0cm)$)}}
 
 {
 \draw[->,line width=1.2pt,rounded corners] \fieldOne{promoted-node-0} -- ++(0.3cm,0.9cm) -- ++(1.7cm,0cm) -- (promoted-node-1.south west);
 }
 
 
-\only{\draw[->,line width=1.2pt] \fieldTwo{promoted-node-1} -- (rnode-1.south west);}
+{\draw[->,line width=1.2pt] \fieldTwo{promoted-node-1} -- (rnode-1.south west);}
 %% \draw<3->[->,line width=1.2pt] \fieldOne{rnode-0} -- (rnode-1.south west);
 
 \draw[->] \fieldOne{rnode-0} -- (rnode-1.south west);

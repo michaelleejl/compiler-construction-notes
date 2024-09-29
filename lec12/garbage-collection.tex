@@ -424,7 +424,7 @@ fun map(xs: list<a>, f: a -> b): list<b> {
 And finally, apply \texttt{dup}/\texttt{drop} fusion
 
 \begin{code}[Pushing \texttt{dup} into each branch]
-\label{code:koka-pushdown-dup}
+\label{code:koka-dup-drop-fusion}
 \begin{minted}[bgcolor=backcolour, escapeinside=!!]{Koka}
 fun map(xs: list<a>, f: a -> b): list<b> {
  match xs{

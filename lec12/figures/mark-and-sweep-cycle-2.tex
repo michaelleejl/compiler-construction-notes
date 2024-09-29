@@ -12,10 +12,10 @@
 
 \begin{scope}
 \draw[->] (root) -- (node-0.south west);
-\draw<1-2>[->] \fieldOne{node-0} -- (node-1.south west);
-\draw<3->[->,darkred,line width=1.2pt] \fieldOne{node-0} -- (node-1.south west);
-\draw<1-3>[->] \fieldTwo{node-0} -- (node-2.south west);
-\draw<4->[->,darkred,line width=1.2pt][->] \fieldTwo{node-0} -- (node-2.south west);
+\draw[->] \fieldOne{node-0} -- (node-1.south west);
+\draw[->,darkred,line width=1.2pt] \fieldOne{node-0} -- (node-1.south west);
+\draw[->] \fieldTwo{node-0} -- (node-2.south west);
+\draw[->,darkred,line width=1.2pt][->] \fieldTwo{node-0} -- (node-2.south west);
 \draw[->] \fieldOne{node-3} -- (node-5.south west);
 \draw[rounded corners=0.5cm,->] \fieldOne{node-5} -- ++ (-0.5cm,1cm) -- ++ (-1cm,-0.5cm) -- ++ (0.3cm,-1cm) to[out=-90,in=135] (node-3.south west);
 \draw[->] \fieldTwo{node-3} to[out=0,in=135] (node-2.south west);

@@ -383,29 +383,6 @@ location = {Copenhagen, Denmark},
 series = {FPCA '93}
 }
 
-@inproceedings{zhao-2022,
-author = {Zhao, Wenyu and Blackburn, Stephen M. and McKinley, Kathryn S.},
-title = {Low-latency, high-throughput garbage collection},
-year = {2022},
-isbn = {9781450392655},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-url = {https://doi.org/10.1145/3519939.3523440},
-doi = {10.1145/3519939.3523440},
-abstract = {To achieve short pauses, state-of-the-art concurrent copying collectors such as C4, Shenandoah, and ZGC use substantially more CPU cycles and memory than simpler collectors. They suffer from design limitations: i) concurrent copying with inherently expensive read and write barriers, ii) scalability limitations due to tracing, and iii) immediacy limitations for mature objects that impose memory overheads.
-
-This paper takes a different approach to optimizing responsiveness and throughput. It uses the insight that regular, brief stop-the-world collections deliver sufficient responsiveness at greater efficiency than concurrent evacuation. It introduces LXR, where stop-the-world collections use reference counting (RC) and judicious copying. RC delivers scalability and immediacy, promptly reclaiming young and mature objects. RC, in a hierarchical Immix heap structure, reclaims most memory without any copying. Occasional concurrent tracing identifies cyclic garbage. LXR introduces: i) RC remembered sets for judicious copying of mature objects; ii) a novel low-overhead write barrier that combines coalescing reference counting, concurrent tracing, and remembered set maintenance; iii) object reclamation while performing a concurrent trace; iv) lazy processing of decrements; and v) novel survival rate triggers that modulate pause durations.
-
-LXR combines excellent responsiveness and throughput, improving over production collectors. On the widely-used Lucene search engine in a tight heap, LXR delivers 7.8\texttimes{} better throughput and 10\texttimes{} better 99.99\% tail latency than Shenandoah. On 17 diverse modern workloads in a moderate heap, LXR outperforms OpenJDK’s default G1 on throughput by 4\% and Shenandoah by 43\%.},
-booktitle = {Proceedings of the 43rd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
-pages = {76–91},
-numpages = {16},
-keywords = {Reference counting, Garbage collection},
-location = {San Diego, CA, USA},
-series = {PLDI 2022}
-}
-
-
 @article{pretnar-2015,
 	abstract = {This paper is a tutorial on algebraic effects and handlers. In it, we explain what algebraic effects are, give ample examples to explain how handlers work, define an operational semantics and a type & effect system, show how one can reason about effects, and give pointers for further reading.},
 	author = {Matija Pretnar},

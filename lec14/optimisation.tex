@@ -597,7 +597,7 @@ We can visualise our expression as a node in a graph. A re-write rule transition
     \node (start) {\texttt{(a * 2) / 2}};
     \node[anchor=west] (one) at ($(start.east) + (5ex, 5ex)$) {\texttt{a * (2/2)}};
     \node[anchor=west] (two) at ($(one.west) + (0ex, -5ex)$) {\texttt{(a << 1) / 2}};
-    \node[anchor=west] (three) at ($(two.west) + (0ex, -5ex)$) {\texttt{(a * 1) * 2) / 2}};
+    \node[anchor=west] (three) at ($(two.west) + (0ex, -5ex)$) {\texttt{((a * 1) * 2) / 2}};
 
     \draw[->] (start.east) to (one.west);
     \draw[->] (start.east) to (two.west);
@@ -605,6 +605,10 @@ We can visualise our expression as a node in a graph. A re-write rule transition
     
 \end{tikzpicture}
 \end{center}
+
+This graph is a syntactic approximation of the set of all expressions that have equivalent
+meaning, according to some formal definition of ``equivalence'' $\cong$. In mathematical terminology
+(\textsf{Part IA Discrete Mathematics}), this is an equivalence class.
 
 To pick an expression, we can define a cost function $f$ for each expression in the graph. Our goal is to search the graph for the expression with the lowest cost. This is then, at least conceptually, a standard graph search problem, of the form you will see in \textsf{Part IB Artificial Intelligence}. Indeed, it can be solved as such. 
 
@@ -615,16 +619,185 @@ There are two main ways to efficiently search a very big / infinite graph. The f
 The second, which we will present here, is to try to come up with a \textit{finite}, and small, representation of a possibly \textit{infinite} graph -- in the same sense that a circle is a finite representation of an infinite set of points. We can then perform ``search'' over this finite representation. Our finite representation, known as an \textit{equivalence graph}, will significantly resemble Binary Decision Diagrams (\textsf{Part IB Logic and Proof}). 
 
 We will build up the notion of an equivalence graph incrementally, followed by a formal definition. The first key idea is \textbf{sharing}. We note that in the same expression, you might have many sub-expressions. To save space, we do not want to duplicate these sub-expressions, but rather share them. 
+We call each sub-expression an equivalence node, or e-node. 
 
-For example, in the expression \texttt{(a * 2)/2}, we only want to use \textbf{one} object for \texttt{2}. This leads to a graph that looks as such
+For example, in the expression \texttt{(a * 2)/2}, we only want to use \textbf{one} e-node for \texttt{2}. Both the \texttt{*} and \texttt{/} expressions 
+should point to the same e-node. This leads to a graph that looks as such
 
-\tikzset{e node/.style={draw, rounded corners=0.5cm, minimum width = 2cm, minimum height = 2cm}}
+\tikzset{e node/.style={draw, rounded corners=0.1cm, minimum width = 1cm, minimum height = 1cm, font=\ttfamily}}
+\tikzset{e class/.style={draw, dashed, rounded corners=0.1cm, minimum width = 1.4cm, minimum height = 1.4cm, font=\ttfamily}}
 
 \begin{center}
     \import{figures/e-graphs}{eg-1}
 \end{center}
 
-For our purposes, a finite representation 
+However, we do not just want to share e-nodes. We want to be able to swap out an e-node for any equivalent e-node (that we find via a re-write rule). 
+For example, we might wish to swap out \texttt{2} for \texttt{2 * 1}. 
+
+Hence, we augment our graph. Rather than pointing to a specific e-node, \texttt{2}, we point to all known e-nodes that are equivalent to \texttt{2}.
+This forms an equivalence class, known as an e-class. We will write $[\texttt{2}]$ to refer to the e-class, and \texttt{2} to refer to the e-node. 
+Diagrammatically, we augment our diagram by drawing a dotted box around our e-node, representing the e-class, and re-wiring
+our arrows to point to the class. 
+
+\begin{center}
+  \import{figures/e-graphs}{eg-2}
+\end{center}
+
+Note how our e-node now points at an e-graph, rather than another e-node. This means our \texttt{$[$a$]$*$[$2$]$} e-node, for example, no longer means 
+``the term \texttt{a * 2}'', but rather ``$e_1 \texttt{ * } e_2$ such that we have rewritten \texttt{a} to $e_1$ and  we have rewritten \texttt{2} to $e_2$''.
+
+Of course, currently, our e-classes only contain \texttt{a} and \texttt{2}, respectively, because we have not applied any re-write rules. 
+Applying a re-write rule \textit{extends} an e-class by adding an e-node to it. 
+We can thus extend our e-graph via a re-write rule by extending one of its constitutent e-classes. 
+For example, given the re-write rule $\texttt{x * 2} \to \texttt{x << 1}$, 
+we know that \texttt{x << 1} is equivalent to (can be substituted for) \texttt{x * 2}. Hence, we can extend our graph as follows
+
+\begin{center}
+  \import{figures/e-graphs}{eg-4}
+\end{center}
+
+Note that we have \textbf{added} an e-node (the \texttt{$[\texttt{a}]$<<$[\texttt{1}]$} node) to an existing e-class. 
+Further, we have added a new e-class, $[\texttt{1}]$, to our graph.
+
+We can do something similar for the re-write rule $\texttt{(x * y) / z} \to \texttt{x * (y / z)}$.
+\begin{center}
+  \import{figures/e-graphs}{eg-5}
+\end{center}
+
+Applying the $\texttt{x / x} \to \texttt{1}$ re-write rule is interesting, because it causes us to \textit{merge} two e-classes: 
+$[[\texttt{2}] \texttt{/} [\texttt{2}]]$ and $[1]$.
+
+\begin{center}
+  \import{figures/e-graphs}{eg-6}
+\end{center}
+
+Further, applying the $\texttt{1 * x} \to \texttt{x}$ re-write rule, we can merge the $[1]\texttt{*}[\texttt{a}]$ and $[\texttt{a}]$ e-classes.
+
+\begin{center}
+  \import{figures/e-graphs}{eg-7}
+\end{center}
+
+If we continue to apply our re-write rules, we find that our e-graph does not grow further. We say that the graph as \textit{saturated} \footnote{this is a fixed-point}, and can 
+now be searched for an optimal representation. There are multiple search techniques, with simple ones just picking the ``best'' e-node in each e-class. 
+
+The technique we have just described is known as the equality saturation technique. We should note, however, that ``saturation'' might not always happen. 
+For this reason, equality saturation also uses a timeout, that stops the process and extracts a term when that timeout is reached, even if the graph is not saturated. 
+
+When the graph does not saturate, then this technique only explores a sub-graph of the full graph, and may not find the optimal solution. Hence, \textit{how} we explore the graph, 
+specifically, the \textit{order} in which we apply the re-write rules, matters. Techniques like \href{https://www.cl.cam.ac.uk/~ey204/pubs/MPHIL_P3/2022_Zak.pdf}{reinforcement learning}
+have been used to find an ``optimal'' ordering. 
+
+\subsubsection{Implementing Equality Saturation}
+In order to implement this technique, we need to implement the e-node, e-class, and e-graph constructs. 
+
+We will implement the e-class and e-node jointly, since they are defined in terms of each other. 
+
+First, we should distinguish between an e-class and its name. An e-class might have multiple names. For example,
+$[\texttt{1}]$ and $[[\texttt{2}] \texttt{/} [\texttt{2}]]$ are two names for the same e-class. For efficiency reasons, we
+will define operations on e-class \textit{names}, rather than e-classes. We will create a look-up table that maps e-class names to e-classes.
+
+Once we have defined the notion of an e-class name, we can then define the e-node as either:
+\begin{enumerate}
+  \item A constant, like \texttt{1} or \texttt{2}, (alternatively, a $0$-ary constructor)
+  \item An $n$-ary constructor paired with a list of e-class names $c_1, \ldots, c_n$.
+\end{enumerate}
+Further, we can define the e-class as a set of e-nodes. 
+
+Having defined the e-node, and the e-class, we can define the e-graph. 
+
+The e-graph needs to maintain a set of e-classes. We will add, but not remove, e-classes from the e-graph. 
+It should support two additional operations:
+\begin{enumerate}
+  \item \keyword{merge}, which merges two e-classes, 
+  \item \keyword{lookup}, which takes an e-node $n$, and returns its e-class in the e-graph (or null)
+\end{enumerate}
+
+To implement these operations, we need to maintain three data structures:
+\begin{enumerate}
+  \item $M$: A map from e-class names to e-classes. If I pass $M$ an e-class name, I should get back all e-nodes in that e-class.
+  \item $H$: A map, or hashcons, from e-nodes to e-class names. If I pass $H$ an e-node, I should get back the name of the e-class to which it belongs.
+  \item $U$: A Union-Find data structure, which maintains the equivalence relation between e-class names. In other words, it tells me when two e-class 
+             names refer to the same e-class.
+\end{enumerate}
+
+Recall that the Union-Find data structure relies on the concept of a \textit{leader}. All e-class names that refer to the same e-class are 
+\textit{aliases} of each other. The Union-Find data structure will arbitrarily designate one the leader, or representative. Think of this as the 
+``true'' name of the e-class. All other e-class names will be aliases of that leader. 
+We say that the leader is the canonical name for the e-class.
+Building on this concept, it exposes two operations:
+\begin{enumerate}
+  \item \keyword{find\_leader}, which takes an e-class name, and returns the leader.
+  \item \keyword{union}, which takes two e-class names, and records that they are ``the same'', by making one the leader of the other.
+\end{enumerate}
+We thus use \keyword{find\_leader} to determine if two e-class names refer to the same e-class, and the \keyword{union} operation to merge 
+two e-classes. Note that one \keyword{merge} may generate more \keyword{merge}s. For example, when we realise that e-class names $x$ and 
+$y$ are the same, we will also realise e-class names $x \texttt{/2}$ and $y \texttt{/2}$ are the same. We need to do these merges 
+to keep our e-graph ``correct''. Specifically, we need to maintain \textit{The Congruence Invariant}: if two e-nodes, $n_1$ and $n_2$ represent equivalent sets of terms, 
+then their e-class names $H(n_1)$ and $H(n_2)$ should have the same leader, $U$\texttt{.find\_leader}($H(n_1)$) = $U$\texttt{.find\_leader}($H(n_2)$).
+If we do not maintain this invariant, we may fail to discover potential re-write opportunities. 
+
+Implementing \keyword{lookup} is slightly more subtle. Since an e-node has a list of e-class names, to \keyword{lookup} an e-node in our e-graph,
+we need to look for an e-node with an equivalent list of e-class names. That is, an e-node $[\texttt{1}] \texttt{/} [\texttt{1}]$, can also be
+written $[\texttt{1*1}] \texttt{/} [\texttt{1}]$, since the e-class names $[\texttt{1*1}]$ and $[\texttt{1}]$ are equivalent. 
+
+Therefore, internally, we need to \keyword{canonicalize} the e-node. \keyword{canonicalize} is the e-node equivalent of \keyword{find\_leader}. 
+It finds a canonical representation for the e-node. For efficiency, we want to implement \keyword{lookup}$(n)$ as $H\keyword{canonicalize}(n)$. In order to do this, 
+we need to maintain \textit{The Hashcons Invariant}. For any e-node $n$ in the e-graph, the hashcons $H$ should have an entry for $\keyword{canonicalize}(n)$,
+and $H(\keyword{canonicalize}(n)) = H(n)$.
+
+Our equality saturation algorithm will thus look like
+
+\begin{lstlisting}[style=pseudocode]
+while e-graph changes and not timeout: 
+  for each re-write rule r:
+    for each e-node n1 in the e-graph:
+      if r can be applied to n1:
+        e-class-1 = lookup(n1)
+        n2 = rewrite n1 using r
+        e-class-2 = e-graph.add(n2)
+        merge(e-class-1, e-class-2)
+return best term in e-graph
+\end{lstlisting}
+
+\subsubsection{Making Equality Saturation Fast}
+This approach is already quite efficient, but we can make it even faster. On each iteration of the loop, we:
+\begin{enumerate}
+  \item Read the e-graph, looking for nodes to be re-written, 
+  \item Write to the e-graph, adding new nodes, and breaking our two invariants, 
+  \item Fix our invariants.
+\end{enumerate}
+
+This process can be made faster by the method of amortized analysis (\textsf{Part IA Algorithms II}). The idea, as there, is to 
+let the mess ``accummulate'', and clean it \textit{once}, rather than every time. We will therefore ``pull'' the invariant fixing out of 
+the \keyword{add} and \keyword{merge} methods, and into a separate \keyword{rebuild} method.
+
+\begin{lstlisting}[style=pseudocode]
+  while e-graph changes and not timeout: 
+    matches = []
+
+    // READ (assuming no mess, all invariants hold)
+    for each re-write rule r:
+      for each node in the e-graph:
+        if r can be applied to node:
+          e-class = lookup(node)
+          append (node, e-class, r) to matches
+    
+    // WRITE (and let mess accummulate)     
+    for each (n1, e-class-1, r) in matches:
+      n2 = rewrite n1 using r
+      e-class-2 = e-graph.add(n2)
+      merge(e-class-1, e-class-2)
+    
+    // FIX (clean up the mess)
+    rebuild()
+
+  return best term in e-graph
+\end{lstlisting}
+
+We will not go into the details, but the idea is that amortization in this manner can reduce the work we have to do. Each call to \keyword{merge} or \keyword{add}
+breaks some invariants, requiring fix-up. However, many updates will break the invariants in the ``same'' way, so by coalescing these updates, we gain a significant speed-up. 
+
+This technique was shown to speed up equality saturation by $21\times$ on average (geometric mean), with the speedup increasing the more re-writes are applied.
 
 \section{Tail Recursion Modulo Cons}
 Our final concrete optimisation is tail recursion modulo cons. 

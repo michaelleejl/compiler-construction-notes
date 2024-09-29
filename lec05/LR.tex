@@ -660,7 +660,7 @@ With this in mind, let's construct the DFA for $G_4$ using LR($1$) Items.
 Look closely at $S_4$, the corresponding state to $I_4$ (\Cref{fig:dfa-g4}). The only two items are
 \begin{center}
     \begin{tikzpicture}
-        \node[rectangular state,inner sep=1pt,anchor=north west,opacity=1.0] (s4) at ($(s1.south west) + (0cm,-0.5cm)$) {
+        \node[rectangular state,inner sep=1pt,anchor=north west,opacity=1.0] (s4) {
 $\begin{array}{l}
  R \to L \bullet ,\$ \\
  S \to L \bullet :=R,\$ \\

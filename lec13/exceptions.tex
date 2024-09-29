@@ -567,10 +567,10 @@ let rec insert k v = function
 \end{minted}
 \end{code}
 
-In \texttt{Duolingo}, each user is given a certain number of hearts, that regenerate over time. We should thus build an increment function that takes a user ID, \texttt{k}, and increments the number of hearts for that user. For simplicity, we'll assume there is no limit to the number of hearts a user can have. This is detailed in \Cref{code:ocaml-inefficient-update}.
+In \texttt{Duolingo}, each user is given a certain number of hearts, that regenerate over time. We should thus build an increment function that takes a user ID, \texttt{k}, and increments the number of hearts for that user. For simplicity, we'll assume there is no limit to the number of hearts a user can have. This is detailed in \Cref{code:ocaml-increment}.
 
 \begin{code}[Defining an incrementation function]
-\label{code:ocaml-inefficient-update}
+\label{code:ocaml-increment}
 \begin{minted}[linenos, bgcolor=backcolour]{ocaml}
 let rec update f k d =
   match d with
@@ -934,7 +934,7 @@ We have now seen several uses of algebraic effect handlers, and hopefully develo
 \newcommand{\keyword}[1]{\textbf{\texttt{#1}}}
 
 \subsubsection{A Toy Language with Effects}\label{section:effect-language}
-\begin{figure}[H]
+\begin{figure}
     \centering
     \resizebox{.8\textwidth}{!}{
     $\begin{array}{rrlll}
@@ -1383,7 +1383,7 @@ Consider a language
         \textbf{Contexts}\; E[-] & := & - \mid E[-] \; e \mid v \; E[-] \mid \langle E[-] \rangle
     \end{array}$
     \caption{A language for single-prompt delimited control}
-    \label{fig:language-delimited-control}
+    \label{fig:language-shift-reset}
 \end{figure}
 
 The reduction rules are

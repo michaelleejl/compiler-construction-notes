@@ -1,3 +1,14 @@
-\begin{tikzpicture}
+\begin{tikzpicture}[>=stealth',shorten >=1pt,]
     \node[e node] (div) {\texttt{/}};
+    \node[e node] (times) at ($(div) + (0, -8ex)$) {*};
+    \node[e node] (a) at ($(times) + (-5ex, -8ex)$) {a};
+    \node[e node] (2) at ($(times) + (5ex, -8ex)$) {2};
+
+    \draw[->] ($(div.south) + (-1ex, 0)$) -- ($(times.north) + (-1ex, 0)$);
+    \draw[->] ($(div.south) + (1ex, 0)$) 
+                 [rounded corners=0.2cm] -- ($(div.south) + (1ex, -1.5ex)$)
+                                         -- ($(div.south) + (5ex, -1.5ex)$)
+                                         -- ($(2.north) + (0ex, 0)$);
+    \draw[->] (times.south) -- ($(a.north) + (1ex, 0)$);
+    \draw[->] (times.south) -- ($(2.north) + (-1ex, 0)$);
 \end{tikzpicture}
